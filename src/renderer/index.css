@@ -1,0 +1,447 @@
+:root {
+  color-scheme: dark;
+  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --top-inset: 44px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: #0f1115;
+  color: #f5f6f8;
+  overflow: hidden;
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+#sidebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 72px;
+  height: 100%;
+  background: #101418;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  z-index: 10;
+}
+
+.sidebar-top,
+.sidebar-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.sidebar-bottom {
+  padding-bottom: 12px;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #e1e4e8;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.brand img {
+  width: 28px;
+  height: 28px;
+}
+
+.sidebar-services {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.sidebar-divider {
+  width: 32px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-btn {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #e1e4e8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 12px 0;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  border-left: 3px solid transparent;
+  transition: color 0.2s ease, border-left-color 0.2s ease, transform 0.2s ease;
+  text-align: center;
+}
+
+.sidebar-btn img {
+  width: 24px;
+  height: 24px;
+}
+
+.sidebar-btn span {
+  font-size: 10px;
+}
+
+.sidebar-btn:hover {
+  color: #2f80ed;
+  transform: translateX(2px);
+}
+
+.sidebar-btn.active {
+  border-left-color: #2f80ed;
+  color: #ffffff;
+}
+
+#tabstrip {
+  position: absolute;
+  left: 72px;
+  top: 0;
+  right: 0;
+  height: 44px;
+  background: #1b212a;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 9;
+}
+
+#tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #242b36;
+  border-radius: 999px;
+  cursor: pointer;
+  color: #dfe3ea;
+  font-size: 13px;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tab-empty {
+  font-size: 13px;
+  color: #7f8797;
+}
+
+.tab.active {
+  background: #2f76ff;
+  color: #ffffff;
+}
+
+.tab button {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.tabstrip-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pill-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: #2a323f;
+  color: #f1f3f7;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.pill-btn:hover {
+  background: #3a4353;
+}
+
+#content {
+  position: absolute;
+  top: var(--top-inset);
+  left: 72px;
+  right: 0;
+  bottom: 0;
+}
+
+#prompt-router-container {
+  position: absolute;
+  left: 72px;
+  right: 0;
+  top: 44px;
+  z-index: 8;
+}
+
+#prompt-router {
+  background: #111823;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.prompt-router-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+#prompt-input {
+  flex: 2;
+  min-height: 80px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.2);
+  color: #f5f6f8;
+  padding: 12px;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.prompt-router-actions {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.prompt-router-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: #a3acbd;
+}
+
+#prompt-agents {
+  min-height: 80px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 18, 26, 0.8);
+  color: #f1f3f7;
+  padding: 8px;
+}
+
+.prompt-router-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+#prompt-history {
+  flex: 1;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(22, 28, 38, 0.9);
+  color: #f8f9fb;
+  padding: 6px 12px;
+}
+
+.router-separator {
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin: 0;
+}
+
+.drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 320px;
+  background: rgba(21, 26, 33, 0.95);
+  backdrop-filter: blur(6px);
+  border-left: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.4);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  z-index: 1;
+}
+
+.drawer.visible {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 11;
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawer-header button {
+  border: none;
+  background: transparent;
+  color: #9da6b6;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.drawer-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  gap: 12px;
+}
+
+#promptList {
+  flex: 1;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prompt-item {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  transition: border 0.2s ease;
+}
+
+.prompt-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.prompt-info strong {
+  font-size: 13px;
+}
+
+.prompt-updated {
+  font-size: 11px;
+  color: #8d96a5;
+}
+
+.prompt-item:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.prompt-item button {
+  border: none;
+  background: transparent;
+  color: #ff6b6b;
+  cursor: pointer;
+}
+
+.prompt-empty {
+  font-size: 13px;
+  color: #8891a0;
+  text-align: center;
+  padding: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+#promptForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#promptForm label {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  color: #aab4c5;
+  gap: 4px;
+}
+
+#promptForm input,
+#promptForm textarea {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(13, 16, 21, 0.9);
+  color: #f5f6f8;
+  font-size: 13px;
+}
+
+#promptForm textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.toast {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  background: rgba(35, 187, 135, 0.95);
+  color: #04110c;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 12;
+}
+
+.toast.hidden {
+  display: none;
+}
+
+.toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+}

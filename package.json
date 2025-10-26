@@ -1,0 +1,17 @@
+{
+  "name": "ai-dock",
+  "version": "1.0.0",
+  "description": "AI Dock - Electron tabbed shell for AI clients",
+  "main": "src/main/main.js",
+  "scripts": {
+    "dev": "electron .",
+    "build": "electron-builder --win nsis",
+    "lint": "echo skip"
+  },
+  "dependencies": {
+    "electron": "^31.0.0"
+  },
+  "devDependencies": {
+    "electron-builder": "^25.0.0"
+  }
+}

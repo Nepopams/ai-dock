@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Dock</title>
+    <link rel="stylesheet" href="./index.css" />
+  </head>
+  <body>
+    <div id="app">
+      <aside id="sidebar">
+        <div class="sidebar-top">
+          <div class="brand">
+            <img src="./icons/logo.svg" alt="AI Dock logo" />
+            <span>AI Dock</span>
+          </div>
+          <div class="sidebar-services">
+            <button class="sidebar-btn" data-service="chatgpt" title="ChatGPT">
+              <img src="./icons/gpt.svg" alt="ChatGPT icon" />
+              <span>ChatGPT</span>
+            </button>
+            <button class="sidebar-btn" data-service="claude" title="Claude">
+              <img src="./icons/claude.svg" alt="Claude icon" />
+              <span>Claude</span>
+            </button>
+            <button class="sidebar-btn" data-service="alisa" title="Alisa">
+              <img src="./icons/alisa.svg" alt="Alisa icon" />
+              <span>Alisa</span>
+            </button>
+            <button class="sidebar-btn" data-service="deepseek" title="DeepSeek">
+              <img src="./icons/deepseek.svg" alt="DeepSeek icon" />
+              <span>DeepSeek</span>
+            </button>
+          </div>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-bottom">
+          <button class="sidebar-btn" data-action="prompts" title="Prompts">
+            <img src="./icons/prompts.svg" alt="Prompts icon" />
+            <span>Prompts</span>
+          </button>
+          <button class="sidebar-btn" data-action="settings" title="Settings">
+            <img src="./icons/settings.svg" alt="Settings icon" />
+            <span>Settings</span>
+          </button>
+          <button class="sidebar-btn" data-action="about" title="About">
+            <img src="./icons/info.svg" alt="About icon" />
+            <span>About</span>
+          </button>
+          <button class="sidebar-btn" data-action="exit" title="Exit">
+            <img src="./icons/exit.svg" alt="Exit icon" />
+            <span>Exit</span>
+          </button>
+        </div>
+      </aside>
+      <div id="prompt-router-container">
+        <section id="prompt-router">
+          <div class="prompt-router-row">
+            <textarea id="prompt-input" placeholder="Введите промт..." rows="3"></textarea>
+            <div class="prompt-router-actions">
+              <label class="prompt-router-label">
+                Target agents
+                <select id="prompt-agents" multiple></select>
+              </label>
+              <div class="prompt-router-buttons">
+                <button id="prompt-send" class="pill-btn">Send</button>
+                <select id="prompt-history">
+                  <option value="">📜 История промтов</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </section>
+        <hr class="router-separator" />
+      </div>
+      <header id="tabstrip">
+        <div id="tabs"></div>
+        <div class="tabstrip-actions">
+          <button id="btnSaveChat" class="pill-btn">Save Chat</button>
+        </div>
+      </header>
+      <main id="content">
+        <section id="promptsDrawer" class="drawer" aria-hidden="true">
+          <div class="drawer-header">
+            <h2>Prompts</h2>
+            <button id="promptsClose" aria-label="Close prompts drawer">&times;</button>
+          </div>
+          <div class="drawer-body">
+            <ul id="promptList"></ul>
+            <form id="promptForm">
+              <label>
+                Title
+                <input id="promptTitle" type="text" placeholder="Quick name" required maxlength="120" />
+              </label>
+              <label>
+                Prompt
+                <textarea id="promptBody" placeholder="Write your prompt..." required></textarea>
+              </label>
+              <div class="form-actions">
+                <button type="submit" class="pill-btn">Save Prompt</button>
+              </div>
+            </form>
+          </div>
+        </section>
+        <div id="toast" class="toast hidden"></div>
+      </main>
+    </div>
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>
