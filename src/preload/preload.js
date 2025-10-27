@@ -20,7 +20,8 @@ contextBridge.exposeInMainWorld("api", {
     close: (tabId) => {
       return safeInvoke("tabs:close", validateString(tabId, "tabId"));
     },
-    list: () => safeInvoke("tabs:list")
+    list: () => safeInvoke("tabs:list"),
+    focusLocal: () => safeInvoke("tabs:focusLocal")
   },
   prompts: {
     list: () => safeInvoke("prompts:list"),
@@ -75,3 +76,6 @@ contextBridge.exposeInMainWorld("api", {
 contextBridge.exposeInMainWorld("aiDock", {
   saveChatMarkdown: () => safeInvoke("save-chat-md")
 });
+
+require("./api/chat")(contextBridge, ipcRenderer);
+require("./api/completions")(contextBridge, ipcRenderer);

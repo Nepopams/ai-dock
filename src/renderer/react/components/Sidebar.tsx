@@ -6,9 +6,10 @@ import alisaIcon from "../assets/icons/alisa.svg";
 import deepseekIcon from "../assets/icons/deepseek.svg";
 import uxpilotIcon from "../assets/icons/uxpilot.svg";
 import promptsIcon from "../assets/icons/prompts.svg";
-import settingsIcon from "../assets/icons/settings.svg";
 import infoIcon from "../assets/icons/info.svg";
 import exitIcon from "../assets/icons/exit.svg";
+import chatIcon from "../assets/icons/chat.svg";
+import connectionsIcon from "../assets/icons/connections.svg";
 
 const serviceIcons: Record<string, string> = {
   chatgpt: gptIcon,
@@ -21,9 +22,11 @@ const serviceIcons: Record<string, string> = {
 function Sidebar() {
   const services = useDockStore((state) => state.services);
   const activeServiceId = useDockStore((state) => state.activeServiceId);
+  const activeLocalView = useDockStore((state) => state.activeLocalView);
   const selectService = useDockStore((state) => state.actions.selectService);
   const toggleDrawer = useDockStore((state) => state.actions.toggleDrawer);
   const showToast = useDockStore((state) => state.actions.showToast);
+  const focusLocalView = useDockStore((state) => state.actions.focusLocalView);
 
   const bottomButtons = [
     {
@@ -33,10 +36,12 @@ function Sidebar() {
       onClick: () => void toggleDrawer(true)
     },
     {
-      id: "settings",
-      label: "Settings",
-      icon: settingsIcon,
-      onClick: () => showToast("Settings coming soon")
+      id: "connections",
+      label: "Connections",
+      icon: connectionsIcon,
+      onClick: () => {
+        void focusLocalView("completions");
+      }
     },
     {
       id: "about",
@@ -52,12 +57,46 @@ function Sidebar() {
     }
   ];
 
+  const localViews = [
+    {
+      id: "chat",
+      label: "Chat",
+      icon: chatIcon,
+      isActive: activeLocalView === "chat",
+      onClick: () => {
+        void focusLocalView("chat");
+      }
+    },
+    {
+      id: "completions",
+      label: "Connections",
+      icon: connectionsIcon,
+      isActive: activeLocalView === "completions",
+      onClick: () => {
+        void focusLocalView("completions");
+      }
+    }
+  ];
+
   return (
     <aside id="sidebar">
       <div className="sidebar-top">
         <div className="brand">
           <img src={logoIcon} alt="AI Dock logo" />
           <span>AI Dock</span>
+        </div>
+        <div className="sidebar-local">
+          {localViews.map((item) => (
+            <button
+              key={item.id}
+              className={`sidebar-btn${item.isActive ? " active" : ""}`}
+              title={item.label}
+              onClick={item.onClick}
+            >
+              <img src={item.icon} alt={`${item.label} icon`} />
+              <span>{item.label}</span>
+            </button>
+          ))}
         </div>
         <div className="sidebar-services">
           {(services.length

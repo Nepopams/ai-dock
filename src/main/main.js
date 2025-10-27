@@ -6,6 +6,8 @@ const services = require("./services");
 const { getState, setState } = require("./store");
 const { HistoryStore } = require("./historyStore");
 const { randomUUID } = require("crypto");
+const { registerChatIpc } = require("./ipc/chat");
+const { registerCompletionsIpc } = require("./ipc/completions");
 
 let mainWindow;
 let tabManager;
@@ -115,6 +117,8 @@ const registerIpc = () => {
     return;
   }
   ipcRegistered = true;
+  registerChatIpc();
+  registerCompletionsIpc();
 
   ipcMain.handle("tabs:createOrFocus", (_event, serviceId) => {
     const service = services[serviceId];
@@ -137,6 +141,11 @@ const registerIpc = () => {
 
   ipcMain.handle("tabs:list", () => {
     return tabManager.list();
+  });
+
+  ipcMain.handle("tabs:focusLocal", () => {
+    tabManager.focusNone();
+    return true;
   });
 
   ipcMain.handle("prompts:list", () => {

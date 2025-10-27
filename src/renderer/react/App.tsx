@@ -9,10 +9,14 @@ import { useTabsSync } from "./hooks/useTabsSync";
 import { usePromptsSync } from "./hooks/usePromptsSync";
 import { usePromptRouterSync } from "./hooks/usePromptRouterSync";
 import { useTopInsetSync } from "./hooks/useTopInsetSync";
+import ChatView from "./views/ChatView";
+import CompletionsSettings from "./views/CompletionsSettings";
+import { useDockStore } from "./store/useDockStore";
 
 function App() {
   const routerRef = useRef<HTMLDivElement | null>(null);
   const tabstripRef = useRef<HTMLElement | null>(null);
+  const activeLocalView = useDockStore((state) => state.activeLocalView);
 
   useTabsSync();
   usePromptsSync();
@@ -25,6 +29,8 @@ function App() {
       <PromptRouter ref={routerRef} />
       <TabStrip ref={tabstripRef} />
       <main id="content">
+        {activeLocalView === "chat" && <ChatView />}
+        {activeLocalView === "completions" && <CompletionsSettings />}
         <PromptDrawer />
         <Toast />
       </main>

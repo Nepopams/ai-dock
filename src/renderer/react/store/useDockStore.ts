@@ -1,4 +1,9 @@
 import { create } from "zustand";
+import {
+  ChatSlice,
+  ChatSliceActions,
+  createChatSlice
+} from "./chatSlice";
 
 export interface ServiceMeta {
   id: string;
@@ -24,7 +29,9 @@ interface ToastState {
   visible: boolean;
 }
 
-interface DockActions {
+type LocalViewId = "chat" | "completions" | null;
+
+type BaseActions = {
   loadServices: () => Promise<void>;
   refreshTabs: () => Promise<void>;
   selectService: (serviceId: string) => Promise<void>;
@@ -43,9 +50,12 @@ interface DockActions {
   saveChat: () => Promise<void>;
   hideToast: () => void;
   showToast: (message: string) => void;
-}
+  focusLocalView: (viewId: LocalViewId) => Promise<void>;
+};
 
-interface DockState {
+export type DockActions = BaseActions & ChatSliceActions;
+
+export interface DockState extends ChatSlice {
   services: ServiceMeta[];
   tabs: TabMeta[];
   prompts: PromptItem[];
@@ -56,6 +66,7 @@ interface DockState {
   promptPanelHidden: boolean;
   activeTabId: string | null;
   activeServiceId: string | null;
+  activeLocalView: LocalViewId;
   toast: ToastState;
   actions: DockActions;
 }
@@ -67,19 +78,25 @@ const getInitialPromptHidden = () => {
   return localStorage.getItem("promptHidden") === "true";
 };
 
-export const useDockStore = create<DockState>((set, get) => ({
-  services: [],
-  tabs: [],
-  prompts: [],
-  promptHistory: [],
-  selectedAgents: [],
-  promptDraft: "",
-  drawerOpen: false,
-  promptPanelHidden: getInitialPromptHidden(),
-  activeTabId: null,
-  activeServiceId: null,
-  toast: { message: "", visible: false },
-  actions: {
+export const useDockStore = create<DockState>((set, get) => {
+  const chatSlice = createChatSlice<DockState & { actions: DockActions }>(set, get as any);
+
+  const baseState = {
+    services: [] as ServiceMeta[],
+    tabs: [] as TabMeta[],
+    prompts: [] as PromptItem[],
+    promptHistory: [] as string[],
+    selectedAgents: [] as string[],
+    promptDraft: "",
+    drawerOpen: false,
+    promptPanelHidden: getInitialPromptHidden(),
+    activeTabId: null,
+    activeServiceId: null,
+    activeLocalView: null as LocalViewId,
+    toast: { message: "", visible: false }
+  };
+
+  const baseActions: BaseActions = {
     loadServices: async () => {
       if (!window.api?.promptRouter) {
         return;
@@ -96,11 +113,12 @@ export const useDockStore = create<DockState>((set, get) => ({
       }
       const rawTabs = await window.api.tabs.list();
       const active = rawTabs.find((tab: TabMeta) => tab.isActive);
-      set({
+      set((state) => ({
         tabs: rawTabs,
         activeTabId: active ? active.id : null,
-        activeServiceId: active?.serviceId ?? null
-      });
+        activeServiceId: active?.serviceId ?? null,
+        activeLocalView: active ? null : state.activeLocalView
+      }));
     },
     selectService: async (serviceId) => {
       if (!window.api?.tabs) {
@@ -114,6 +132,7 @@ export const useDockStore = create<DockState>((set, get) => ({
         return;
       }
       await window.api.tabs.switch(tabId);
+      set({ activeLocalView: null });
       await get().actions.refreshTabs();
     },
     closeTab: async (tabId) => {
@@ -161,21 +180,21 @@ export const useDockStore = create<DockState>((set, get) => ({
       }
       const text = get().promptDraft.trim();
       if (!text) {
-        get().actions.showToast("Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð¿Ñ€Ð¾Ð¼Ñ‚");
+        get().actions.showToast("Ââåäèòå ïðîìò");
         return;
       }
       const targetAgents = get().selectedAgents.length
         ? get().selectedAgents
         : get().services.map((svc) => svc.id);
       if (!targetAgents.length) {
-        get().actions.showToast("ÐÐµÑ‚ Ð²Ñ‹Ð±Ñ€Ð°Ð½Ð½Ñ‹Ñ… Ð°Ð³ÐµÐ½Ñ‚Ð¾Ð²");
+        get().actions.showToast("Íåò âûáðàííûõ àãåíòîâ");
         return;
       }
       await window.api.promptRouter.broadcast({ text, agents: targetAgents });
       await window.api.promptRouter.saveToHistory(text);
       set({ promptDraft: "" });
       await get().actions.loadPromptHistory();
-      get().actions.showToast("ÐŸÑ€Ð¾Ð¼Ñ‚ Ð¾Ñ‚Ð¿Ñ€Ð°Ð²Ð»ÐµÐ½");
+      get().actions.showToast("Ïðîìò îòïðàâëåí");
     },
     loadPromptHistory: async () => {
       if (!window.api?.promptRouter) {
@@ -190,7 +209,7 @@ export const useDockStore = create<DockState>((set, get) => ({
       }
       await window.api.prompts.add(input);
       await get().actions.loadPrompts();
-      get().actions.showToast("ÐŸÑ€Ð¾Ð¼Ñ‚ ÑÐ¾Ñ…Ñ€Ð°Ð½Ñ‘Ð½");
+      get().actions.showToast("Ïðîìò ñîõðàí¸í");
     },
     removePrompt: async (id) => {
       if (!window.api?.prompts) {
@@ -204,12 +223,28 @@ export const useDockStore = create<DockState>((set, get) => ({
         return;
       }
       await window.api.clipboard.copy(body);
-      get().actions.showToast(title ? `ÐŸÑ€Ð¾Ð¼Ñ‚ "${title}" ÑÐºÐ¾Ð¿Ð¸Ñ€Ð¾Ð²Ð°Ð½` : "Ð¡ÐºÐ¾Ð¿Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¾");
+      get().actions.showToast(title ? `Ïðîìò "${title}" ñêîïèðîâàí` : "Ñêîïèðîâàíî");
     },
     saveChat: async () => {
       await window.aiDock?.saveChatMarkdown();
     },
     hideToast: () => set({ toast: { message: "", visible: false } }),
-    showToast: (message) => set({ toast: { message, visible: true } })
-  }
-}));
+    showToast: (message: string) => set({ toast: { message, visible: true } }),
+    focusLocalView: async (viewId) => {
+      if (viewId) {
+        await window.api?.tabs.focusLocal();
+      }
+      set({ activeLocalView: viewId, activeTabId: null, activeServiceId: null });
+    }
+  };
+
+  return {
+    ...baseState,
+    ...chatSlice.state,
+    actions: {
+      ...baseActions,
+      ...chatSlice.actions
+    }
+  } as DockState;
+});
+

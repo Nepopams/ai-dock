@@ -166,6 +166,20 @@ class TabManager {
     tab.view.setAutoResize({ width: true, height: true });
   }
 
+  focusNone() {
+    if (this.activeTabId) {
+      const active = this.tabs.find((tab) => tab.id === this.activeTabId);
+      if (active && active.view && !active.view.webContents.isDestroyed()) {
+        try {
+          this.mainWindow.removeBrowserView(active.view);
+        } catch {
+          // ignore removal errors
+        }
+      }
+    }
+    this.activeTabId = null;
+  }
+
   setDrawerInset(pixels) {
     this.extraLeftOffset = Math.max(0, Number.isFinite(pixels) ? pixels : 0);
     this.updateBounds();
