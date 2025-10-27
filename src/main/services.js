@@ -24,5 +24,11 @@ module.exports = {
     icon: "src/renderer/icons/deepseek.svg",
     url: "https://chat.deepseek.com/",
     partition: "persist:deepseek"
+  },
+  uxpilot: {
+    id: "uxpilot",
+    title: "UX Pilot",
+    url: "https://uxpilot.ai/",
+    partition: "persist:svc-uxpilot"
   }
 };

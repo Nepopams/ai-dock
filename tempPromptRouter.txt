@@ -1,0 +1,114 @@
+import { ForwardedRef, forwardRef, useMemo } from "react";
+import { shallow } from "zustand/shallow";
+import { useDockStore } from "../store/useDockStore";
+
+const PromptRouter = forwardRef<HTMLDivElement>((_props, ref) => {
+  const {
+    promptDraft,
+    promptHistory,
+    promptPanelHidden,
+    selectedAgents,
+    services,
+    actions
+  } = useDockStore(
+    (state) => ({
+      promptDraft: state.promptDraft,
+      promptHistory: state.promptHistory,
+      promptPanelHidden: state.promptPanelHidden,
+      selectedAgents: state.selectedAgents,
+      services: state.services,
+      togglePromptPanel: state.actions.togglePromptPanel,
+      setPromptDraft: state.actions.setPromptDraft,
+      setSelectedAgents: state.actions.setSelectedAgents,
+      sendPrompt: state.actions.sendPrompt
+    }),
+    shallow
+  );
+
+  const historyOptions = useMemo(() => promptHistory.slice(0, 50), [promptHistory]);
+
+  return (
+    <div id="prompt-router-container" ref={ref as ForwardedRef<HTMLDivElement>}>
+      <section id="prompt-router">
+        <div id="prompt-toolbar">
+          <button id="toggle-prompt" onClick={() => actions.togglePromptPanel()}>
+            {promptPanelHidden ? "📤 Show" : "👁 Hide"}
+          </button>
+        </div>
+        <div id="prompt-body" className={promptPanelHidden ? "hidden" : undefined}>
+          <div className="prompt-router-row">
+            <textarea
+              id="prompt-input"
+              placeholder="Введите промт..."
+              rows={3}
+              value={promptDraft}
+              onChange={(event) => actions.setPromptDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+                  event.preventDefault();
+                  void actions.sendPrompt();
+                }
+              }}
+            />
+            <div className="prompt-router-actions">
+              <label className="prompt-router-label">
+                Target agents
+                <select
+                  id="prompt-agents"
+                  multiple
+                  value={selectedAgents}
+                  onChange={(event) => {
+                    const values = Array.from(event.target.selectedOptions).map((option) => option.value);
+                    actions.setSelectedAgents(values);
+                  }}
+                >
+                  {services.length === 0 && (
+                    <option value="" disabled>
+                      Загрузка сервисов...
+                    </option>
+                  )}
+                  {services.map((service) => (
+                    <option key={service.id} value={service.id}>
+                      {service.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="prompt-router-buttons">
+                <button
+                  id="prompt-send"
+                  className="pill-btn"
+                  onClick={() => {
+                    void actions.sendPrompt();
+                  }}
+                >
+                  Send
+                </button>
+          <select
+            id="prompt-history"
+            value=""
+            onChange={(event) => {
+              if (event.target.value) {
+                actions.setPromptDraft(event.target.value);
+                event.target.selectedIndex = 0;
+              }
+            }}
+          >
+            <option value="">📜 История промтов</option>
+                  {historyOptions.map((prompt) => (
+                    <option key={prompt} value={prompt}>
+                      {prompt.length > 80 ? `${prompt.slice(0, 77)}...` : prompt}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <hr className="router-separator" />
+    </div>
+  );
+});
+
+export default PromptRouter;

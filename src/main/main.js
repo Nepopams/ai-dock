@@ -25,6 +25,17 @@ app.on("second-instance", () => {
   }
 });
 
+const getRendererUrl = () => {
+  const useViteUi = process.env.AI_DOCK_REACT_UI === "true";
+  if (isDev && useViteUi) {
+    return "http://localhost:5173";
+  }
+  if (useViteUi) {
+    return path.join(__dirname, "..", "renderer", "react", "dist", "index.html");
+  }
+  return path.join(__dirname, "..", "renderer", "index.html");
+};
+
 const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -61,7 +72,12 @@ const createWindow = () => {
     }
   });
 
-  mainWindow.loadFile(path.join(__dirname, "..", "renderer", "index.html"));
+  const rendererEntry = getRendererUrl();
+  if (rendererEntry.startsWith("http")) {
+    mainWindow.loadURL(rendererEntry);
+  } else {
+    mainWindow.loadFile(rendererEntry);
+  }
 
   tabManager = new TabManager(mainWindow);
   mainWindow.tabManager = tabManager;

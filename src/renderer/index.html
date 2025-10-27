@@ -56,18 +56,23 @@
       </aside>
       <div id="prompt-router-container">
         <section id="prompt-router">
-          <div class="prompt-router-row">
-            <textarea id="prompt-input" placeholder="Введите промт..." rows="3"></textarea>
-            <div class="prompt-router-actions">
-              <label class="prompt-router-label">
-                Target agents
-                <select id="prompt-agents" multiple></select>
-              </label>
-              <div class="prompt-router-buttons">
-                <button id="prompt-send" class="pill-btn">Send</button>
-                <select id="prompt-history">
-                  <option value="">📜 История промтов</option>
-                </select>
+          <div id="prompt-toolbar">
+            <button id="toggle-prompt">👁 Hide</button>
+          </div>
+          <div id="prompt-body">
+            <div class="prompt-router-row">
+              <textarea id="prompt-input" placeholder="Введите промт..." rows="3"></textarea>
+              <div class="prompt-router-actions">
+                <label class="prompt-router-label">
+                  Target agents
+                  <select id="prompt-agents" multiple></select>
+                </label>
+                <div class="prompt-router-buttons">
+                  <button id="prompt-send" class="pill-btn">Send</button>
+                  <select id="prompt-history">
+                    <option value="">📜 История промтов</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>

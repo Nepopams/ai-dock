@@ -4,14 +4,29 @@
   "description": "AI Dock - Electron tabbed shell for AI clients",
   "main": "src/main/main.js",
   "scripts": {
-    "dev": "electron .",
-    "build": "electron-builder --win nsis",
+    "dev": "vite",
+    "build": "vite build",
+    "start": "electron .",
+    "dev:new-ui": "cross-env AI_DOCK_REACT_UI=true concurrently \"npm:dev\" \"npm:electron:dev\"",
+    "electron:dev": "electron .",
+    "electron:build": "electron-builder --win nsis",
     "lint": "echo skip"
   },
   "dependencies": {
-    "electron": "^31.0.0"
+    "@tauri-apps/api": "^2.9.0",
+    "electron": "^31.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "electron-builder": "^25.0.0"
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.1.0",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron-builder": "^25.0.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12"
   }
 }

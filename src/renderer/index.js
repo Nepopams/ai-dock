@@ -16,6 +16,8 @@ const agentSelect = document.getElementById("prompt-agents");
 const sendButton = document.getElementById("prompt-send");
 const historySelect = document.getElementById("prompt-history");
 const promptRouterContainer = document.getElementById("prompt-router-container");
+const promptBody = document.getElementById("prompt-body");
+const togglePromptButton = document.getElementById("toggle-prompt");
 
 let drawerOpen = false;
 let toastTimeout;
@@ -36,6 +38,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await refreshTabs();
   await promptsDrawer.init();
   await initPromptRouter();
+  initPromptVisibilityControls();
   await updateTopInset();
 });
 
@@ -188,6 +191,29 @@ async function updateTopInset() {
   const total = tabstripHeight + routerHeight;
   document.documentElement.style.setProperty("--top-inset", `${total}px`);
   await window.api.layout.setTopInset(total);
+}
+
+function initPromptVisibilityControls() {
+  if (!togglePromptButton || !promptBody) {
+    return;
+  }
+  const hidden = localStorage.getItem("promptHidden") === "true";
+  applyPromptVisibility(hidden);
+
+  togglePromptButton.addEventListener("click", () => {
+    const currentlyHidden = promptBody.style.display === "none";
+    applyPromptVisibility(!currentlyHidden);
+  });
+}
+
+function applyPromptVisibility(hidden) {
+  if (!promptBody || !togglePromptButton) {
+    return;
+  }
+  promptBody.style.display = hidden ? "none" : "block";
+  togglePromptButton.textContent = hidden ? "📤 Show" : "👁 Hide";
+  localStorage.setItem("promptHidden", hidden ? "true" : "false");
+  updateTopInset();
 }
 
 function showToast(message) {

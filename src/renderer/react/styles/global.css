@@ -154,11 +154,6 @@ body {
   flex-shrink: 0;
 }
 
-.tab-empty {
-  font-size: 13px;
-  color: #7f8797;
-}
-
 .tab.active {
   background: #2f76ff;
   color: #ffffff;
@@ -192,14 +187,6 @@ body {
   background: #3a4353;
 }
 
-#content {
-  position: absolute;
-  top: var(--top-inset);
-  left: 72px;
-  right: 0;
-  bottom: 0;
-}
-
 #prompt-router-container {
   position: absolute;
   left: 72px;
@@ -220,7 +207,7 @@ body {
 #prompt-toolbar {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 #toggle-prompt {
@@ -239,6 +226,10 @@ body {
 
 #prompt-body {
   display: block;
+}
+
+#prompt-body.hidden {
+  display: none;
 }
 
 .prompt-router-row {
@@ -302,6 +293,14 @@ body {
   border: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   margin: 0;
+}
+
+#content {
+  position: absolute;
+  top: var(--top-inset);
+  left: 72px;
+  right: 0;
+  bottom: 0;
 }
 
 .drawer {
