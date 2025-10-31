@@ -8,6 +8,7 @@ const { HistoryStore } = require("./historyStore");
 const { randomUUID } = require("crypto");
 const { registerChatIpc } = require("./ipc/chat");
 const { registerCompletionsIpc } = require("./ipc/completions");
+const { registerRegistryIpc } = require("./ipc/registry.ipc");
 
 let mainWindow;
 let tabManager;
@@ -119,6 +120,7 @@ const registerIpc = () => {
   ipcRegistered = true;
   registerChatIpc();
   registerCompletionsIpc();
+  registerRegistryIpc();
 
   ipcMain.handle("tabs:createOrFocus", (_event, serviceId) => {
     const service = services[serviceId];
@@ -341,3 +343,5 @@ app.on("window-all-closed", () => {
     app.quit();
   }
 });
+
+
