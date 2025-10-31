@@ -11,7 +11,7 @@ import infoIcon from "../assets/icons/info.svg";
 import exitIcon from "../assets/icons/exit.svg";
 import chatIcon from "../assets/icons/chat.svg";
 import connectionsIcon from "../assets/icons/connections.svg";
-import { serviceCategories, ServiceCategory, ServiceClient } from "../../shared/types/registry";
+import { serviceCategories, ServiceCategory, ServiceClient } from "../../../shared/types/registry.ts";
 
 const builtinIconMap: Record<string, string> = {
   chatgpt: gptIcon,
@@ -103,14 +103,6 @@ function Sidebar() {
       label: "Prompts",
       icon: promptsIcon,
       onClick: () => void toggleDrawer(true)
-    },
-    {
-      id: "connections",
-      label: "Connections",
-      icon: connectionsIcon,
-      onClick: () => {
-        void focusLocalView("completions");
-      }
     },
     {
       id: "about",

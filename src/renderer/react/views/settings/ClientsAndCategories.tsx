@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useDockStore } from "../../store/useDockStore";
-import { serviceCategories, ServiceClient, ServiceRegistryFile } from "../../../shared/types/registry";
+import { serviceCategories, ServiceClient, ServiceRegistryFile } from "../../../../shared/types/registry.ts";
 
 interface EditorState {
   id: string;
@@ -168,13 +168,14 @@ const ClientsAndCategories = () => {
       return;
     }
     const originalId = registryClients.find((client) => client.id === editor.id)?.id;
-    const validation = validate(editor, originalId);
+    const validation = validate(editor, originalId ?? undefined);
     if (validation.hasErrors || !validation.client) {
       return;
     }
 
+    const targetId = originalId ?? editor.id;
     const nextClients = registryClients
-      .filter((client) => client.id !== editor.id)
+      .filter((client) => client.id !== targetId)
       .concat(validation.client)
       .sort((a, b) => a.title.localeCompare(b.title));
 
@@ -189,7 +190,10 @@ const ClientsAndCategories = () => {
       return;
     }
     const nextClients = registryClients.filter((item) => item.id !== client.id);
-    await saveRegistry(buildRegistryPayload(nextClients));
+    const success = await saveRegistry(buildRegistryPayload(nextClients));
+    if (success && editor?.id === client.id) {
+      resetEditor();
+    }
   };
 
   return (
@@ -236,7 +240,7 @@ const ClientsAndCategories = () => {
               {!sortedClients.length && (
                 <tr>
                   <td colSpan={5} className="settings-empty">
-                    {registryLoading ? "Loading clients…" : "No clients configured"}
+                    {registryLoading ? "Loading clients..." : "No clients configured"}
                   </td>
                 </tr>
               )}
@@ -323,7 +327,9 @@ const ClientsAndCategories = () => {
                 <textarea
                   value={editor.metaText}
                   onChange={(event) => setEditor({ ...editor, metaText: event.target.value })}
-                  placeholder="{\n  \"key\": \"value\"\n}"
+                  placeholder={`{
+  "key": "value"
+}`}
                   rows={4}
                 />
                 {errors.metaText && <span className="settings-error-inline">{errors.metaText}</span>}
@@ -339,7 +345,7 @@ const ClientsAndCategories = () => {
             </form>
           ) : (
             <div className="settings-editor-placeholder">
-              <p>Select a client to edit or click “Add Client”.</p>
+              <p>Select a client to edit or click "Add Client".</p>
             </div>
           )}
         </section>
@@ -349,4 +355,3 @@ const ClientsAndCategories = () => {
 };
 
 export default ClientsAndCategories;
-

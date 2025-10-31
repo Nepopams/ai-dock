@@ -14,7 +14,10 @@ let unwatchService = null;
 const subscribers = new Set();
 
 const ok = (data = true) => ({ ok: true, data });
-const fail = (error) => ({ ok: false, error: error instanceof Error ? error.message : String(error) });
+const fail = (error) => ({
+  ok: false,
+  error: error instanceof Error ? error.message : String(error)
+});
 
 const notifySubscribers = () => {
   for (const contents of Array.from(subscribers)) {
@@ -35,13 +38,20 @@ const ensureServiceWatcher = async () => {
   });
 };
 
-const removeSubscriber = (contents) => {\n  subscribers.delete(contents);\n};
+const removeSubscriber = (contents) => {
+  subscribers.delete(contents);
+};
 
 const registerRegistryIpc = () => {
   if (registered) {
     return;
   }
-  registered = true;\n\n  ensureServiceWatcher().catch((error) => {\n    console.error("[registry] failed to initialise watcher", error);\n  });\n
+  registered = true;
+
+  ensureServiceWatcher().catch((error) => {
+    console.error("[registry] failed to initialise watcher", error);
+  });
+
   ipcMain.handle(IPC_REGISTRY_LIST, async () => {
     try {
       const registry = await loadRegistry();
@@ -85,5 +95,3 @@ const registerRegistryIpc = () => {
 };
 
 module.exports = { registerRegistryIpc };
-
-

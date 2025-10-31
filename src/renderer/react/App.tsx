@@ -10,7 +10,7 @@ import { usePromptsSync } from "./hooks/usePromptsSync";
 import { usePromptRouterSync } from "./hooks/usePromptRouterSync";
 import { useTopInsetSync } from "./hooks/useTopInsetSync";
 import ChatView from "./views/ChatView";
-import CompletionsSettings from "./views/CompletionsSettings";
+import ConnectionsSettings from "./views/ConnectionsSettings";
 import { useDockStore } from "./store/useDockStore";
 
 function App() {
@@ -30,7 +30,7 @@ function App() {
       <TabStrip ref={tabstripRef} />
       <main id="content">
         {activeLocalView === "chat" && <ChatView />}
-        {activeLocalView === "completions" && <CompletionsSettings />}
+        {activeLocalView === "completions" && <ConnectionsSettings />}
         <PromptDrawer />
         <Toast />
       </main>

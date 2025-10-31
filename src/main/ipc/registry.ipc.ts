@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain, WebContents } from "electron";
+import { ipcMain, WebContents } from "electron";
 import {
   IPC_REGISTRY_CHANGED,
   IPC_REGISTRY_LIST,
@@ -13,8 +13,7 @@ import {
   RegistryWatchResponse
 } from "../../shared/ipc/contracts";
 import { isRegistryFile } from "../../shared/types/registry";
-import {
-  loadRegistry\n  saveRegistry,\n  watchRegistry\n} from "../services/registry";
+import { loadRegistry, saveRegistry, watchRegistry } from "../services/registry";
 
 let registered = false;
 let unwatchService: (() => void) | null = null;
@@ -49,11 +48,16 @@ const removeSubscriber = (contents: WebContents) => {
   subscribers.delete(contents);
 };
 
-export const registerRegistryIpc = () => {
+export const registerRegistryIpc = (): void => {
   if (registered) {
     return;
   }
-  registered = true;\n\n  ensureServiceWatcher().catch((error) => {\n    console.error("[registry] failed to initialise watcher", error);\n  });\n
+  registered = true;
+
+  ensureServiceWatcher().catch((error) => {
+    console.error("[registry] failed to initialise watcher", error);
+  });
+
   ipcMain.handle(IPC_REGISTRY_LIST, async (): Promise<RegistryListResponse> => {
     try {
       const registry = await loadRegistry();
@@ -104,5 +108,3 @@ export const registerRegistryIpc = () => {
     }
   );
 };
-
-
