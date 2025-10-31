@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useDockStore } from "../store/useDockStore";
 import logoIcon from "../assets/icons/logo.svg";
 import gptIcon from "../assets/icons/gpt.svg";
@@ -10,8 +11,9 @@ import infoIcon from "../assets/icons/info.svg";
 import exitIcon from "../assets/icons/exit.svg";
 import chatIcon from "../assets/icons/chat.svg";
 import connectionsIcon from "../assets/icons/connections.svg";
+import { serviceCategories, ServiceCategory, ServiceClient } from "../../shared/types/registry";
 
-const serviceIcons: Record<string, string> = {
+const builtinIconMap: Record<string, string> = {
   chatgpt: gptIcon,
   claude: claudeIcon,
   alisa: alisaIcon,
@@ -19,10 +21,77 @@ const serviceIcons: Record<string, string> = {
   uxpilot: uxpilotIcon
 };
 
+const fallbackClients: ServiceClient[] = [
+  {
+    id: "chatgpt",
+    title: "ChatGPT",
+    category: "chat",
+    urlPatterns: [],
+    adapterId: "openai.chatgpt",
+    icon: "builtin:chatgpt",
+    enabled: true
+  },
+  {
+    id: "claude",
+    title: "Claude",
+    category: "chat",
+    urlPatterns: [],
+    adapterId: "anthropic.claude",
+    icon: "builtin:claude",
+    enabled: true
+  },
+  {
+    id: "deepseek",
+    title: "DeepSeek",
+    category: "chat",
+    urlPatterns: [],
+    adapterId: "deepseek.chat",
+    icon: "builtin:deepseek",
+    enabled: true
+  }
+];
+
+const categoryLabels: Record<ServiceCategory, string> = {
+  chat: "Chat",
+  code: "Code",
+  presentation: "Presentation",
+  image_video: "Images & Video",
+  other: "Other"
+};
+
 function Sidebar() {
-  const services = useDockStore((state) => state.services);
+  const registryClients = useDockStore((state) => state.registryClients);
   const activeServiceId = useDockStore((state) => state.activeServiceId);
   const activeLocalView = useDockStore((state) => state.activeLocalView);
+
+  const groupedClients = useMemo(() => {
+    const enabled = registryClients.filter((client) => client.enabled);
+    const source = enabled.length ? enabled : fallbackClients;
+    const map = new Map<ServiceCategory, ServiceClient[]>();
+    source.forEach((client) => {
+      const bucket = map.get(client.category) ?? [];
+      bucket.push(client);
+      map.set(client.category as ServiceCategory, bucket);
+    });
+    return serviceCategories
+      .map((category) => ({
+        category,
+        clients: (map.get(category) ?? []).slice().sort((a, b) => a.title.localeCompare(b.title))
+      }))
+      .filter((group) => group.clients.length > 0);
+  }, [registryClients]);
+
+  const resolveIcon = (client: ServiceClient): string => {
+    if (client.icon) {
+      if (client.icon.startsWith("builtin:")) {
+        const builtinKey = client.icon.slice("builtin:".length);
+        return builtinIconMap[builtinKey] || builtinIconMap[client.id] || logoIcon;
+      }
+      return client.icon;
+    }
+    return builtinIconMap[client.id] || logoIcon;
+  };
+
   const selectService = useDockStore((state) => state.actions.selectService);
   const toggleDrawer = useDockStore((state) => state.actions.toggleDrawer);
   const showToast = useDockStore((state) => state.actions.showToast);
@@ -99,32 +168,28 @@ function Sidebar() {
           ))}
         </div>
         <div className="sidebar-services">
-          {(services.length
-            ? services
-            : [
-                { id: "chatgpt", title: "ChatGPT" },
-                { id: "claude", title: "Claude" },
-                { id: "alisa", title: "Alisa" },
-                { id: "deepseek", title: "DeepSeek" },
-                { id: "uxpilot", title: "UX Pilot" }
-              ]
-          ).map((service) => {
-            const icon = serviceIcons[service.id] || logoIcon;
-            const isActive = activeServiceId === service.id;
-            return (
-              <button
-                key={service.id}
-                className={`sidebar-btn${isActive ? " active" : ""}`}
-                title={service.title}
-                onClick={() => {
-                  void selectService(service.id);
-                }}
-              >
-                <img src={icon} alt={`${service.title} icon`} />
-                <span>{service.title}</span>
-              </button>
-            );
-          })}
+          {groupedClients.map(({ category, clients }) => (
+            <div key={category} className="sidebar-category">
+              <span className="sidebar-category-label">{categoryLabels[category]}</span>
+              {clients.map((client) => {
+                const iconSource = resolveIcon(client);
+                const isActive = activeServiceId === client.id;
+                return (
+                  <button
+                    key={client.id}
+                    className={`sidebar-btn${isActive ? " active" : ""}`}
+                    title={client.title}
+                    onClick={() => {
+                      void selectService(client.id);
+                    }}
+                  >
+                    <img src={iconSource} alt={`${client.title} icon`} />
+                    <span>{client.title}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
       <div className="sidebar-divider"></div>
@@ -146,3 +211,8 @@ function Sidebar() {
 }
 
 export default Sidebar;
+
+
+
+
+

@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   color-scheme: dark;
   font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
   --top-inset: 44px;
@@ -1641,6 +1641,7 @@ body {
   opacity: 1;
   transform: translateY(0);
 }
+
 
 
 
