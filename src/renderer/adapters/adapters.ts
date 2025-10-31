@@ -1,4 +1,4 @@
-
+﻿
 import { AdapterId, AdapterSelectors, AdapterError, IAgentAdapter } from "./IAgentAdapter";
 import { chatGptAdapter, ChatGptAdapter } from "./impl/chatgpt.adapter";
 import { claudeAdapter, ClaudeAdapter } from "./impl/claude.adapter";
@@ -6,6 +6,21 @@ import { deepSeekAdapter, DeepSeekAdapter } from "./impl/deepseek.adapter";
 
 type MutableAdapter = IAgentAdapter & {
   updateSelectors?: (overrides?: Partial<AdapterSelectors>) => void;
+};
+
+export const resolveAdapterId = (raw?: string | null): AdapterId | null => {
+  if (!raw) {
+    return null;
+  }
+  const normalized = raw.split(".").pop()?.trim().toLowerCase();
+  switch (normalized) {
+    case "chatgpt":
+    case "claude":
+    case "deepseek":
+      return normalized as AdapterId;
+    default:
+      return null;
+  }
 };
 
 const adapterMap: Record<AdapterId, MutableAdapter> = {
@@ -39,3 +54,4 @@ export const adapters = {
 };
 
 export type AdapterRegistry = typeof adapters;
+

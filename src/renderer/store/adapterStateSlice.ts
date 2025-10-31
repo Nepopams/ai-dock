@@ -1,11 +1,11 @@
-import { StateCreator } from "zustand";
+﻿import { StateCreator } from "zustand";
 import {
   AdapterError,
   AdapterId,
   IAgentAdapter,
   AdapterSelectors
 } from "../adapters/IAgentAdapter";
-import { getAdapterById, updateAdapterOverrides } from "../adapters/adapters";
+import { getAdapterById, updateAdapterOverrides, resolveAdapterId } from "../adapters/adapters";
 
 export interface AdapterTabState {
   adapterId: AdapterId | null;
@@ -23,6 +23,7 @@ export interface AdapterStateActions {
   clearAdapterState(tabId?: string): void;
   setAdapterOverride(serviceId: string, adapterId: AdapterId, selectors?: Partial<AdapterSelectors>): void;
   checkAdapterReady(tabId: string, serviceId: string | null): Promise<boolean>;
+  healthCheckAdapter(serviceId: string): Promise<{ ok: boolean; details?: string }>;
   setAdapterError(tabId: string, error: string): void;
 }
 
@@ -181,13 +182,100 @@ export const createAdapterStateSlice = <
     }
   };
 
+  const healthCheckAdapter = async (serviceId: string): Promise<{ ok: boolean; details?: string }> => {
+    if (!serviceId) {
+      return { ok: false, details: "Service is not specified" };
+    }
+
+    const state = get() as BoundState<T> & {
+      tabs?: Array<{ id: string; serviceId: string | null }>;
+      registryClients?: Array<{ id: string; adapterId?: string }>;
+    };
+
+    const tab = (state.tabs || []).find((item) => item.serviceId === serviceId);
+    if (!tab) {
+      return { ok: false, details: "Open a tab for this service to run health-check" };
+    }
+
+    const registryClients = state.registryClients || [];
+    const client = registryClients.find((item) => item.id === serviceId);
+    if (!client || !client.adapterId) {
+      return { ok: false, details: "Adapter not configured" };
+    }
+
+    const adapterId = client.adapterId as AdapterId;
+    let adapter: IAgentAdapter;
+    try {
+      adapter = getAdapterById(adapterId);
+    } catch (error) {
+      return {
+        ok: false,
+        details: error instanceof Error ? error.message : String(error)
+      };
+    }
+
+    set((state) => ({
+      adapterStateByTab: {
+        ...state.adapterStateByTab,
+        [tab.id]: {
+          ...touchState(state.adapterStateByTab[tab.id], adapterId),
+          checking: true,
+          lastError: undefined
+        }
+      }
+    }));
+
+    try {
+      const result = await adapter.healthCheck({ tabId: tab.id });
+      set((state) => ({
+        adapterStateByTab: {
+          ...state.adapterStateByTab,
+          [tab.id]: {
+            adapterId,
+            ready: result.ok,
+            checking: false,
+            lastError: result.ok ? undefined : result.details,
+            lastCheckAt: new Date().toISOString()
+          }
+        }
+      }));
+      return result;
+    } catch (error) {
+      const message =
+        error instanceof AdapterError
+          ? `${error.code}: ${error.message}`
+          : error instanceof Error
+            ? error.message
+            : String(error);
+      set((state) => ({
+        adapterStateByTab: {
+          ...state.adapterStateByTab,
+          [tab.id]: {
+            adapterId,
+            ready: false,
+            checking: false,
+            lastError: message,
+            lastCheckAt: new Date().toISOString()
+          }
+        }
+      }));
+      return { ok: false, details: message };
+    }
+  };
+
   return {
     state: getInitialState(),
     actions: {
       clearAdapterState,
       setAdapterOverride,
       checkAdapterReady,
+      healthCheckAdapter,
       setAdapterError
     }
   };
 };
+
+
+
+
+

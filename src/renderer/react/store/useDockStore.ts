@@ -102,6 +102,10 @@ export const useDockStore = create<DockState>((set, get) => {
     set,
     get as any
   );
+  const adapterSlice = createAdapterStateSlice<DockState & { actions: DockActions }>(
+    set,
+    get as any
+  );
 
   const baseState = {
     services: [] as ServiceMeta[],
@@ -237,13 +241,14 @@ export const useDockStore = create<DockState>((set, get) => {
             return;
           }
           const client = registryClients.find((item) => item.id === tab.serviceId);
-          if (!client?.adapterId) {
+          const adapterId = resolveAdapterId(client?.adapterId as string | undefined);
+          if (!client || !adapterId) {
             get().actions.setAdapterError(tabId, "Adapter not configured");
             return;
           }
           let adapter;
           try {
-            adapter = getAdapterById(client.adapterId as AdapterId);
+            adapter = getAdapterById(adapterId);
           } catch (error) {
             get().actions.setAdapterError(
               tabId,
@@ -255,7 +260,6 @@ export const useDockStore = create<DockState>((set, get) => {
             await adapter.insert({ tabId }, text);
             if (send) {
               await adapter.send({ tabId });
-              // do not await readLastAnswer, fire-and-forget
               void adapter
                 .readLastAnswer({ tabId })
                 .then(() => undefined)
@@ -267,7 +271,7 @@ export const useDockStore = create<DockState>((set, get) => {
               adapterStateByTab: {
                 ...state.adapterStateByTab,
                 [tabId]: {
-                  adapterId: client.adapterId as AdapterId,
+                  adapterId,
                   ready: true,
                   checking: false,
                   lastError: undefined,
@@ -356,10 +360,12 @@ export const useDockStore = create<DockState>((set, get) => {
     ...baseState,
     ...chatSlice.state,
     ...registrySlice.state,
+    ...adapterSlice.state,
     actions: {
       ...baseActions,
       ...chatSlice.actions,
-      ...registrySlice.actions
+      ...registrySlice.actions,
+      ...adapterSlice.actions
     }
   } as DockState;
 });
@@ -395,6 +401,10 @@ if (typeof window !== "undefined") {
     }
   }
 }
+
+
+
+
 
 
 

@@ -1,6 +1,8 @@
-import { StateCreator } from "zustand";
+﻿import { StateCreator } from "zustand";
 import { RegistryListResponse, RegistrySaveRequest, RegistrySaveResponse } from "../../shared/ipc/contracts";
-import { ServiceClient, ServiceRegistryFile } from "../../shared/types/registry";
+import { ServiceClient, ServiceRegistryFile } from "../../shared/types/registry.ts";
+import { AdapterSelectors } from "../adapters/IAgentAdapter";
+import { updateAdapterOverrides, resolveAdapterId } from "../adapters/adapters";
 
 export interface RegistrySlice {
   registryClients: ServiceClient[];
@@ -86,4 +88,7 @@ export const createRegistrySlice = <T extends RegistrySlice & { actions: Registr
     } as RegistrySliceActions
   };
 };
+
+
+
 
