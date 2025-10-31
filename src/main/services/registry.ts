@@ -1,0 +1,129 @@
+import { app } from "electron";
+import { existsSync } from "fs";
+import { promises as fs } from "fs";
+import path from "path";
+import {
+  ServiceClient,
+  ServiceRegistryFile,
+  isRegistryFile,
+  isServiceClient
+} from "../../shared/types/registry";
+
+const REGISTRY_FILE_NAME = "registry.json";
+
+let registryCache: ServiceRegistryFile | null = null;
+
+const cloneRegistry = (registry: ServiceRegistryFile): ServiceRegistryFile =>
+  JSON.parse(JSON.stringify(registry));
+
+const createDefaultClients = (): ServiceClient[] => [
+  {
+    id: "chatgpt",
+    title: "ChatGPT",
+    category: "chat",
+    urlPatterns: ["https://chat.openai.com/*"],
+    adapterId: "openai.chatgpt",
+    icon: "builtin:chatgpt",
+    enabled: true
+  },
+  {
+    id: "claude",
+    title: "Claude",
+    category: "chat",
+    urlPatterns: ["https://claude.ai/*"],
+    adapterId: "anthropic.claude",
+    icon: "builtin:claude",
+    enabled: true
+  },
+  {
+    id: "deepseek",
+    title: "DeepSeek",
+    category: "chat",
+    urlPatterns: ["https://www.deepseek.com/*"],
+    adapterId: "deepseek.chat",
+    icon: "builtin:deepseek",
+    enabled: true
+  }
+];
+
+const buildDefaultRegistry = (): ServiceRegistryFile => ({
+  version: 1,
+  updatedAt: new Date().toISOString(),
+  clients: createDefaultClients()
+});
+
+export const getRegistryPath = (): string => {
+  return path.join(app.getPath("userData"), REGISTRY_FILE_NAME);
+};
+
+const readRegistryFromDisk = async (filePath: string): Promise<ServiceRegistryFile | null> => {
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    const parsed = JSON.parse(raw);
+    if (isRegistryFile(parsed)) {
+      return parsed;
+    }
+    console.warn("[registry] Invalid registry format detected, rebuilding default file");
+    return null;
+  } catch (error) {
+    console.warn("[registry] Failed to read registry file", error);
+    return null;
+  }
+};
+
+const writeRegistryToDisk = async (filePath: string, registry: ServiceRegistryFile): Promise<void> => {
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, `${JSON.stringify(registry, null, 2)}\n`, "utf8");
+};
+
+const ensureRegistryFile = async (): Promise<ServiceRegistryFile> => {
+  const filePath = getRegistryPath();
+  if (!existsSync(filePath)) {
+    const defaults = buildDefaultRegistry();
+    await writeRegistryToDisk(filePath, defaults);
+    return defaults;
+  }
+  const loaded = await readRegistryFromDisk(filePath);
+  if (loaded) {
+    return loaded;
+  }
+  const fallback = buildDefaultRegistry();
+  await writeRegistryToDisk(filePath, fallback);
+  return fallback;
+};
+
+export const loadRegistry = async (): Promise<ServiceRegistryFile> => {
+  if (!registryCache) {
+    registryCache = await ensureRegistryFile();
+  }
+  return cloneRegistry(registryCache);
+};
+
+export const saveRegistry = async (
+  updater: (current: ServiceRegistryFile) => ServiceRegistryFile
+): Promise<ServiceRegistryFile> => {
+  const current = await loadRegistry();
+  const next = updater(cloneRegistry(current));
+  if (!next || typeof next !== "object") {
+    throw new Error("Registry updater must return an object");
+  }
+  if (next.version !== 1) {
+    throw new Error("Unsupported registry version");
+  }
+  if (!Array.isArray(next.clients) || next.clients.some((client) => !isServiceClient(client))) {
+    throw new Error("Registry contains invalid clients");
+  }
+  const stamped: ServiceRegistryFile = {
+    ...next,
+    version: 1,
+    updatedAt: new Date().toISOString()
+  };
+  const filePath = getRegistryPath();
+  await writeRegistryToDisk(filePath, stamped);
+  registryCache = stamped;
+  return cloneRegistry(stamped);
+};
+
+export const clearRegistryCache = (): void => {
+  registryCache = null;
+};
