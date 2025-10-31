@@ -1,11 +1,11 @@
-import {
+﻿import {
   AdapterConfig,
   AdapterError,
   AdapterSelectors,
   IAgentAdapter,
   WebAdapterContext
 } from "../IAgentAdapter";
-import { buildAdapterSelectors, selectorHeuristics } from "../selectorHeuristics";
+import { buildAdapterSelectors, selectorHeuristics } from "../selectorHeuristics.ts";
 import { domScriptTemplates, toDomScriptSource } from "../../utils/domScriptTemplates";
 import { execDomScript, withTimeout } from "../adapterBridgeClient";
 
@@ -250,3 +250,4 @@ export class ChatGptAdapter implements IAgentAdapter {
 }
 
 export const chatGptAdapter = new ChatGptAdapter();
+

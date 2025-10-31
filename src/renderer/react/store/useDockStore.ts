@@ -1,4 +1,4 @@
-import { create } from "zustand";
+ï»¿import { create } from "zustand";
 import {
   ChatSlice,
   ChatSliceActions,
@@ -9,6 +9,13 @@ import {
   RegistrySliceActions,
   createRegistrySlice
 } from "../../store/registrySlice";
+import {
+  AdapterStateSlice,
+  AdapterStateActions,
+  createAdapterStateSlice
+} from "../../store/adapterStateSlice";
+import { AdapterId, AdapterError } from "../../adapters/IAgentAdapter";
+import { getAdapterById } from "../../adapters/adapters";
 
 export interface ServiceMeta {
   id: string;
@@ -47,6 +54,8 @@ type BaseActions = {
   togglePromptPanel: () => void;
   setPromptDraft: (text: string) => void;
   setSelectedAgents: (agents: string[]) => void;
+  setSelectedTabs: (tabIds: string[]) => void;
+  insertPromptToTabs: (options?: { send?: boolean }) => Promise<void>;
   sendPrompt: () => Promise<void>;
   loadPromptHistory: () => Promise<void>;
   addPrompt: (input: { title: string; body: string }) => Promise<void>;
@@ -58,14 +67,15 @@ type BaseActions = {
   focusLocalView: (viewId: LocalViewId) => Promise<void>;
 };
 
-export type DockActions = BaseActions & ChatSliceActions & RegistrySliceActions;
+export type DockActions = BaseActions & ChatSliceActions & RegistrySliceActions & AdapterStateActions;
 
-export interface DockState extends ChatSlice, RegistrySlice {
+export interface DockState extends ChatSlice, RegistrySlice, AdapterStateSlice {
   services: ServiceMeta[];
   tabs: TabMeta[];
   prompts: PromptItem[];
   promptHistory: string[];
   selectedAgents: string[];
+  selectedTabIds: string[];
   promptDraft: string;
   drawerOpen: boolean;
   promptPanelHidden: boolean;
@@ -99,6 +109,7 @@ export const useDockStore = create<DockState>((set, get) => {
     prompts: [] as PromptItem[],
     promptHistory: [] as string[],
     selectedAgents: [] as string[],
+    selectedTabIds: [] as string[],
     promptDraft: "",
     drawerOpen: false,
     promptPanelHidden: getInitialPromptHidden(),
@@ -124,13 +135,21 @@ export const useDockStore = create<DockState>((set, get) => {
         return;
       }
       const rawTabs = await window.api.tabs.list();
+      const previousTabs = get().tabs;
+      const removedTabIds = previousTabs
+        .filter((prev) => !rawTabs.some((next: TabMeta) => next.id === prev.id))
+        .map((tab) => tab.id);
       const active = rawTabs.find((tab: TabMeta) => tab.isActive);
       set((state) => ({
         tabs: rawTabs,
         activeTabId: active ? active.id : null,
         activeServiceId: active?.serviceId ?? null,
-        activeLocalView: active ? null : state.activeLocalView
+        activeLocalView: active ? null : state.activeLocalView,
+        selectedTabIds: state.selectedTabIds.filter((id) => rawTabs.some((tab) => tab.id === id))
       }));
+      removedTabIds.forEach((tabId) => {
+        get().actions.clearAdapterState(tabId);
+      });
     },
     selectService: async (serviceId) => {
       if (!window.api?.tabs) {
@@ -186,27 +205,110 @@ export const useDockStore = create<DockState>((set, get) => {
     setSelectedAgents: (agents) => {
       set({ selectedAgents: agents });
     },
+    setSelectedTabs: (tabIds) => {
+      const unique = Array.from(new Set(tabIds.filter(Boolean)));
+      set({ selectedTabIds: unique });
+    },
+    insertPromptToTabs: async (options) => {
+      const text = get().promptDraft.trim();
+      if (!text) {
+        get().actions.showToast("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½à®¬ï¿½");
+        return;
+      }
+      const send = Boolean(options?.send);
+      const tabs = get().tabs;
+      const selected = get().selectedTabIds.length
+        ? get().selectedTabIds
+        : tabs.filter((tab) => tab.serviceId).map((tab) => tab.id);
+      if (!selected.length) {
+        get().actions.showToast("ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½â®¢ ï¿½ï¿½ï¿½ï¿½");
+        return;
+      }
+      const registryClients = get().registryClients || [];
+      await Promise.all(
+        selected.map(async (tabId) => {
+          const tab = tabs.find((item) => item.id === tabId);
+          if (!tab || !tab.serviceId) {
+            get().actions.setAdapterError(tabId, "Tab is not bound to a service");
+            return;
+          }
+          const ready = await get().actions.checkAdapterReady(tabId, tab.serviceId);
+          if (!ready) {
+            return;
+          }
+          const client = registryClients.find((item) => item.id === tab.serviceId);
+          if (!client?.adapterId) {
+            get().actions.setAdapterError(tabId, "Adapter not configured");
+            return;
+          }
+          let adapter;
+          try {
+            adapter = getAdapterById(client.adapterId as AdapterId);
+          } catch (error) {
+            get().actions.setAdapterError(
+              tabId,
+              error instanceof Error ? error.message : String(error)
+            );
+            return;
+          }
+          try {
+            await adapter.insert({ tabId }, text);
+            if (send) {
+              await adapter.send({ tabId });
+              // do not await readLastAnswer, fire-and-forget
+              void adapter
+                .readLastAnswer({ tabId })
+                .then(() => undefined)
+                .catch((error) => {
+                  console.warn("[adapter] readLastAnswer failed", error);
+                });
+            }
+            set((state) => ({
+              adapterStateByTab: {
+                ...state.adapterStateByTab,
+                [tabId]: {
+                  adapterId: client.adapterId as AdapterId,
+                  ready: true,
+                  checking: false,
+                  lastError: undefined,
+                  lastCheckAt: new Date().toISOString()
+                }
+              }
+            }));
+          } catch (error) {
+            const message =
+              error instanceof AdapterError
+                ? `${error.code}: ${error.message}`
+                : error instanceof Error
+                  ? error.message
+                  : String(error);
+            get().actions.setAdapterError(tabId, message);
+          }
+        })
+      );
+      get().actions.showToast(send ? "Prompt inserted and submitted" : "Prompt inserted");
+    },
     sendPrompt: async () => {
       if (!window.api?.promptRouter) {
         return;
       }
       const text = get().promptDraft.trim();
       if (!text) {
-        get().actions.showToast("Ââåäèòå ïðîìò");
+        get().actions.showToast("Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð¿Ñ€Ð¾Ð¼Ñ‚");
         return;
       }
       const targetAgents = get().selectedAgents.length
         ? get().selectedAgents
         : get().services.map((svc) => svc.id);
       if (!targetAgents.length) {
-        get().actions.showToast("Íåò âûáðàííûõ àãåíòîâ");
+        get().actions.showToast("ÐÐµÑ‚ Ð²Ñ‹Ð±Ñ€Ð°Ð½Ð½Ñ‹Ñ… Ð°Ð³ÐµÐ½Ñ‚Ð¾Ð²");
         return;
       }
       await window.api.promptRouter.broadcast({ text, agents: targetAgents });
       await window.api.promptRouter.saveToHistory(text);
       set({ promptDraft: "" });
       await get().actions.loadPromptHistory();
-      get().actions.showToast("Ïðîìò îòïðàâëåí");
+      get().actions.showToast("ÐŸÑ€Ð¾Ð¼Ñ‚ Ð¾Ñ‚Ð¿Ñ€Ð°Ð²Ð»ÐµÐ½");
     },
     loadPromptHistory: async () => {
       if (!window.api?.promptRouter) {
@@ -221,7 +323,7 @@ export const useDockStore = create<DockState>((set, get) => {
       }
       await window.api.prompts.add(input);
       await get().actions.loadPrompts();
-      get().actions.showToast("Ïðîìò ñîõðàí¸í");
+      get().actions.showToast("ÐŸÑ€Ð¾Ð¼Ñ‚ ÑÐ¾Ñ…Ñ€Ð°Ð½Ñ‘Ð½");
     },
     removePrompt: async (id) => {
       if (!window.api?.prompts) {
@@ -235,7 +337,7 @@ export const useDockStore = create<DockState>((set, get) => {
         return;
       }
       await window.api.clipboard.copy(body);
-      get().actions.showToast(title ? `Ïðîìò "${title}" ñêîïèðîâàí` : "Ñêîïèðîâàíî");
+      get().actions.showToast(title ? `ÐŸÑ€Ð¾Ð¼Ñ‚ "${title}" ÑÐºÐ¾Ð¿Ð¸Ñ€Ð¾Ð²Ð°Ð½` : "Ð¡ÐºÐ¾Ð¿Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¾");
     },
     saveChat: async () => {
       await window.aiDock?.saveChatMarkdown();
@@ -293,4 +395,13 @@ if (typeof window !== "undefined") {
     }
   }
 }
+
+
+
+
+
+
+
+
+
 

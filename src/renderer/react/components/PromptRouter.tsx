@@ -1,4 +1,4 @@
-import { ForwardedRef, forwardRef, useMemo } from "react";
+﻿import { ForwardedRef, forwardRef, useMemo } from "react";
 import { useDockStore } from "../store/useDockStore";
 
 const PromptRouter = forwardRef<HTMLDivElement>((_props, ref) => {
@@ -19,14 +19,14 @@ const PromptRouter = forwardRef<HTMLDivElement>((_props, ref) => {
       <section id="prompt-router">
         <div id="prompt-toolbar">
           <button id="toggle-prompt" onClick={() => togglePromptPanel()}>
-            {promptPanelHidden ? "📤 Show" : "👁 Hide"}
+            {promptPanelHidden ? "рџ“¤ Show" : "рџ‘Ѓ Hide"}
           </button>
         </div>
         <div id="prompt-body" className={promptPanelHidden ? "hidden" : undefined}>
           <div className="prompt-router-row">
             <textarea
               id="prompt-input"
-              placeholder="Введите промт..."
+              placeholder="Р’РІРµРґРёС‚Рµ РїСЂРѕРјС‚..."
               rows={3}
               value={promptDraft}
               onChange={(event) => setPromptDraft(event.target.value)}
@@ -38,6 +38,29 @@ const PromptRouter = forwardRef<HTMLDivElement>((_props, ref) => {
               }}
             />
             <div className="prompt-router-actions">
+              <label className="prompt-router-label">
+                Target tabs
+                <select
+                  id="prompt-tabs"
+                  multiple
+                  value={selectedTabIds}
+                  onChange={(event) => {
+                    const values = Array.from(event.target.selectedOptions).map((option) => option.value);
+                    setSelectedTabs(values);
+                  }}
+                >
+                  {targetTabs.length === 0 && (
+                    <option value="" disabled>
+                      No AI tabs detected
+                    </option>
+                  )}
+                  {targetTabs.map((tab) => (
+                    <option key={tab.id} value={tab.id}>
+                      {tab.title || tab.id}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <label className="prompt-router-label">
                 Target agents
                 <select
@@ -51,7 +74,7 @@ const PromptRouter = forwardRef<HTMLDivElement>((_props, ref) => {
                 >
                   {services.length === 0 && (
                     <option value="" disabled>
-                      Загрузка сервисов...
+                      �-���?�?�?����� �?��?�?��?�?�?...
                     </option>
                   )}
                   {services.map((service) => (
@@ -63,13 +86,31 @@ const PromptRouter = forwardRef<HTMLDivElement>((_props, ref) => {
               </label>
               <div className="prompt-router-buttons">
                 <button
+                  type="button"
+                  className="pill-btn ghost"
+                  onClick={() => {
+                    void insertPromptToTabs({ send: false });
+                  }}
+                >
+                  Insert
+                </button>
+                <button
+                  type="button"
+                  className="pill-btn ghost"
+                  onClick={() => {
+                    void insertPromptToTabs({ send: true });
+                  }}
+                >
+                  Insert + Send
+                </button>
+                <button
                   id="prompt-send"
                   className="pill-btn"
                   onClick={() => {
                     void sendPrompt();
                   }}
                 >
-                  Send
+                  Broadcast
                 </button>
                 <select
                   id="prompt-history"
@@ -81,13 +122,36 @@ const PromptRouter = forwardRef<HTMLDivElement>((_props, ref) => {
                     }
                   }}
                 >
-                  <option value="">📜 История промтов</option>
+                  <option value="">�?"? �?�?�'�?�?��? ���?�?�?�'�?�?</option>
                   {historyOptions.map((prompt) => (
                     <option key={prompt} value={prompt}>
                       {prompt.length > 80 ? `${prompt.slice(0, 77)}...` : prompt}
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="adapter-status-list">
+                {statusTabs.map((tab) => {
+                  const state = adapterStateByTab[tab.id];
+                  let statusText = "Idle";
+                  let statusClass = "idle";
+                  if (state?.checking) {
+                    statusText = "Checking…";
+                    statusClass = "checking";
+                  } else if (state?.lastError) {
+                    statusText = state.lastError;
+                    statusClass = "error";
+                  } else if (state?.ready) {
+                    statusText = "Ready";
+                    statusClass = "ready";
+                  }
+                  return (
+                    <div key={tab.id} className={`adapter-status adapter-status--${statusClass}`}>
+                      <span className="adapter-status-title">{tab.title || tab.id}</span>
+                      <span className="adapter-status-text">{statusText}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -99,3 +163,11 @@ const PromptRouter = forwardRef<HTMLDivElement>((_props, ref) => {
 });
 
 export default PromptRouter;
+
+
+
+
+
+
+
+

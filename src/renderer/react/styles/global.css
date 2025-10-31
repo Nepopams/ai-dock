@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   color-scheme: dark;
   font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
   --top-inset: 44px;
@@ -281,6 +281,54 @@ body {
 }
 
 #prompt-history {
+.adapter-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.adapter-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(15, 20, 28, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #cdd4e1;
+}
+
+.adapter-status-title {
+  font-weight: 600;
+  margin-right: 12px;
+}
+
+.adapter-status-text {
+  font-size: 12px;
+}
+
+.adapter-status--ready {
+  border-color: rgba(47, 128, 237, 0.45);
+  color: #5fb0ff;
+}
+
+.adapter-status--checking {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f2f5fa;
+}
+
+.adapter-status--error {
+  border-color: rgba(255, 94, 104, 0.55);
+  color: #ff7c86;
+}
+
+.adapter-status--idle {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+
   flex: 1;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1145,7 +1193,14 @@ body {
   box-shadow: inset 0 0 0 1px rgba(255, 95, 109, 0.2);
 }
 
-.completions-view {\n  position: relative;\n  flex: 1;\n  display: grid;\n  grid-template-columns: 240px 1fr;\n  gap: 24px;\n  height: 100%;\n}
+.completions-view {
+  position: relative;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 24px;
+  height: 100%;
+}
 
 .completions-sidebar {
   background: rgba(21, 27, 36, 0.88);
@@ -1641,6 +1696,236 @@ body {
   opacity: 1;
   transform: translateY(0);
 }
+
+.connections-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.connections-tabs {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 2;
+}
+
+.connections-tab {
+  background: rgba(255, 255, 255, 0.04);
+  color: #f5f6f8;
+}
+
+.connections-tab.active {
+  background: #2f80ed;
+  color: #fff;
+}
+
+.connections-panel {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin-top: 12px;
+}
+
+.connections-panel .chat-shell {
+  margin-top: 0;
+  flex: 1;
+}
+
+.connections-panel > * {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.settings-clients {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.settings-clients__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.settings-clients__header h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.settings-clients__header p {
+  margin: 0;
+  color: #9aa5b5;
+  font-size: 13px;
+}
+
+.settings-error {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(255, 90, 90, 0.1);
+  border: 1px solid rgba(255, 90, 90, 0.4);
+  color: #ff8080;
+  font-size: 13px;
+}
+
+.settings-clients__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 20px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.settings-clients__list {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.settings-clients__list table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.settings-clients__list thead tr {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.settings-clients__list th,
+.settings-clients__list td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.settings-clients__list tbody tr:hover {
+  background: rgba(47, 128, 237, 0.08);
+}
+
+.settings-clients__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.settings-empty {
+  padding: 18px;
+  text-align: center;
+  color: #8891a0;
+}
+
+.settings-clients__editor {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 20px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.settings-editor-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.settings-editor-form h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.settings-editor-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: #aab4c5;
+}
+
+.settings-editor-form input,
+.settings-editor-form select,
+.settings-editor-form textarea {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(10, 14, 20, 0.9);
+  color: #f5f6f8;
+  font-size: 13px;
+  width: 100%;
+}
+
+.settings-editor-form textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.settings-checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-checkbox input {
+  width: 18px;
+  height: 18px;
+}
+
+.settings-error-inline {
+  color: #ff8080;
+  font-size: 11px;
+}
+
+.settings-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.settings-editor-placeholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8891a0;
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 1200px) {
+  .settings-clients__body {
+    grid-template-columns: 1fr;
+    grid-auto-rows: minmax(0, 1fr);
+  }
+
+  .settings-clients__editor {
+    order: -1;
+  }
+}
+
 
 
 
