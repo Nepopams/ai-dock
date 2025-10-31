@@ -1,5 +1,5 @@
 import { app } from "electron";
-import { existsSync } from "fs";
+import { existsSync, watch, FSWatcher } from "fs";
 import { promises as fs } from "fs";
 import path from "path";
 import {
@@ -8,6 +8,7 @@ import {
   isRegistryFile,
   isServiceClient
 } from "../../shared/types/registry";
+import { debounce } from "../../shared/utils/debounce";
 
 const REGISTRY_FILE_NAME = "registry.json";
 
@@ -126,4 +127,72 @@ export const saveRegistry = async (
 
 export const clearRegistryCache = (): void => {
   registryCache = null;
+};
+
+let fsWatcher: FSWatcher | null = null;
+const watcherListeners = new Set<() => void>();
+
+const notifyListeners = (eventError?: unknown) => {
+  watcherListeners.forEach((listener) => {
+    try {
+      listener();
+    } catch (listenerError) {
+      console.error("[registry] watcher listener error", listenerError);
+    }
+  });
+  if (eventError) {
+    console.warn("[registry] watcher event handled with error", eventError);
+  }
+};
+
+const emitRegistryChange = debounce(() => {
+  clearRegistryCache();
+  loadRegistry()
+    .catch((error) => {
+      console.warn("[registry] reload failed after change", error);
+    })
+    .finally(() => {
+      notifyListeners();
+    });
+}, 250);
+
+const ensureFsWatcher = async () => {
+  if (fsWatcher) {
+    return;
+  }
+  try {
+    await ensureRegistryFile();
+  } catch (error) {
+    console.error("[registry] failed to ensure registry file", error);
+    throw error;
+  }
+  try {
+    fsWatcher = watch(getRegistryPath(), { persistent: false }, () => emitRegistryChange());
+    fsWatcher.on("error", (error) => {
+      console.error("[registry] watcher error", error);
+      emitRegistryChange();
+    });
+  } catch (error) {
+    console.error("[registry] failed to start watcher", error);
+    throw error;
+  }
+};
+
+export const watchRegistry = async (onChange: () => void): Promise<() => void> => {
+  watcherListeners.add(onChange);
+  await ensureFsWatcher();
+  return () => {
+    watcherListeners.delete(onChange);
+    if (watcherListeners.size === 0) {
+      stopRegistryWatcher();
+    }
+  };
+};
+
+export const stopRegistryWatcher = (): void => {
+  if (fsWatcher) {
+    fsWatcher.close();
+    fsWatcher = null;
+  }
+  watcherListeners.clear();
 };
