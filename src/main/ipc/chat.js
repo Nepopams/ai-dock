@@ -1,6 +1,7 @@
 const { ipcMain } = require("electron");
 const chatBridge = require("../services/chatBridge");
 const historyFs = require("../storage/historyFs");
+const { exportConversationToMarkdown } = require("../services/exporter");
 
 let registered = false;
 
@@ -87,6 +88,43 @@ function registerChatIpc() {
       return false;
     }
     return historyFs.deleteConversation(normalized);
+  });
+
+  ipcMain.handle("chat:deleteMessage", async (_event, payload = {}) => {
+    const normalized = ensureObject(payload);
+    const conversationId = ensureString(normalized.conversationId).trim();
+    const messageId = ensureString(normalized.messageId).trim();
+    if (!conversationId || !messageId) {
+      throw new Error("conversationId and messageId are required");
+    }
+    return historyFs.deleteMessage(conversationId, messageId);
+  });
+
+  ipcMain.handle("chat:truncateAfter", async (_event, payload = {}) => {
+    const normalized = ensureObject(payload);
+    const conversationId = ensureString(normalized.conversationId).trim();
+    const messageId = ensureString(normalized.messageId).trim();
+    if (!conversationId || !messageId) {
+      throw new Error("conversationId and messageId are required");
+    }
+    return historyFs.truncateAfterMessage(conversationId, messageId);
+  });
+
+  ipcMain.handle("chat:exportMarkdown", async (event, conversationId) => {
+    const normalized = ensureString(conversationId).trim();
+    if (!normalized) {
+      throw new Error("conversationId must be provided");
+    }
+    try {
+      return await exportConversationToMarkdown(normalized, event.sender);
+    } catch (error) {
+      console.error(`[chat] exportMarkdown failed for ${normalized}:`, error);
+      const err = new Error(
+        typeof error?.message === "string" ? error.message : "Failed to export conversation"
+      );
+      err.code = error?.code || "export_failed";
+      throw err;
+    }
   });
 }
 

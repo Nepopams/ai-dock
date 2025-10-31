@@ -130,6 +130,18 @@ module.exports = (contextBridge, ipcRenderer) => {
       invoke("chat:deleteConversation", normalizeConversationId(conversationId)),
     createConversation: (title) =>
       invoke("chat:createConversation", typeof title === "string" ? title : undefined),
+    deleteMessage: (conversationId, messageId) =>
+      invoke("chat:deleteMessage", {
+        conversationId: normalizeConversationId(conversationId),
+        messageId: typeof messageId === "string" ? messageId.trim() : ""
+      }),
+    truncateAfter: (conversationId, messageId) =>
+      invoke("chat:truncateAfter", {
+        conversationId: normalizeConversationId(conversationId),
+        messageId: typeof messageId === "string" ? messageId.trim() : ""
+      }),
+    exportMarkdown: (conversationId) =>
+      invoke("chat:exportMarkdown", normalizeConversationId(conversationId)),
     onChunk: (cb) => wrapListener("chat:chunk", cb),
     onDone: (cb) => wrapListener("chat:done", cb),
     onError: (cb) => wrapListener("chat:error", cb),

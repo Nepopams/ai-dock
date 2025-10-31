@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { MouseEvent, useEffect } from "react";
 import { useDockStore } from "../../store/useDockStore";
 
 function ConversationList() {
@@ -14,6 +14,7 @@ function ConversationList() {
     (state) => state.actions.deleteConversation
   );
   const loadConversations = useDockStore((state) => state.actions.loadConversations);
+  const showToast = useDockStore((state) => state.actions.showToast);
 
   useEffect(() => {
     if (!conversations.length) {
@@ -32,6 +33,28 @@ function ConversationList() {
     } catch {
       return "";
     }
+  };
+
+  const handleExport = async (event: MouseEvent<HTMLButtonElement>, conversationId: string) => {
+    event.stopPropagation();
+    if (!window.chat?.exportMarkdown) {
+      showToast("Export is unavailable");
+      return;
+    }
+    try {
+      const result = await window.chat.exportMarkdown(conversationId);
+      if (!result?.canceled) {
+        showToast("Conversation exported");
+      }
+    } catch (error) {
+      console.error("Failed to export conversation", error);
+      showToast("Failed to export conversation");
+    }
+  };
+
+  const handleDelete = (event: MouseEvent<HTMLButtonElement>, conversationId: string) => {
+    event.stopPropagation();
+    void deleteConversation(conversationId);
   };
 
   return (
@@ -63,18 +86,38 @@ function ConversationList() {
                 <span className="chat-conversation-date">
                   {formatUpdatedAt(conversation.updatedAt)}
                 </span>
+                <div className="chat-conversation-meta">
+                  {conversation.profile && (
+                    <span className="chat-conversation-chip">{conversation.profile}</span>
+                  )}
+                  {conversation.model && (
+                    <span className="chat-conversation-chip muted">{conversation.model}</span>
+                  )}
+                  {typeof conversation.messageCount === "number" && (
+                    <span className="chat-conversation-chip count">
+                      {conversation.messageCount}
+                    </span>
+                  )}
+                </div>
               </button>
-              <button
-                type="button"
-                className="chat-conversation-delete"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  void deleteConversation(conversation.id);
-                }}
-                title="Delete conversation"
-              >
-                ×
-              </button>
+              <div className="chat-conversation-actions">
+                <button
+                  type="button"
+                  className="chat-conversation-export"
+                  onClick={(event) => handleExport(event, conversation.id)}
+                  title="Export to Markdown"
+                >
+                  MD
+                </button>
+                <button
+                  type="button"
+                  className="chat-conversation-delete"
+                  onClick={(event) => handleDelete(event, conversation.id)}
+                  title="Delete conversation"
+                >
+                  X
+                </button>
+              </div>
             </div>
           );
         })}

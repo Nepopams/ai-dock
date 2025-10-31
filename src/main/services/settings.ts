@@ -1,17 +1,47 @@
+export type UsagePathMap = {
+  prompt_tokens?: string;
+  completion_tokens?: string;
+  total_tokens?: string;
+};
+
+export interface GenericHttpConfig {
+  endpoint: string;
+  method: "POST" | "GET";
+  requestTemplate?: {
+    headers?: Record<string, string>;
+    body?: unknown;
+  };
+  responseSchema: {
+    mode: "stream" | "buffer";
+    stream?: {
+      framing: "sse" | "ndjson" | "lines";
+      pathDelta?: string;
+      pathFinish?: string;
+      pathUsage?: UsagePathMap;
+    };
+    buffer?: {
+      pathText: string;
+      pathFinish?: string;
+      pathUsage?: UsagePathMap;
+    };
+  };
+}
+
 export interface CompletionsProfile {
   name: string;
-  driver: "openai-compatible";
+  driver: "openai-compatible" | "generic-http";
   baseUrl: string;
   defaultModel: string;
-  auth: {
+  auth?: {
     scheme: "Bearer" | "Basic";
-    tokenRef: string;
+    tokenRef?: string;
   };
   headers?: Record<string, string>;
   request?: {
     stream?: boolean;
     timeoutMs?: number;
   };
+  generic?: GenericHttpConfig;
 }
 
 export interface CompletionsState {

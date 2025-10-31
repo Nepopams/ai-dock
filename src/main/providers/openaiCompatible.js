@@ -140,6 +140,8 @@ async function* send(messages, options, profile, abortSignal) {
     method: "POST",
     headers: buildHeaders(profile, token, options?.extraHeaders),
     body: JSON.stringify(buildBody(messages, options, profile)),
+    signal: combinedSignal
+  };
   let response;
   try {
     response = await fetch(url, requestOptions);

@@ -6,6 +6,7 @@ const {
 } = require("./settings");
 const historyFs = require("../storage/historyFs");
 const { send: sendOpenAI } = require("../providers/openaiCompatible");
+const { send: sendGenericHttp } = require("../providers/genericHttp");
 
 const wait = (ms) =>
   new Promise((resolve) => {
@@ -120,19 +121,21 @@ class ChatBridge {
     }
 
     const profile = await getActiveProfile();
-    if (!profile?.auth?.tokenRef) {
+    let runtimeProfile = { ...profile };
+    if (profile.auth?.tokenRef) {
+      const token = await secureRetrieveToken(profile.auth.tokenRef);
+      runtimeProfile = {
+        ...runtimeProfile,
+        auth: {
+          ...runtimeProfile.auth,
+          token
+        }
+      };
+    } else if (profile.driver === "openai-compatible") {
       const error = new Error("Active profile is missing authentication token");
       error.code = "missing_token";
       throw error;
     }
-    const token = await secureRetrieveToken(profile.auth.tokenRef);
-    const runtimeProfile = {
-      ...profile,
-      auth: {
-        ...profile.auth,
-        token
-      }
-    };
 
     const {
       __internal: internalOptions = {},
@@ -272,7 +275,9 @@ class ChatBridge {
       streamState.pendingContent = "";
       const controller = new AbortController();
       streamState.controller = controller;
-      const upstream = sendOpenAI(
+      const provider =
+        runtimeProfile.driver === "generic-http" ? sendGenericHttp : sendOpenAI;
+      const upstream = provider(
         messageList,
         driverOptions,
         runtimeProfile,

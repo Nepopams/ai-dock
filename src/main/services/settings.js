@@ -19,7 +19,8 @@ const DEFAULT_PROFILE = {
   request: {
     stream: true,
     timeoutMs: 60000
-  }
+  },
+  generic: undefined
 };
 
 const DEFAULT_STATE = {
@@ -45,44 +46,158 @@ const writeJson = async (filePath, data) => {
 
 const cloneDefaultState = () => JSON.parse(JSON.stringify(DEFAULT_STATE));
 
+const sanitizeHeaders = (input) => {
+  if (!input || typeof input !== "object") {
+    return undefined;
+  }
+  return Object.fromEntries(
+    Object.entries(input).filter(
+      ([key, value]) => typeof key === "string" && typeof value === "string"
+    )
+  );
+};
+
+const sanitizeRequest = (input) => {
+  if (!input || typeof input !== "object") {
+    return undefined;
+  }
+  const next = {};
+  if (typeof input.stream === "boolean") {
+    next.stream = input.stream;
+  }
+  if (Number.isFinite(input.timeoutMs) && input.timeoutMs > 0) {
+    next.timeoutMs = Number(input.timeoutMs);
+  }
+  return Object.keys(next).length ? next : undefined;
+};
+
+const sanitizeAuth = (input, options = {}) => {
+  const { defaultScheme = "Bearer", allowEmpty = false } = options || {};
+  if (!input || typeof input !== "object") {
+    return undefined;
+  }
+  const scheme = input.scheme === "Basic" ? "Basic" : defaultScheme;
+  const tokenRef = typeof input.tokenRef === "string" ? input.tokenRef : "";
+  if (!tokenRef && !allowEmpty) {
+    return undefined;
+  }
+  return {
+    scheme,
+    tokenRef
+  };
+};
+
+const sanitizeUsagePaths = (input) => {
+  if (!input || typeof input !== "object") {
+    return undefined;
+  }
+  const next = {};
+  for (const key of ["prompt_tokens", "completion_tokens", "total_tokens"]) {
+    if (typeof input[key] === "string" && input[key].trim()) {
+      next[key] = input[key].trim();
+    }
+  }
+  return Object.keys(next).length ? next : undefined;
+};
+
+const sanitizeGenericResponse = (schema) => {
+  if (!schema || typeof schema !== "object") {
+    return {
+      mode: "buffer",
+      buffer: {
+        pathText: "choices[0].message.content"
+      }
+    };
+  }
+  const mode = schema.mode === "stream" ? "stream" : "buffer";
+  const result = { mode };
+  if (schema.stream && typeof schema.stream === "object") {
+    const framing = ["sse", "ndjson", "lines"].includes(schema.stream.framing)
+      ? schema.stream.framing
+      : "sse";
+    result.stream = {
+      framing,
+      pathDelta:
+        typeof schema.stream.pathDelta === "string" && schema.stream.pathDelta.trim()
+          ? schema.stream.pathDelta.trim()
+          : undefined,
+      pathFinish:
+        typeof schema.stream.pathFinish === "string" && schema.stream.pathFinish.trim()
+          ? schema.stream.pathFinish.trim()
+          : undefined,
+      pathUsage: sanitizeUsagePaths(schema.stream.pathUsage)
+    };
+  }
+  if (schema.buffer && typeof schema.buffer === "object") {
+    result.buffer = {
+      pathText:
+        typeof schema.buffer.pathText === "string" && schema.buffer.pathText.trim()
+          ? schema.buffer.pathText.trim()
+          : "choices[0].message.content",
+      pathFinish:
+        typeof schema.buffer.pathFinish === "string" && schema.buffer.pathFinish.trim()
+          ? schema.buffer.pathFinish.trim()
+          : undefined,
+      pathUsage: sanitizeUsagePaths(schema.buffer.pathUsage)
+    };
+  }
+  return result;
+};
+
+const sanitizeGenericConfig = (input) => {
+  if (!input || typeof input !== "object") {
+    return undefined;
+  }
+  const method = input.method === "GET" ? "GET" : "POST";
+  const endpoint =
+    typeof input.endpoint === "string" && input.endpoint.trim()
+      ? input.endpoint.trim()
+      : "/v1/chat";
+  const requestTemplate = {
+    headers: sanitizeHeaders(input.requestTemplate?.headers),
+    body: input.requestTemplate && "body" in input.requestTemplate
+      ? input.requestTemplate.body
+      : undefined
+  };
+  const responseSchema = sanitizeGenericResponse(input.responseSchema);
+  return {
+    endpoint,
+    method,
+    requestTemplate,
+    responseSchema
+  };
+};
+
 const sanitizeProfile = (name, profile) => {
   if (!profile || typeof profile !== "object") {
     return null;
   }
-  const scheme = profile.auth?.scheme === "Basic" ? "Basic" : "Bearer";
-  const tokenRef = typeof profile.auth?.tokenRef === "string" ? profile.auth.tokenRef : "";
-  const headers = profile.headers && typeof profile.headers === "object"
-    ? Object.fromEntries(
-        Object.entries(profile.headers).filter(
-          ([key, value]) => typeof key === "string" && typeof value === "string"
-        )
-      )
-    : undefined;
-  const request = profile.request && typeof profile.request === "object"
-    ? {
-        stream: typeof profile.request.stream === "boolean" ? profile.request.stream : undefined,
-        timeoutMs:
-          Number.isFinite(profile.request.timeoutMs) && profile.request.timeoutMs > 0
-            ? Number(profile.request.timeoutMs)
-            : undefined
-      }
-    : undefined;
+  const driver = profile.driver === "generic-http" ? "generic-http" : "openai-compatible";
+  const baseUrl =
+    typeof profile.baseUrl === "string" && profile.baseUrl.trim()
+      ? profile.baseUrl.trim()
+      : DEFAULT_PROFILE.baseUrl;
+  const defaultModel =
+    typeof profile.defaultModel === "string" && profile.defaultModel.trim()
+      ? profile.defaultModel.trim()
+      : DEFAULT_PROFILE.defaultModel;
+  const headers = sanitizeHeaders(profile.headers);
+  const request = sanitizeRequest(profile.request);
+  const auth = sanitizeAuth(profile.auth, {
+    defaultScheme: driver === "openai-compatible" ? "Bearer" : "Bearer",
+    allowEmpty: driver === "openai-compatible"
+  });
+  const generic = driver === "generic-http" ? sanitizeGenericConfig(profile.generic) : undefined;
 
   return {
     name: profile.name || name,
-    driver: "openai-compatible",
-    baseUrl: typeof profile.baseUrl === "string" && profile.baseUrl.trim()
-      ? profile.baseUrl.trim()
-      : DEFAULT_PROFILE.baseUrl,
-    defaultModel: typeof profile.defaultModel === "string" && profile.defaultModel.trim()
-      ? profile.defaultModel.trim()
-      : DEFAULT_PROFILE.defaultModel,
-    auth: {
-      scheme,
-      tokenRef
-    },
+    driver,
+    baseUrl,
+    defaultModel,
+    auth: auth || (driver === "openai-compatible" ? { scheme: "Bearer", tokenRef: "" } : undefined),
     headers,
-    request
+    request,
+    generic
   };
 };
 

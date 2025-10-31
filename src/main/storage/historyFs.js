@@ -234,6 +234,43 @@ const updateConversationMeta = async (conversationId, partial) => {
   return next;
 };
 
+const deleteMessage = async (conversationId, messageId) => {
+  const conversation = await readConversation(conversationId);
+  if (!conversation || !Array.isArray(conversation.messages)) {
+    return false;
+  }
+  const messages = conversation.messages.filter((message) => message.id !== messageId);
+  if (messages.length === conversation.messages.length) {
+    return false;
+  }
+  const next = {
+    ...conversation,
+    messages,
+    updatedAt: toIsoString()
+  };
+  await safeWrite(conversationPath(conversationId), next);
+  return true;
+};
+
+const truncateAfterMessage = async (conversationId, messageId) => {
+  const conversation = await readConversation(conversationId);
+  if (!conversation || !Array.isArray(conversation.messages)) {
+    return false;
+  }
+  const index = conversation.messages.findIndex((message) => message.id === messageId);
+  if (index === -1) {
+    return false;
+  }
+  const trimmed = conversation.messages.slice(0, index + 1);
+  const next = {
+    ...conversation,
+    messages: trimmed,
+    updatedAt: toIsoString()
+  };
+  await safeWrite(conversationPath(conversationId), next);
+  return true;
+};
+
 module.exports = {
   ensureStorageDir,
   createConversation,
@@ -244,5 +281,7 @@ module.exports = {
   deleteConversation,
   safeWrite,
   updateConversationMeta,
-  readConversation
+  readConversation,
+  deleteMessage,
+  truncateAfterMessage
 };

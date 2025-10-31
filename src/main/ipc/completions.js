@@ -7,8 +7,104 @@ const {
   secureRetrieveToken
 } = require("../services/settings");
 const { send: sendOpenAI } = require("../providers/openaiCompatible");
+const { send: sendGenericHttp } = require("../providers/genericHttp");
 
 let registered = false;
+
+const ensureHeaders = (input) => {
+  if (!input || typeof input !== "object") {
+    return undefined;
+  }
+  return Object.fromEntries(
+    Object.entries(input).filter(
+      ([key, value]) => typeof key === "string" && typeof value === "string"
+    )
+  );
+};
+
+const ensureRequest = (input) => {
+  if (!input || typeof input !== "object") {
+    return undefined;
+  }
+  const next = {};
+  if (typeof input.stream === "boolean") {
+    next.stream = input.stream;
+  }
+  if (Number.isFinite(input.timeoutMs) && input.timeoutMs > 0) {
+    next.timeoutMs = Number(input.timeoutMs);
+  }
+  return Object.keys(next).length ? next : undefined;
+};
+
+const ensureUsagePaths = (input) => {
+  if (!input || typeof input !== "object") {
+    return undefined;
+  }
+  const next = {};
+  for (const key of ["prompt_tokens", "completion_tokens", "total_tokens"]) {
+    if (typeof input[key] === "string" && input[key].trim()) {
+      next[key] = input[key].trim();
+    }
+  }
+  return Object.keys(next).length ? next : undefined;
+};
+
+const ensureGenericConfig = (input) => {
+  if (!input || typeof input !== "object") {
+    return undefined;
+  }
+  const method = input.method === "GET" ? "GET" : "POST";
+  const endpoint =
+    typeof input.endpoint === "string" && input.endpoint.trim()
+      ? input.endpoint.trim()
+      : "/v1/chat";
+  const requestTemplate = {
+    headers: ensureHeaders(input.requestTemplate?.headers),
+    body:
+      input.requestTemplate && Object.prototype.hasOwnProperty.call(input.requestTemplate, "body")
+        ? input.requestTemplate.body
+        : undefined
+  };
+  const responseSchema = {
+    mode: input.responseSchema?.mode === "stream" ? "stream" : "buffer",
+    stream: input.responseSchema?.stream
+      ? {
+          framing: ["sse", "ndjson", "lines"].includes(input.responseSchema.stream.framing)
+            ? input.responseSchema.stream.framing
+            : "sse",
+          pathDelta:
+            typeof input.responseSchema.stream.pathDelta === "string"
+              ? input.responseSchema.stream.pathDelta.trim()
+              : undefined,
+          pathFinish:
+            typeof input.responseSchema.stream.pathFinish === "string"
+              ? input.responseSchema.stream.pathFinish.trim()
+              : undefined,
+          pathUsage: ensureUsagePaths(input.responseSchema.stream.pathUsage)
+        }
+      : undefined,
+    buffer: input.responseSchema?.buffer
+      ? {
+          pathText:
+            typeof input.responseSchema.buffer.pathText === "string" &&
+            input.responseSchema.buffer.pathText.trim()
+              ? input.responseSchema.buffer.pathText.trim()
+              : "choices[0].message.content",
+          pathFinish:
+            typeof input.responseSchema.buffer.pathFinish === "string"
+              ? input.responseSchema.buffer.pathFinish.trim()
+              : undefined,
+          pathUsage: ensureUsagePaths(input.responseSchema.buffer.pathUsage)
+        }
+      : undefined
+  };
+  return {
+    endpoint,
+    method,
+    requestTemplate,
+    responseSchema
+  };
+};
 
 const mapProfilesToRecord = (profilesArray) => {
   const record = {};
@@ -23,45 +119,36 @@ const mapProfilesToRecord = (profilesArray) => {
     if (!name) {
       continue;
     }
-    const scheme = profile.auth?.scheme === "Basic" ? "Basic" : "Bearer";
-    record[name] = {
+    const driver = profile.driver === "generic-http" ? "generic-http" : "openai-compatible";
+    const baseProfile = {
       name,
-      driver: "openai-compatible",
-      baseUrl: typeof profile.baseUrl === "string" && profile.baseUrl.trim()
-        ? profile.baseUrl.trim()
-        : "https://api.openai.com/v1",
-      defaultModel: typeof profile.defaultModel === "string" && profile.defaultModel.trim()
-        ? profile.defaultModel.trim()
-        : "gpt-4o-mini",
-      auth: {
-        scheme,
-        tokenRef: typeof profile.auth?.tokenRef === "string" ? profile.auth.tokenRef : ""
-      },
-      headers:
-        profile.headers && typeof profile.headers === "object"
-          ? Object.fromEntries(
-              Object.entries(profile.headers).filter(
-                ([key, value]) => typeof key === "string" && typeof value === "string"
-              )
-            )
-          : undefined,
-      request:
-        profile.request && typeof profile.request === "object"
-          ? {
-              stream:
-                typeof profile.request.stream === "boolean"
-                  ? profile.request.stream
-                  : undefined,
-              timeoutMs:
-                Number.isFinite(profile.request.timeoutMs) && profile.request.timeoutMs > 0
-                  ? Number(profile.request.timeoutMs)
-                  : undefined
-            }
-          : undefined
+      driver,
+      baseUrl:
+        typeof profile.baseUrl === "string" && profile.baseUrl.trim()
+          ? profile.baseUrl.trim()
+          : "https://api.openai.com/v1",
+      defaultModel:
+        typeof profile.defaultModel === "string" && profile.defaultModel.trim()
+          ? profile.defaultModel.trim()
+          : "gpt-4o-mini",
+      headers: ensureHeaders(profile.headers),
+      request: ensureRequest(profile.request)
     };
-    if (profile.auth && typeof profile.auth.token === "string" && profile.auth.token.trim()) {
-      record[name].auth.token = profile.auth.token.trim();
+    const scheme = profile.auth?.scheme === "Basic" ? "Basic" : "Bearer";
+    if (profile.auth && (profile.auth.tokenRef || profile.auth.token || driver === "openai-compatible")) {
+      baseProfile.auth = {
+        scheme,
+        tokenRef:
+          typeof profile.auth?.tokenRef === "string" ? profile.auth.tokenRef : ""
+      };
+      if (typeof profile.auth?.token === "string" && profile.auth.token.trim()) {
+        baseProfile.auth.token = profile.auth.token.trim();
+      }
     }
+    if (driver === "generic-http") {
+      baseProfile.generic = ensureGenericConfig(profile.generic);
+    }
+    record[name] = baseProfile;
   }
   return record;
 };
@@ -76,11 +163,14 @@ const sanitizeForRenderer = (state) => {
       defaultModel: profile.defaultModel,
       headers: profile.headers || {},
       request: profile.request || {},
-      auth: {
-        scheme: profile.auth.scheme,
-        tokenRef: profile.auth.tokenRef,
-        hasToken: Boolean(profile.auth.tokenRef)
-      }
+      auth: profile.auth
+        ? {
+            scheme: profile.auth.scheme,
+            tokenRef: profile.auth.tokenRef,
+            hasToken: Boolean(profile.auth.tokenRef)
+          }
+        : undefined,
+      generic: profile.generic
     }))
   };
 };
@@ -91,26 +181,30 @@ const persistProfiles = async (payload) => {
   const nextProfiles = {};
 
   for (const [name, profile] of Object.entries(incomingProfiles)) {
-    const previous = current.profiles[name];
-    const providedTokenRef =
-      typeof profile.auth.tokenRef === "string" ? profile.auth.tokenRef : undefined;
-    let tokenRef =
-      providedTokenRef !== undefined ? providedTokenRef : previous?.auth.tokenRef || "";
-    if (profile.auth && typeof profile.auth.token === "string") {
-      const trimmed = profile.auth.token.trim();
-      if (trimmed) {
-        tokenRef = await secureStoreToken(trimmed);
-      } else if (providedTokenRef === "") {
-        tokenRef = "";
+    const previous = current.profiles[name] || {};
+    let auth;
+    if (profile.auth) {
+      const providedTokenRef =
+        typeof profile.auth.tokenRef === "string" ? profile.auth.tokenRef : undefined;
+      let tokenRef =
+        providedTokenRef !== undefined ? providedTokenRef : previous.auth?.tokenRef || "";
+      if (typeof profile.auth.token === "string") {
+        const trimmed = profile.auth.token.trim();
+        if (trimmed) {
+          tokenRef = await secureStoreToken(trimmed);
+        } else if (providedTokenRef === "") {
+          tokenRef = "";
+        }
       }
-    }
-    delete profile.auth.token;
-    nextProfiles[name] = {
-      ...profile,
-      auth: {
+      auth = {
         scheme: profile.auth.scheme,
         tokenRef
-      }
+      };
+      delete profile.auth.token;
+    }
+    nextProfiles[name] = {
+      ...profile,
+      ...(auth ? { auth } : {})
     };
   }
 
@@ -164,17 +258,19 @@ const registerCompletionsIpc = () => {
       if (!profile) {
         throw new Error(`Profile "${profileName}" not found`);
       }
-      if (!profile.auth?.tokenRef) {
+      let runtimeProfile = { ...profile };
+      if (profile.auth?.tokenRef) {
+        const token = await secureRetrieveToken(profile.auth.tokenRef);
+        runtimeProfile = {
+          ...runtimeProfile,
+          auth: {
+            ...runtimeProfile.auth,
+            token
+          }
+        };
+      } else if (profile.driver === "openai-compatible") {
         throw new Error("Profile has no stored token");
       }
-      const token = await secureRetrieveToken(profile.auth.tokenRef);
-      const runtimeProfile = {
-        ...profile,
-        auth: {
-          ...profile.auth,
-          token
-        }
-      };
       const controller = new AbortController();
       const timeoutMs =
         Number.isFinite(profile.request?.timeoutMs) && profile.request.timeoutMs > 0
@@ -186,7 +282,9 @@ const registerCompletionsIpc = () => {
       let usage;
       let finishReason;
       try {
-        const iterator = sendOpenAI(
+        const provider =
+          profile.driver === "generic-http" ? sendGenericHttp : sendOpenAI;
+        const iterator = provider(
           [{ role: "user", content: "ping" }],
           { model: profile.defaultModel },
           runtimeProfile,

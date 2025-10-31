@@ -64,6 +64,12 @@ interface ChatHistoryResult {
   messages: ChatMessagePayload[];
 }
 
+type UsagePathMap = {
+  prompt_tokens?: string;
+  completion_tokens?: string;
+  total_tokens?: string;
+};
+
 interface ChatApi {
   send: (
     conversationId: string,
@@ -79,15 +85,45 @@ interface ChatApi {
   ) => Promise<ChatHistoryResult>;
   createConversation: (title?: string) => Promise<ChatConversationSummary>;
   deleteConversation: (conversationId: string) => Promise<boolean>;
+  deleteMessage: (conversationId: string, messageId: string) => Promise<boolean>;
+  truncateAfter: (conversationId: string, messageId: string) => Promise<boolean>;
+  exportMarkdown: (
+    conversationId: string
+  ) => Promise<{ canceled: boolean; filePath?: string }>;
   onChunk?: (cb: (event: ChatChunkEvent) => void) => UnsubscribeFn;
   onDone?: (cb: (event: ChatDoneEvent) => void) => UnsubscribeFn;
   onError?: (cb: (event: ChatErrorEvent) => void) => UnsubscribeFn;
   onRetry?: (cb: (event: ChatRetryEvent) => void) => UnsubscribeFn;
 }
 
+interface GenericHttpResponseSchema {
+  mode: "stream" | "buffer";
+  stream?: {
+    framing: "sse" | "ndjson" | "lines";
+    pathDelta?: string;
+    pathFinish?: string;
+    pathUsage?: UsagePathMap;
+  };
+  buffer?: {
+    pathText: string;
+    pathFinish?: string;
+    pathUsage?: UsagePathMap;
+  };
+}
+
+interface GenericHttpConfigPayload {
+  endpoint: string;
+  method: "POST" | "GET";
+  requestTemplate?: {
+    headers?: Record<string, string>;
+    body?: any;
+  };
+  responseSchema: GenericHttpResponseSchema;
+}
+
 interface CompletionsProfilePayload {
   name: string;
-  driver: "openai-compatible";
+  driver: "openai-compatible" | "generic-http";
   baseUrl: string;
   defaultModel: string;
   headers?: Record<string, string>;
@@ -95,11 +131,12 @@ interface CompletionsProfilePayload {
     stream?: boolean;
     timeoutMs?: number;
   };
-  auth: {
+  auth?: {
     scheme: "Bearer" | "Basic";
-    tokenRef: string;
-    hasToken: boolean;
+    tokenRef?: string;
+    hasToken?: boolean;
   };
+  generic?: GenericHttpConfigPayload;
 }
 
 interface CompletionsStatePayload {

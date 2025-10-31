@@ -34,6 +34,9 @@ export interface ChatConversation {
   title: string;
   createdAt: string;
   updatedAt: string;
+  model?: string | null;
+  profile?: string | null;
+  messageCount?: number;
 }
 
 export type ChatSendStatus =
@@ -78,6 +81,12 @@ export interface ChatRequestOptions {
   stream?: boolean;
 }
 
+export interface ConversationSettings {
+  temperature?: number | null;
+  maxTokens?: number | null;
+  responseFormat?: "default" | "json";
+}
+
 export interface ChatSlice {
   conversations: ChatConversation[];
   messagesByConvId: Record<string, ChatMessage[]>;
@@ -101,6 +110,7 @@ export interface ChatSlice {
       requestOptions?: ChatRequestOptions;
     }
   >;
+  conversationSettings: Record<string, ConversationSettings>;
 }
 
 export interface ChatSliceActions {
@@ -117,6 +127,10 @@ export interface ChatSliceActions {
   handleChatRetry: (payload: ChatRetryPayload) => void;
   abortChat: () => void;
   retryLast: (conversationId: string) => Promise<void>;
+  setConversationSettings: (conversationId: string, settings: Partial<ConversationSettings>) => void;
+  deleteMessage: (conversationId: string, messageId: string) => Promise<void>;
+  truncateConversationAfter: (conversationId: string, messageId: string) => Promise<void>;
+  regenerateFromMessage: (conversationId: string, messageId: string) => Promise<void>;
 }
 
 export type ChatSliceCreator<T> = StateCreator<T, [["zustand/devtools", never]], [], T>;
@@ -182,7 +196,10 @@ const mapConversationRecord = (input: any, fallbackTitle?: string): ChatConversa
       id: generateId(),
       title: safeTitle,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      model: null,
+      profile: null,
+      messageCount: 0
     };
   }
   const id =
@@ -197,11 +214,22 @@ const mapConversationRecord = (input: any, fallbackTitle?: string): ChatConversa
       : new Date().toISOString();
   const updatedAt =
     typeof input.updatedAt === "string" && input.updatedAt ? input.updatedAt : createdAt;
+  const model =
+    typeof input.model === "string" && input.model.trim() ? input.model.trim() : null;
+  const profile =
+    typeof input.profile === "string" && input.profile.trim() ? input.profile.trim() : null;
+  const messageCount =
+    Number.isInteger(input.messageCount) && input.messageCount >= 0
+      ? Number(input.messageCount)
+      : undefined;
   return {
     id,
     title,
     createdAt,
-    updatedAt
+    updatedAt,
+    model,
+    profile,
+    ...(messageCount !== undefined ? { messageCount } : {})
   };
 };
 
@@ -243,24 +271,161 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
   set: (partial: Partial<T> | ((state: T) => Partial<T>)) => void,
   get: () => T
 ) => {
-  const buildRequestOptionsPayload = (requestOptions?: ChatRequestOptions) => {
-    const payload: Record<string, unknown> = {};
-    if (requestOptions?.model) {
-      payload.model = requestOptions.model;
+  const getConversationSettingsFor = (conversationId: string): ConversationSettings => {
+    const settings = get().conversationSettings[conversationId];
+    return settings || {};
+  };
+
+  const ensureConversationSettings = (conversationId: string) => {
+    set((current) => {
+      if (current.conversationSettings[conversationId]) {
+        return {} as Partial<T>;
+      }
+      return {
+        conversationSettings: {
+          ...current.conversationSettings,
+          [conversationId]: {}
+        }
+      } as Partial<T>;
+    });
+  };
+
+  const setConversationSettings = (
+    conversationId: string,
+    settings: Partial<ConversationSettings>
+  ) => {
+    if (!conversationId) {
+      return;
     }
-    if (typeof requestOptions?.temperature === "number") {
-      payload.temperature = requestOptions.temperature;
-    }
-    if (typeof requestOptions?.max_tokens === "number") {
-      payload.max_tokens = requestOptions.max_tokens;
-    }
-    if (requestOptions?.response_format) {
-      payload.response_format = requestOptions.response_format;
-    }
-    if (typeof requestOptions?.stream === "boolean") {
-      payload.stream = requestOptions.stream;
-    }
-    return payload;
+    set((current) => {
+      const existing = current.conversationSettings[conversationId] || {};
+      const next: ConversationSettings = { ...existing };
+      let changed = false;
+
+      if (Object.prototype.hasOwnProperty.call(settings, "temperature")) {
+        const value = settings.temperature;
+        if (typeof value === "number" && Number.isFinite(value)) {
+          if (next.temperature !== value) {
+            next.temperature = value;
+            changed = true;
+          }
+        } else if (next.temperature !== undefined) {
+          delete next.temperature;
+          changed = true;
+        }
+      }
+
+      if (Object.prototype.hasOwnProperty.call(settings, "maxTokens")) {
+        const value = settings.maxTokens;
+        if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+          if (next.maxTokens !== value) {
+            next.maxTokens = value;
+            changed = true;
+          }
+        } else if (next.maxTokens !== undefined) {
+          delete next.maxTokens;
+          changed = true;
+        }
+      }
+
+      if (Object.prototype.hasOwnProperty.call(settings, "responseFormat")) {
+        const value = settings.responseFormat;
+        if (value === "json") {
+          if (next.responseFormat !== "json") {
+            next.responseFormat = "json";
+            changed = true;
+          }
+        } else if (next.responseFormat !== undefined) {
+          delete next.responseFormat;
+          changed = true;
+        }
+      }
+
+      if (!changed) {
+        return {} as Partial<T>;
+      }
+
+      return {
+        conversationSettings: {
+          ...current.conversationSettings,
+          [conversationId]: next
+        }
+      } as Partial<T>;
+    });
+  };
+
+  const updateConversationMessagesState = (
+    conversationId: string,
+    transformer: (messages: ChatMessage[]) => ChatMessage[]
+  ) => {
+    set((current) => {
+      const existing = current.messagesByConvId[conversationId] || [];
+      const nextMessages = transformer(existing);
+      if (nextMessages === existing) {
+        return {} as Partial<T>;
+      }
+      const messageIds = new Set(nextMessages.map((message) => message.id));
+      const currentConversation = current.conversations.find((conv) => conv.id === conversationId);
+      const now = new Date().toISOString();
+      const reassignedTitle = (() => {
+        const assistant = [...nextMessages]
+          .reverse()
+          .find((message) => message.role === "assistant" && message.content);
+        if (assistant) {
+          return summarizeAssistantTitle(assistant.content);
+        }
+        const firstUser = nextMessages.find((message) => message.role === "user" && message.content);
+        if (firstUser) {
+          return truncateTitle(firstUser.content);
+        }
+        return currentConversation?.title || "New Chat";
+      })();
+      const filteredRequestEntries = Object.entries(current.requestMap).filter(
+        ([, entry]) => entry.conversationId !== conversationId || messageIds.has(entry.messageId)
+      );
+      const nextRequestMap = Object.fromEntries(filteredRequestEntries);
+      const nextCurrentRequestId =
+        current.currentRequestId && nextRequestMap[current.currentRequestId]
+          ? current.currentRequestId
+          : null;
+      const nextRetryState =
+        current.retryState && nextRequestMap[current.retryState.requestId]
+          ? current.retryState
+          : null;
+      const nextLastRequest = { ...current.lastRequestByConvId };
+      if (
+        nextLastRequest[conversationId] &&
+        !messageIds.has(nextLastRequest[conversationId].assistantMessageId)
+      ) {
+        delete nextLastRequest[conversationId];
+      }
+      return {
+        messagesByConvId: {
+          ...current.messagesByConvId,
+          [conversationId]: nextMessages
+        },
+        conversations: current.conversations.map((conv) =>
+          conv.id === conversationId
+            ? {
+                ...conv,
+                title: reassignedTitle,
+                updatedAt: now,
+                messageCount: nextMessages.length
+              }
+            : conv
+        ),
+        requestMap: nextRequestMap,
+        currentRequestId: nextCurrentRequestId,
+        retryState: nextRetryState,
+        lastRequestByConvId: nextLastRequest,
+        sendStatus:
+          current.currentRequestId && !nextRequestMap[current.currentRequestId]
+            ? "idle"
+            : current.sendStatus === "streaming"
+              ? "idle"
+              : current.sendStatus
+      } as Partial<T>;
+    });
   };
 
   const loadConversations = async () => {
@@ -275,9 +440,16 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
       set((current) => {
         const hasActive = mapped.some((conversation) => conversation.id === current.activeConvId);
         const nextActive = hasActive ? current.activeConvId : mapped[0]?.id || null;
+        const nextSettings = { ...current.conversationSettings };
+        mapped.forEach((conversation) => {
+          if (!nextSettings[conversation.id]) {
+            nextSettings[conversation.id] = {};
+          }
+        });
         return {
           conversations: mapped,
-          activeConvId: nextActive
+          activeConvId: nextActive,
+          conversationSettings: nextSettings
         } as Partial<T>;
       });
     } catch (error) {
@@ -301,6 +473,10 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
           messagesByConvId: {
             ...current.messagesByConvId,
             [mapped.id]: current.messagesByConvId[mapped.id] || []
+          },
+          conversationSettings: {
+            ...current.conversationSettings,
+            [mapped.id]: current.conversationSettings[mapped.id] || {}
           }
         }) as Partial<T>);
         return mapped.id;
@@ -313,7 +489,10 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
       id: generateId(),
       title: fallbackTitle,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      model: null,
+      profile: null,
+      messageCount: 0
     };
     set((current) => ({
       conversations: mergeConversationSummary(current.conversations, mapped),
@@ -321,6 +500,10 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
       messagesByConvId: {
         ...current.messagesByConvId,
         [mapped.id]: []
+      },
+      conversationSettings: {
+        ...current.conversationSettings,
+        [mapped.id]: current.conversationSettings[mapped.id] || {}
       }
     }) as Partial<T>);
     return mapped.id;
@@ -332,6 +515,7 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
       state.activeConvId &&
       state.conversations.some((conversation) => conversation.id === state.activeConvId)
     ) {
+      ensureConversationSettings(state.activeConvId);
       return state.activeConvId;
     }
     if (!state.conversations.length && window.chat?.getConversations) {
@@ -342,11 +526,13 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
       state.activeConvId &&
       state.conversations.some((conversation) => conversation.id === state.activeConvId)
     ) {
+      ensureConversationSettings(state.activeConvId);
       return state.activeConvId;
     }
     if (state.conversations.length) {
       const nextId = state.conversations[0].id;
       set({ activeConvId: nextId } as Partial<T>);
+      ensureConversationSettings(nextId);
       return nextId;
     }
     return startNewConversation();
@@ -374,6 +560,10 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
           const summary = mapConversationRecord(result.conversation);
           partial.conversations = mergeConversationSummary(current.conversations, summary);
         }
+        partial.conversationSettings = {
+          ...current.conversationSettings,
+          [conversationId]: current.conversationSettings[conversationId] || {}
+        };
         return partial;
       });
     } catch (error) {
@@ -407,6 +597,7 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
         messagesByConvId: restMessages,
         lastRequestByConvId: restSnapshots,
         requestMap: nextRequestMap,
+        conversationSettings: omitKey(current.conversationSettings, conversationId),
         currentRequestId:
           current.currentRequestId && nextRequestMap[current.currentRequestId]
             ? current.currentRequestId
@@ -419,6 +610,118 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
     if (nextActiveId) {
       void loadConversationHistory(nextActiveId);
     }
+  };
+
+  const truncateMessagesInternal = async (conversationId: string, messageId: string) => {
+    if (!conversationId || !messageId) {
+      return false;
+    }
+    const messages = get().messagesByConvId[conversationId] || [];
+    if (!messages.length) {
+      return false;
+    }
+    const targetIndex = messages.findIndex((message) => message.id === messageId);
+    if (targetIndex === -1) {
+      return false;
+    }
+
+    let remoteOk = true;
+    if (window.chat?.truncateAfter) {
+      try {
+        const result = await window.chat.truncateAfter(conversationId, messageId);
+        if (result === false) {
+          remoteOk = false;
+        }
+      } catch (error) {
+        console.error(
+          `Failed to truncate conversation ${conversationId} after ${messageId}`,
+          error
+        );
+        remoteOk = false;
+      }
+    }
+
+    if (!remoteOk) {
+      return false;
+    }
+
+    updateConversationMessagesState(conversationId, (list) => {
+      const idx = list.findIndex((message) => message.id === messageId);
+      if (idx === -1) {
+        return list;
+      }
+      return list.slice(0, idx + 1);
+    });
+
+    return true;
+  };
+
+  const deleteMessage = async (conversationId: string, messageId: string) => {
+    if (!conversationId || !messageId) {
+      return;
+    }
+    const messages = get().messagesByConvId[conversationId] || [];
+    if (!messages.some((message) => message.id === messageId)) {
+      return;
+    }
+    let success = true;
+    if (window.chat?.deleteMessage) {
+      try {
+        const result = await window.chat.deleteMessage(conversationId, messageId);
+        success = result !== false;
+      } catch (error) {
+        console.error(
+          `Failed to delete message ${messageId} in conversation ${conversationId}`,
+          error
+        );
+        success = false;
+      }
+    }
+    if (!success) {
+      return;
+    }
+    updateConversationMessagesState(conversationId, (list) =>
+      list.filter((message) => message.id !== messageId)
+    );
+  };
+
+  const truncateConversationAfter = async (conversationId: string, messageId: string) => {
+    await truncateMessagesInternal(conversationId, messageId);
+  };
+
+  const regenerateFromMessage = async (conversationId: string, messageId: string) => {
+    if (!conversationId || !messageId) {
+      return;
+    }
+    const state = get();
+    const messages = state.messagesByConvId[conversationId] || [];
+    const targetIndex = messages.findIndex((message) => message.id === messageId);
+    if (targetIndex === -1) {
+      return;
+    }
+    const target = messages[targetIndex];
+    if (target.role !== "user") {
+      return;
+    }
+    const hasLaterUser = messages.slice(targetIndex + 1).some((message) => message.role === "user");
+    if (hasLaterUser) {
+      return;
+    }
+    const truncated = await truncateMessagesInternal(conversationId, messageId);
+    if (!truncated) {
+      return;
+    }
+    const refreshedMessages = get().messagesByConvId[conversationId] || [];
+    const userMessage = refreshedMessages.find(
+      (message) => message.id === messageId && message.role === "user"
+    );
+    if (!userMessage) {
+      return;
+    }
+    const snapshot = get().lastRequestByConvId[conversationId];
+    const requestOptions =
+      snapshot && snapshot.userMessageId === messageId ? snapshot.requestOptions : undefined;
+    await sendMessageInternal(userMessage.content, requestOptions, userMessage);
   };
 
   const appendMessage = (conversationId: string, message: ChatMessage) => {
@@ -435,13 +738,17 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
             updatedAt: now,
             title: isFirstUserMessage
               ? truncateTitle(message.content)
-              : existingConversation.title
+              : existingConversation.title,
+            messageCount: updatedMessages.length
           }
         : {
             id: conversationId,
             title: isFirstUserMessage ? truncateTitle(message.content) : "New Chat",
             createdAt: now,
-            updatedAt: now
+            updatedAt: now,
+            model: null,
+            profile: null,
+            messageCount: updatedMessages.length
           };
 
       return {
@@ -490,7 +797,41 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
     });
   };
 
-  const sendChatMessage = async (text: string, requestOptions?: ChatRequestOptions) => {
+  const buildRequestOptionsPayload = (conversationId: string, requestOptions?: ChatRequestOptions) => {
+    const payload: Record<string, unknown> = {};
+    if (requestOptions?.model) {
+      payload.model = requestOptions.model;
+    }
+    if (typeof requestOptions?.temperature === "number") {
+      payload.temperature = requestOptions.temperature;
+    }
+    if (typeof requestOptions?.max_tokens === "number") {
+      payload.max_tokens = requestOptions.max_tokens;
+    }
+    if (requestOptions?.response_format) {
+      payload.response_format = requestOptions.response_format;
+    }
+    if (typeof requestOptions?.stream === "boolean") {
+      payload.stream = requestOptions.stream;
+    }
+    const settings = getConversationSettingsFor(conversationId);
+    if (payload.temperature === undefined && settings.temperature !== undefined) {
+      payload.temperature = settings.temperature;
+    }
+    if (payload.max_tokens === undefined && settings.maxTokens !== undefined) {
+      payload.max_tokens = settings.maxTokens;
+    }
+    if (!payload.response_format && settings.responseFormat === "json") {
+      payload.response_format = { type: "json_object" };
+    }
+    return payload;
+  };
+
+  const sendMessageInternal = async (
+    text: string,
+    requestOptions?: ChatRequestOptions,
+    existingUser?: ChatMessage | null
+  ) => {
     const content = text.trim();
     if (!content) {
       return;
@@ -499,22 +840,36 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
     if (status === "streaming" || status === "connecting" || status === "retrying") {
       return;
     }
-    const conversationId = await ensureConversation();
+    let conversationId = existingUser?.conversationId || null;
+    if (!conversationId) {
+      conversationId = await ensureConversation();
+    }
     if (!conversationId) {
       return;
     }
+    ensureConversationSettings(conversationId);
     if (!get().messagesByConvId[conversationId]) {
       await loadConversationHistory(conversationId);
     }
-    const existingHistory = get().messagesByConvId[conversationId] || [];
-    const userMessage: ChatMessage = {
-      id: generateId(),
-      role: "user",
-      content,
-      status: "completed",
-      conversationId
-    };
-    appendMessage(conversationId, userMessage);
+    const historyBefore = get().messagesByConvId[conversationId] || [];
+    let userMessage: ChatMessage;
+    if (existingUser) {
+      userMessage = existingUser;
+    } else {
+      userMessage = {
+        id: generateId(),
+        role: "user",
+        content,
+        status: "completed",
+        conversationId
+      };
+      appendMessage(conversationId, userMessage);
+    }
+
+    const messagesSnapshot = get().messagesByConvId[conversationId] || [];
+    const payloadMessages = mapMessagesForSend(
+      existingUser ? messagesSnapshot : [...historyBefore, userMessage]
+    );
 
     const assistantMessageId = generateId();
     const assistantMessage: ChatMessage = {
@@ -556,11 +911,11 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
     }
 
     try {
-      const payloadMessages = mapMessagesForSend([...existingHistory, userMessage]);
       const optionsPayload: Record<string, unknown> = {
-        ...buildRequestOptionsPayload(requestOptions),
+        ...buildRequestOptionsPayload(conversationId, requestOptions),
         assistantMessageId,
-        userMessageId: userMessage.id
+        userMessageId: userMessage.id,
+        ...(existingUser ? { isRetry: true } : {})
       };
       const response = await window.chat.send(conversationId, payloadMessages, optionsPayload);
       const requestId = response?.requestId || generateId();
@@ -634,6 +989,10 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
         currentRequestId: null
       } as Partial<T>);
     }
+  };
+
+  const sendChatMessage = async (text: string, requestOptions?: ChatRequestOptions) => {
+    await sendMessageInternal(text, requestOptions, null);
   };
 
   const handleChatChunk = ({ requestId, delta }: ChatChunkPayload) => {
@@ -711,13 +1070,17 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
         ? {
             ...existingConversation,
             title: title || existingConversation.title,
-            updatedAt: now
+            updatedAt: now,
+            messageCount: messages.length
           }
         : {
             id: conversationId,
             title: title || "New Chat",
             createdAt: now,
-            updatedAt: now
+            updatedAt: now,
+            model: null,
+            profile: null,
+            messageCount: messages.length
           };
       return {
         requestMap: nextRequestMap,
@@ -860,7 +1223,7 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
 
     try {
       const optionsPayload: Record<string, unknown> = {
-        ...buildRequestOptionsPayload(snapshot.requestOptions),
+        ...buildRequestOptionsPayload(conversationId, snapshot.requestOptions),
         assistantMessageId: snapshot.assistantMessageId,
         userMessageId: snapshot.userMessageId,
         isRetry: true
@@ -926,7 +1289,8 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
       retryState: null,
       currentRequestId: null,
       requestMap: {},
-      lastRequestByConvId: {}
+      lastRequestByConvId: {},
+      conversationSettings: {}
     } as ChatSlice,
     actions: {
       ensureConversation,
@@ -943,7 +1307,11 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
       handleChatError,
       handleChatRetry,
       abortChat,
-      retryLast
+      retryLast,
+      setConversationSettings,
+      deleteMessage,
+      truncateConversationAfter,
+      regenerateFromMessage
     } as ChatSliceActions
   };
 };

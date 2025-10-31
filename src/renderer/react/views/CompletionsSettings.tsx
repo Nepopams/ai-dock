@@ -1,4 +1,4 @@
-﻿import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useDockStore } from "../store/useDockStore";
 
 interface HeaderRow {
@@ -7,9 +7,60 @@ interface HeaderRow {
   value: string;
 }
 
+interface UsagePathPayload {
+  prompt_tokens?: string;
+  completion_tokens?: string;
+  total_tokens?: string;
+}
+
+interface GenericResponseSchemaPayload {
+  mode: "stream" | "buffer";
+  stream?: {
+    framing: "sse" | "ndjson" | "lines";
+    pathDelta?: string;
+    pathFinish?: string;
+    pathUsage?: UsagePathPayload;
+  };
+  buffer?: {
+    pathText: string;
+    pathFinish?: string;
+    pathUsage?: UsagePathPayload;
+  };
+}
+
+interface GenericConfigPayload {
+  endpoint: string;
+  method: "POST" | "GET";
+  requestTemplate?: {
+    headers?: Record<string, string>;
+    body?: unknown;
+  };
+  responseSchema: GenericResponseSchemaPayload;
+}
+
+interface EditableGenericConfig {
+  endpoint: string;
+  method: "POST" | "GET";
+  headers: HeaderRow[];
+  bodyText: string;
+  responseMode: "stream" | "buffer";
+  streamFraming: "sse" | "ndjson" | "lines";
+  streamPathDelta: string;
+  streamPathFinish: string;
+  streamUsagePrompt?: string;
+  streamUsageCompletion?: string;
+  streamUsageTotal?: string;
+  bufferPathText: string;
+  bufferPathFinish: string;
+  bufferUsagePrompt?: string;
+  bufferUsageCompletion?: string;
+  bufferUsageTotal?: string;
+}
+
 interface EditableProfile {
   id: string;
   name: string;
+  driver: "openai-compatible" | "generic-http";
   baseUrl: string;
   defaultModel: string;
   authScheme: "Bearer" | "Basic";
@@ -20,13 +71,14 @@ interface EditableProfile {
   headers: HeaderRow[];
   stream: boolean;
   timeoutMs?: number;
+  generic: EditableGenericConfig;
 }
 
 interface CompletionsStatePayload {
   active: string;
   profiles: Array<{
     name: string;
-    driver: "openai-compatible";
+    driver: "openai-compatible" | "generic-http";
     baseUrl: string;
     defaultModel: string;
     headers?: Record<string, string>;
@@ -34,11 +86,12 @@ interface CompletionsStatePayload {
       stream?: boolean;
       timeoutMs?: number;
     };
-    auth: {
+    auth?: {
       scheme: "Bearer" | "Basic";
-      tokenRef: string;
-      hasToken: boolean;
+      tokenRef?: string;
+      hasToken?: boolean;
     };
+    generic?: GenericConfigPayload;
   }>;
 }
 
@@ -74,24 +127,77 @@ const rowsToHeaders = (rows: HeaderRow[]) => {
   return record;
 };
 
+const createGenericConfig = (payload?: GenericConfigPayload): EditableGenericConfig => {
+  const body =
+    payload && payload.requestTemplate && Object.prototype.hasOwnProperty.call(payload.requestTemplate, "body")
+      ? payload.requestTemplate.body
+      : undefined;
+  const defaultBody = `{
+  "model": "{{model}}",
+  "messages": "{{messages[]}}",
+  "stream": {{stream}},
+  "temperature": "{{temperature}}",
+  "max_tokens": "{{max_tokens}}"
+}`;
+  return {
+    endpoint: payload?.endpoint || "/v1/chat",
+    method: payload?.method === "GET" ? "GET" : "POST",
+    headers: headersToRows(payload?.requestTemplate?.headers),
+    bodyText: body !== undefined ? JSON.stringify(body, null, 2) : defaultBody,
+    responseMode: payload?.responseSchema?.mode === "stream" ? "stream" : "buffer",
+    streamFraming: payload?.responseSchema?.stream?.framing || "sse",
+    streamPathDelta: payload?.responseSchema?.stream?.pathDelta || "choices[0].delta.content",
+    streamPathFinish: payload?.responseSchema?.stream?.pathFinish || "choices[0].finish_reason",
+    streamUsagePrompt: payload?.responseSchema?.stream?.pathUsage?.prompt_tokens,
+    streamUsageCompletion: payload?.responseSchema?.stream?.pathUsage?.completion_tokens,
+    streamUsageTotal: payload?.responseSchema?.stream?.pathUsage?.total_tokens,
+    bufferPathText: payload?.responseSchema?.buffer?.pathText || "choices[0].message.content",
+    bufferPathFinish: payload?.responseSchema?.buffer?.pathFinish || "choices[0].finish_reason",
+    bufferUsagePrompt: payload?.responseSchema?.buffer?.pathUsage?.prompt_tokens,
+    bufferUsageCompletion: payload?.responseSchema?.buffer?.pathUsage?.completion_tokens,
+    bufferUsageTotal: payload?.responseSchema?.buffer?.pathUsage?.total_tokens
+  };
+};
+
+const createUsageRecord = (
+  prompt?: string,
+  completion?: string,
+  total?: string
+): UsagePathPayload | undefined => {
+  const next: UsagePathPayload = {};
+  if (prompt?.trim()) {
+    next.prompt_tokens = prompt.trim();
+  }
+  if (completion?.trim()) {
+    next.completion_tokens = completion.trim();
+  }
+  if (total?.trim()) {
+    next.total_tokens = total.trim();
+  }
+  return Object.keys(next).length ? next : undefined;
+};
+
 const createEditableProfile = (profile: CompletionsStatePayload["profiles"][number]): EditableProfile => ({
   id: profile.name,
   name: profile.name,
+  driver: profile.driver,
   baseUrl: profile.baseUrl,
   defaultModel: profile.defaultModel,
-  authScheme: profile.auth.scheme,
-  tokenRef: profile.auth.tokenRef,
-  hasToken: profile.auth.hasToken,
+  authScheme: profile.auth?.scheme || "Bearer",
+  tokenRef: profile.auth?.tokenRef || "",
+  hasToken: Boolean(profile.auth?.hasToken || profile.auth?.tokenRef),
   tokenInput: "",
   tokenChanged: false,
   headers: headersToRows(profile.headers),
   stream: profile.request?.stream !== false,
-  timeoutMs: profile.request?.timeoutMs
+  timeoutMs: profile.request?.timeoutMs,
+  generic: createGenericConfig(profile.generic)
 });
 
 const createEmptyProfile = (): EditableProfile => ({
   id: createId(),
   name: "new-profile",
+  driver: "openai-compatible",
   baseUrl: "https://api.openai.com/v1",
   defaultModel: "gpt-4o-mini",
   authScheme: "Bearer",
@@ -101,7 +207,8 @@ const createEmptyProfile = (): EditableProfile => ({
   tokenChanged: false,
   headers: [],
   stream: true,
-  timeoutMs: 60000
+  timeoutMs: 60000,
+  generic: createGenericConfig()
 });
 
 const normalizeProfiles = (data?: CompletionsStatePayload) => {
@@ -160,16 +267,48 @@ const CompletionsSettings = () => {
     }
   };
 
-  const updateProfile = (id: string, updater: (profile: EditableProfile) => EditableProfile) => {
-    setProfiles((current) => current.map((profile) => (profile.id === id ? updater(profile) : profile)));
-    setDirty(true);
-  };
+const updateProfile = (id: string, updater: (profile: EditableProfile) => EditableProfile) => {
+  setProfiles((current) => current.map((profile) => (profile.id === id ? updater(profile) : profile)));
+  setDirty(true);
+};
 
-  const handleAddProfile = () => {
-    const newProfile = createEmptyProfile();
-    newProfile.name = `profile-${profiles.length + 1}`;
-    setProfiles((current) => [...current, newProfile]);
-    setSelectedId(newProfile.id);
+const updateGenericConfig = (
+  id: string,
+  updater: (generic: EditableGenericConfig) => EditableGenericConfig
+) => {
+  updateProfile(id, (profile) => ({
+    ...profile,
+    generic: updater(profile.generic ?? createGenericConfig())
+  }));
+};
+
+const setProfileDriver = (profileId: string, driver: "openai-compatible" | "generic-http") => {
+  updateProfile(profileId, (profile) => {
+    if (profile.driver === driver) {
+      return profile;
+    }
+    if (driver === "generic-http") {
+      return {
+        ...profile,
+        driver,
+        generic: profile.generic ?? createGenericConfig(),
+        stream: profile.stream
+      };
+    }
+    return {
+      ...profile,
+      driver,
+      authScheme: profile.authScheme || "Bearer",
+      hasToken: Boolean(profile.tokenRef)
+    };
+  });
+};
+
+const handleAddProfile = () => {
+  const newProfile = createEmptyProfile();
+  newProfile.name = `profile-${profiles.length + 1}`;
+  setProfiles((current) => [...current, newProfile]);
+  setSelectedId(newProfile.id);
     setDirty(true);
   };
 
@@ -193,7 +332,13 @@ const CompletionsSettings = () => {
 
   const serializeState = (): CompletionsStatePayload => {
     const payloadProfiles = profiles.map((profile) => {
+      const name = profile.name.trim();
+      if (!name) {
+        throw new Error("Profile name is required");
+      }
       const headersRecord = rowsToHeaders(profile.headers);
+      const baseUrl = profile.baseUrl.trim() || "https://api.openai.com/v1";
+      const defaultModel = profile.defaultModel.trim() || "gpt-4o-mini";
       const requestConfig: CompletionsStatePayload["profiles"][number]["request"] = {};
       if (typeof profile.stream === "boolean") {
         requestConfig.stream = profile.stream;
@@ -201,30 +346,108 @@ const CompletionsSettings = () => {
       if (typeof profile.timeoutMs === "number" && profile.timeoutMs > 0) {
         requestConfig.timeoutMs = profile.timeoutMs;
       }
-      const trimmedToken = profile.tokenInput.trim();
-      let tokenRef = profile.tokenRef;
-      if (profile.tokenChanged && !trimmedToken) {
-        tokenRef = "";
-      }
-      const auth: Record<string, unknown> = {
-        scheme: profile.authScheme,
-        tokenRef
-      };
-      if (profile.tokenChanged) {
-        auth.token = trimmedToken;
-      }
       const headers = Object.keys(headersRecord).length ? headersRecord : undefined;
       const request = Object.keys(requestConfig).length ? requestConfig : undefined;
+
+      const trimmedToken = profile.tokenInput.trim();
+      let tokenRef = profile.tokenRef;
+      let auth: Record<string, unknown> | undefined;
+      if (profile.driver === "openai-compatible") {
+        if (profile.tokenChanged && !trimmedToken) {
+          tokenRef = "";
+        }
+        auth = {
+          scheme: profile.authScheme,
+          tokenRef
+        };
+        if (profile.tokenChanged && trimmedToken) {
+          auth.token = trimmedToken;
+        }
+      } else {
+        if (profile.tokenChanged) {
+          if (trimmedToken) {
+            auth = {
+              scheme: profile.authScheme,
+              token: trimmedToken,
+              tokenRef
+            };
+          } else {
+            tokenRef = "";
+            auth = {
+              scheme: profile.authScheme,
+              tokenRef: ""
+            };
+          }
+        } else if (profile.tokenRef) {
+          auth = {
+            scheme: profile.authScheme,
+            tokenRef: profile.tokenRef
+          };
+        }
+      }
+
+      const genericState = profile.generic ?? createGenericConfig();
+      let generic: GenericConfigPayload | undefined;
+      if (profile.driver === "generic-http") {
+        const genericHeaders = rowsToHeaders(genericState.headers);
+        const trimmedBody = genericState.bodyText.trim();
+        let parsedBody: unknown | undefined;
+        if (trimmedBody) {
+          try {
+            parsedBody = JSON.parse(trimmedBody);
+          } catch (error) {
+            throw new Error(`Profile "${name}": generic request body must be valid JSON`);
+          }
+        }
+        const streamUsage = createUsageRecord(
+          genericState.streamUsagePrompt,
+          genericState.streamUsageCompletion,
+          genericState.streamUsageTotal
+        );
+        const bufferUsage = createUsageRecord(
+          genericState.bufferUsagePrompt,
+          genericState.bufferUsageCompletion,
+          genericState.bufferUsageTotal
+        );
+        generic = {
+          endpoint: genericState.endpoint || "/v1/chat",
+          method: genericState.method,
+          requestTemplate: {
+            headers: Object.keys(genericHeaders).length ? genericHeaders : undefined,
+            ...(parsedBody !== undefined ? { body: parsedBody } : {})
+          },
+          responseSchema: {
+            mode: genericState.responseMode,
+            stream:
+              genericState.responseMode === "stream"
+                ? {
+                    framing: genericState.streamFraming,
+                    pathDelta: genericState.streamPathDelta || undefined,
+                    pathFinish: genericState.streamPathFinish || undefined,
+                    pathUsage: streamUsage
+                  }
+                : undefined,
+            buffer: {
+              pathText: genericState.bufferPathText || "choices[0].message.content",
+              pathFinish: genericState.bufferPathFinish || undefined,
+              pathUsage: bufferUsage
+            }
+          }
+        };
+      }
+
       return {
-        name: profile.name,
-        driver: "openai-compatible" as const,
-        baseUrl: profile.baseUrl,
-        defaultModel: profile.defaultModel,
+        name,
+        driver: profile.driver,
+        baseUrl,
+        defaultModel,
         headers,
         request,
-        auth
+        ...(auth ? { auth } : {}),
+        ...(generic ? { generic } : {})
       };
     });
+
     return {
       active: activeName,
       profiles: payloadProfiles
@@ -267,7 +490,8 @@ const CompletionsSettings = () => {
       return true;
     } catch (error) {
       console.error("Failed to save profiles", error);
-      showToast("Failed to save profiles");
+      const message = error instanceof Error && error.message ? error.message : "Failed to save profiles";
+      showToast(message);
       return false;
     } finally {
       setSaving(false);
@@ -374,6 +598,25 @@ const CompletionsSettings = () => {
     }));
   };
 
+  const onGenericHeaderChange = (
+    profileId: string,
+    headerId: string,
+    field: "key" | "value",
+    value: string
+  ) => {
+    updateGenericConfig(profileId, (generic) => ({
+      ...generic,
+      headers: generic.headers.map((header) =>
+        header.id === headerId
+          ? {
+              ...header,
+              [field]: value
+            }
+          : header
+      )
+    }));
+  };
+
   const addHeaderRow = (profileId: string) => {
     updateProfile(profileId, (profile) => ({
       ...profile,
@@ -381,10 +624,24 @@ const CompletionsSettings = () => {
     }));
   };
 
+  const addGenericHeaderRow = (profileId: string) => {
+    updateGenericConfig(profileId, (generic) => ({
+      ...generic,
+      headers: [...generic.headers, { id: createId(), key: "", value: "" }]
+    }));
+  };
+
   const removeHeaderRow = (profileId: string, headerId: string) => {
     updateProfile(profileId, (profile) => ({
       ...profile,
       headers: profile.headers.filter((header) => header.id !== headerId)
+    }));
+  };
+
+  const removeGenericHeaderRow = (profileId: string, headerId: string) => {
+    updateGenericConfig(profileId, (generic) => ({
+      ...generic,
+      headers: generic.headers.filter((header) => header.id !== headerId)
     }));
   };
 
@@ -414,6 +671,268 @@ const CompletionsSettings = () => {
       : "Set Active";
   const setActiveDisabled =
     activating === selectedProfile?.id || saving || (!dirty && isActiveSelectedProfile);
+
+  const renderGenericSection = () => {
+    if (!selectedProfile || selectedProfile.driver !== "generic-http") {
+      return null;
+    }
+    const generic = selectedProfile.generic;
+    const handleGenericChange = (patch: Partial<EditableGenericConfig>) => {
+      updateGenericConfig(selectedProfile.id, (current) => ({
+        ...current,
+        ...patch
+      }));
+    };
+    const renderStreamUsageInputs = () => (
+      <div className="form-grid">
+        <label>
+          Usage prompt path
+          <input
+            type="text"
+            value={generic.streamUsagePrompt ?? ""}
+            onChange={(event) =>
+              handleGenericChange({ streamUsagePrompt: event.target.value || undefined })
+            }
+            placeholder="eg. usage.prompt_tokens"
+          />
+        </label>
+        <label>
+          Usage completion path
+          <input
+            type="text"
+            value={generic.streamUsageCompletion ?? ""}
+            onChange={(event) =>
+              handleGenericChange({ streamUsageCompletion: event.target.value || undefined })
+            }
+            placeholder="eg. usage.completion_tokens"
+          />
+        </label>
+        <label>
+          Usage total path
+          <input
+            type="text"
+            value={generic.streamUsageTotal ?? ""}
+            onChange={(event) =>
+              handleGenericChange({ streamUsageTotal: event.target.value || undefined })
+            }
+            placeholder="eg. usage.total_tokens"
+          />
+        </label>
+      </div>
+    );
+
+    const renderBufferUsageInputs = () => (
+      <div className="form-grid">
+        <label>
+          Usage prompt path
+          <input
+            type="text"
+            value={generic.bufferUsagePrompt ?? ""}
+            onChange={(event) =>
+              handleGenericChange({ bufferUsagePrompt: event.target.value || undefined })
+            }
+            placeholder="eg. usage.prompt_tokens"
+          />
+        </label>
+        <label>
+          Usage completion path
+          <input
+            type="text"
+            value={generic.bufferUsageCompletion ?? ""}
+            onChange={(event) =>
+              handleGenericChange({ bufferUsageCompletion: event.target.value || undefined })
+            }
+            placeholder="eg. usage.completion_tokens"
+          />
+        </label>
+        <label>
+          Usage total path
+          <input
+            type="text"
+            value={generic.bufferUsageTotal ?? ""}
+            onChange={(event) =>
+              handleGenericChange({ bufferUsageTotal: event.target.value || undefined })
+            }
+            placeholder="eg. usage.total_tokens"
+          />
+        </label>
+      </div>
+    );
+
+    return (
+      <div className="completions-generic">
+        <h4>Generic HTTP Configuration</h4>
+        <div className="form-grid">
+          <label>
+            Endpoint
+            <input
+              type="text"
+              value={generic.endpoint}
+              onChange={(event) => handleGenericChange({ endpoint: event.target.value })}
+              placeholder="/v1/chat"
+              required
+            />
+          </label>
+          <label>
+            Method
+            <select
+              value={generic.method}
+              onChange={(event) =>
+                handleGenericChange({ method: (event.target.value as "POST" | "GET") || "POST" })
+              }
+            >
+              <option value="POST">POST</option>
+              <option value="GET">GET</option>
+            </select>
+          </label>
+        </div>
+        <div className="completions-headers">
+          <div className="completions-headers-title">
+            <span>Request Headers</span>
+            <button
+              type="button"
+              className="pill-btn ghost"
+              onClick={() => addGenericHeaderRow(selectedProfile.id)}
+            >
+              Add Header
+            </button>
+          </div>
+          <div className="completions-headers-list">
+            {generic.headers.length === 0 && (
+              <div className="completions-headers-empty">No custom headers</div>
+            )}
+            {generic.headers.map((header) => (
+              <div key={header.id} className="completions-header-row">
+                <input
+                  type="text"
+                  placeholder="Header"
+                  value={header.key}
+                  onChange={(event) =>
+                    onGenericHeaderChange(selectedProfile.id, header.id, "key", event.target.value)
+                  }
+                />
+                <input
+                  type="text"
+                  placeholder="Value"
+                  value={header.value}
+                  onChange={(event) =>
+                    onGenericHeaderChange(selectedProfile.id, header.id, "value", event.target.value)
+                  }
+                />
+                <button
+                  type="button"
+                  className="pill-btn ghost"
+                  onClick={() => removeGenericHeaderRow(selectedProfile.id, header.id)}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+        <label>
+          Request body template (JSON)
+          <textarea
+            value={generic.bodyText}
+            onChange={(event) => handleGenericChange({ bodyText: event.target.value })}
+            rows={6}
+            placeholder='{"model":"{{model}}","messages":"{{messages[]}}","stream":{{stream}}}'
+          />
+        </label>
+        <div className="form-grid">
+          <label>
+            Response mode
+            <select
+              value={generic.responseMode}
+              onChange={(event) =>
+                handleGenericChange({
+                  responseMode: (event.target.value as "stream" | "buffer") || "stream"
+                })
+              }
+            >
+              <option value="stream">Stream</option>
+              <option value="buffer">Buffer</option>
+            </select>
+          </label>
+          {generic.responseMode === "stream" && (
+            <label>
+              Stream framing
+              <select
+                value={generic.streamFraming}
+                onChange={(event) =>
+                  handleGenericChange({
+                    streamFraming:
+                      (event.target.value as "sse" | "ndjson" | "lines") || generic.streamFraming
+                  })
+                }
+              >
+                <option value="sse">Server-Sent Events</option>
+                <option value="ndjson">NDJSON</option>
+                <option value="lines">Line delimited</option>
+              </select>
+            </label>
+          )}
+        </div>
+        {generic.responseMode === "stream" ? (
+          <>
+            <div className="form-grid">
+              <label>
+                Delta path
+                <input
+                  type="text"
+                  value={generic.streamPathDelta}
+                  onChange={(event) =>
+                    handleGenericChange({ streamPathDelta: event.target.value })
+                  }
+                  placeholder="choices[0].delta.content"
+                />
+              </label>
+              <label>
+                Finish reason path
+                <input
+                  type="text"
+                  value={generic.streamPathFinish}
+                  onChange={(event) =>
+                    handleGenericChange({ streamPathFinish: event.target.value })
+                  }
+                  placeholder="choices[0].finish_reason"
+                />
+              </label>
+            </div>
+            {renderStreamUsageInputs()}
+          </>
+        ) : (
+          <>
+            <div className="form-grid">
+              <label>
+                Text path
+                <input
+                  type="text"
+                  value={generic.bufferPathText}
+                  onChange={(event) =>
+                    handleGenericChange({ bufferPathText: event.target.value })
+                  }
+                  placeholder="choices[0].message.content"
+                />
+              </label>
+              <label>
+                Finish reason path
+                <input
+                  type="text"
+                  value={generic.bufferPathFinish}
+                  onChange={(event) =>
+                    handleGenericChange({ bufferPathFinish: event.target.value })
+                  }
+                  placeholder="choices[0].finish_reason"
+                />
+              </label>
+            </div>
+            {renderBufferUsageInputs()}
+          </>
+        )}
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -456,7 +975,12 @@ const CompletionsSettings = () => {
                   onClick={() => setSelectedId(profile.id)}
                   type="button"
                 >
-                  <span className="completions-list-name">{profile.name}</span>
+                  <div className="completions-list-info">
+                    <span className="completions-list-name">{profile.name}</span>
+                    <span className="completions-list-meta">
+                      {profile.driver === "generic-http" ? "Generic HTTP" : "OpenAI"}
+                    </span>
+                  </div>
                   {isActiveProfile && <span className="completions-list-badge">Active</span>}
                 </button>
               );
@@ -467,7 +991,7 @@ const CompletionsSettings = () => {
           <header className="completions-editor-header">
             <div>
               <h3>{selectedProfile.name}</h3>
-              <p>Configure an OpenAI-compatible completion profile.</p>
+              <p>{selectedProfile.driver === "openai-compatible" ? "Standard OpenAI-compatible /v1/chat/completions endpoint." : "Generic HTTP driver with templated payloads for custom providers."}</p>
             </div>
             <div className="completions-editor-actions">
               <button
@@ -506,6 +1030,21 @@ const CompletionsSettings = () => {
                 />
               </label>
               <label>
+                Provider Type
+                <select
+                  value={selectedProfile.driver}
+                  onChange={(event) =>
+                    setProfileDriver(
+                      selectedProfile.id,
+                      (event.target.value as "openai-compatible" | "generic-http") || "openai-compatible"
+                    )
+                  }
+                >
+                  <option value="openai-compatible">OpenAI-compatible</option>
+                  <option value="generic-http">Generic HTTP</option>
+                </select>
+              </label>
+              <label>
                 Base URL
                 <input
                   type="text"
@@ -533,6 +1072,8 @@ const CompletionsSettings = () => {
                   required
                 />
               </label>
+            </div>
+            <div className="form-grid">
               <label>
                 Auth Scheme
                 <select
@@ -548,13 +1089,11 @@ const CompletionsSettings = () => {
                   <option value="Basic">Basic</option>
                 </select>
               </label>
-            </div>
-            <div className="form-grid">
               <label>
                 API Token
                 <input
                   type="password"
-                  placeholder={selectedProfile.hasToken ? "Stored securely" : "Enter token"}
+                  placeholder={selectedProfile.hasToken ? "Stored securely" : "Paste API token"}
                   value={selectedProfile.tokenInput}
                   onChange={(event) =>
                     updateProfile(selectedProfile.id, (profile) => ({
@@ -592,14 +1131,16 @@ const CompletionsSettings = () => {
                 />
                 Stream responses
               </label>
-              <button
-                type="button"
-                className="pill-btn ghost"
-                onClick={() => clearToken(selectedProfile.id)}
-                disabled={!selectedProfile.hasToken && !selectedProfile.tokenInput}
-              >
-                Clear Token
-              </button>
+              {selectedProfile.hasToken && (
+                <button
+                  type="button"
+                  className="pill-btn ghost"
+                  onClick={() => clearToken(selectedProfile.id)}
+                  disabled={!selectedProfile.hasToken}
+                >
+                  Clear Token
+                </button>
+              )}
             </div>
             <div className="completions-headers">
               <div className="completions-headers-title">
@@ -637,6 +1178,7 @@ const CompletionsSettings = () => {
                 ))}
               </div>
             </div>
+            {renderGenericSection()}
             {selectedTest && (
               <div className={`completions-test-status${selectedTest.success ? " success" : " error"}`}>
                 {selectedTest.message}
@@ -676,6 +1218,9 @@ const CompletionsSettings = () => {
 };
 
 export default CompletionsSettings;
+
+
+
 
 
 
