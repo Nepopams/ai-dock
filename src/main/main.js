@@ -9,6 +9,7 @@ const { randomUUID } = require("crypto");
 const { registerChatIpc } = require("./ipc/chat");
 const { registerCompletionsIpc } = require("./ipc/completions");
 const { registerRegistryIpc } = require("./ipc/registry.ipc");
+const { registerAdapterBridgeIpc } = require("./browserViews/adapterBridge");
 
 let mainWindow;
 let tabManager;
@@ -100,7 +101,7 @@ const createWindow = () => {
     tabManager = null;
   });
 
-  registerIpc();
+  registerIpc(tabManager);
 };
 
 const readPrompts = () => {
@@ -113,7 +114,7 @@ const writePrompts = (prompts) => {
   return prompts;
 };
 
-const registerIpc = () => {
+const registerIpc = (tabManagerInstance) => {
   if (ipcRegistered) {
     return;
   }
@@ -121,6 +122,9 @@ const registerIpc = () => {
   registerChatIpc();
   registerCompletionsIpc();
   registerRegistryIpc();
+  if (tabManagerInstance) {
+    registerAdapterBridgeIpc(tabManagerInstance);
+  }
 
   ipcMain.handle("tabs:createOrFocus", (_event, serviceId) => {
     const service = services[serviceId];

@@ -1,11 +1,9 @@
-const { contextBridge, ipcRenderer } = require("electron");
-const {
-  IPC_REGISTRY_LIST,
-  IPC_REGISTRY_SAVE,
-  IPC_REGISTRY_WATCH_START,
-  IPC_REGISTRY_WATCH_STOP,
-  IPC_REGISTRY_CHANGED
-} = require("../shared/ipc/contracts");
+﻿const { contextBridge, ipcRenderer } = require("electron");
+const IPC_REGISTRY_LIST = "registry:list";
+const IPC_REGISTRY_SAVE = "registry:save";
+const IPC_REGISTRY_WATCH_START = "registry:watch-start";
+const IPC_REGISTRY_WATCH_STOP = "registry:watch-stop";
+const IPC_REGISTRY_CHANGED = "registry:changed";
 
 const safeInvoke = (channel, payload) => ipcRenderer.invoke(channel, payload);
 
@@ -266,6 +264,39 @@ const stopRegistryWatch = () => {
   }
 };
 
+const ensureTabId = (tabId) => {
+  if (typeof tabId !== "string" || !tabId.trim()) {
+    throw new Error("tabId must be a non-empty string");
+  }
+  return tabId.trim();
+};
+
+const toFunctionSource = (fn) => {
+  if (typeof fn === "function") {
+    const source = fn.toString();
+    if (source.includes("[native code]")) {
+      throw new Error("native functions are not allowed");
+    }
+    return source;
+  }
+  if (typeof fn === "string" && fn.trim()) {
+    return fn.trim();
+  }
+  throw new Error("fn must be a function or non-empty string");
+};
+
+contextBridge.exposeInMainWorld("adapterBridge", {
+  exec: (tabId, fn, args = []) => {
+    const payload = {
+      tabId: ensureTabId(tabId),
+      fnSource: toFunctionSource(fn),
+      args: Array.isArray(args) ? args : [args]
+    };
+    return safeInvoke("adapter:exec", payload);
+  },
+  ping: () => safeInvoke("adapter:ping")
+});
+
 contextBridge.exposeInMainWorld("registry", {
   list: () => safeInvoke(IPC_REGISTRY_LIST),
   save: (registry) => safeInvoke(IPC_REGISTRY_SAVE, registry),
@@ -282,5 +313,6 @@ contextBridge.exposeInMainWorld("registry", {
     };
   }
 });
+
 
 

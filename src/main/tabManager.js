@@ -107,6 +107,14 @@ class TabManager {
     return active ? active.view : null;
   }
 
+  getView(tabId) {
+    const tab = this.tabs.find((entry) => entry.id === tabId);
+    if (!tab) {
+      return null;
+    }
+    return tab.view || null;
+  }
+
   persist() {
     const serviceTabs = this.tabs.filter((tab) => Boolean(tab.serviceId));
     const payload = {
