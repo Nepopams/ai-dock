@@ -4,6 +4,11 @@ import {
   ChatSliceActions,
   createChatSlice
 } from "./chatSlice";
+import {
+  RegistrySlice,
+  RegistrySliceActions,
+  createRegistrySlice
+} from "../../store/registrySlice";
 
 export interface ServiceMeta {
   id: string;
@@ -53,9 +58,9 @@ type BaseActions = {
   focusLocalView: (viewId: LocalViewId) => Promise<void>;
 };
 
-export type DockActions = BaseActions & ChatSliceActions;
+export type DockActions = BaseActions & ChatSliceActions & RegistrySliceActions;
 
-export interface DockState extends ChatSlice {
+export interface DockState extends ChatSlice, RegistrySlice {
   services: ServiceMeta[];
   tabs: TabMeta[];
   prompts: PromptItem[];
@@ -79,7 +84,14 @@ const getInitialPromptHidden = () => {
 };
 
 export const useDockStore = create<DockState>((set, get) => {
-  const chatSlice = createChatSlice<DockState & { actions: DockActions }>(set, get as any);
+  const chatSlice = createChatSlice<DockState & { actions: DockActions }>(
+    set,
+    get as any
+  );
+  const registrySlice = createRegistrySlice<DockState & { actions: DockActions }>(
+    set,
+    get as any
+  );
 
   const baseState = {
     services: [] as ServiceMeta[],
@@ -241,10 +253,17 @@ export const useDockStore = create<DockState>((set, get) => {
   return {
     ...baseState,
     ...chatSlice.state,
+    ...registrySlice.state,
     actions: {
       ...baseActions,
-      ...chatSlice.actions
+      ...chatSlice.actions,
+      ...registrySlice.actions
     }
   } as DockState;
 });
+
+
+
+
+
 
