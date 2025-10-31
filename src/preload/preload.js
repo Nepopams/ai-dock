@@ -1,4 +1,11 @@
 const { contextBridge, ipcRenderer } = require("electron");
+const {
+  IPC_REGISTRY_LIST,
+  IPC_REGISTRY_SAVE,
+  IPC_REGISTRY_WATCH_START,
+  IPC_REGISTRY_WATCH_STOP,
+  IPC_REGISTRY_CHANGED
+} = require("../shared/ipc/contracts");
 
 const safeInvoke = (channel, payload) => ipcRenderer.invoke(channel, payload);
 
@@ -238,3 +245,42 @@ contextBridge.exposeInMainWorld("completions", {
   setActive: (name) => safeInvoke("completions:setActive", name),
   testProfile: (name) => safeInvoke("completions:testProfile", name)
 });
+
+let registryWatchers = 0;
+
+const startRegistryWatch = () => {
+  registryWatchers += 1;
+  if (registryWatchers === 1) {
+    safeInvoke(IPC_REGISTRY_WATCH_START).catch((error) => {
+      console.error("[registry] failed to start watcher", error);
+    });
+  }
+};
+
+const stopRegistryWatch = () => {
+  registryWatchers = Math.max(0, registryWatchers - 1);
+  if (registryWatchers === 0) {
+    safeInvoke(IPC_REGISTRY_WATCH_STOP).catch((error) => {
+      console.error("[registry] failed to stop watcher", error);
+    });
+  }
+};
+
+contextBridge.exposeInMainWorld("registry", {
+  list: () => safeInvoke(IPC_REGISTRY_LIST),
+  save: (registry) => safeInvoke(IPC_REGISTRY_SAVE, registry),
+  watch: (cb) => {
+    if (typeof cb !== "function") {
+      throw new Error("callback must be a function");
+    }
+    startRegistryWatch();
+    const handler = () => cb();
+    ipcRenderer.on(IPC_REGISTRY_CHANGED, handler);
+    return () => {
+      ipcRenderer.removeListener(IPC_REGISTRY_CHANGED, handler);
+      stopRegistryWatch();
+    };
+  }
+});
+
+

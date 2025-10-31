@@ -1,5 +1,8 @@
 export {};
 
+import type { ServiceClient, ServiceRegistryFile } from "../shared/types/registry";
+import type { RegistryListResponse, RegistrySaveResponse } from "../shared/ipc/contracts";
+
 type UnsubscribeFn = () => void;
 
 interface ChatChunkEvent {
@@ -182,6 +185,12 @@ declare global {
         setDrawer: (width: number) => Promise<void>;
         setTopInset: (height: number) => Promise<void>;
       };
+      registry?: {
+        list: () => Promise<RegistryListResponse>;
+        save: (registry: ServiceRegistryFile) => Promise<RegistrySaveResponse>;
+        watch: (callback: () => void) => UnsubscribeFn;
+      };
+      __registryWatchCleanup?: () => void;
       promptRouter: {
         getAgents: () => Promise<any>;
         broadcast: (payload: { text: string; agents: string[] }) => Promise<void>;
@@ -196,3 +205,5 @@ declare global {
     };
   }
 }
+
+

@@ -267,3 +267,30 @@ export const useDockStore = create<DockState>((set, get) => {
 
 
 
+
+if (typeof window !== "undefined") {
+  const registryApi = window.registry;
+  if (registryApi?.watch) {
+    if (!(window as unknown as Record<string, unknown>).__registryWatchCleanup) {
+      const cleanup = registryApi.watch(() => {
+        const actions = useDockStore.getState().actions;
+        if (actions?.applyRegistryChange) {
+          void actions.applyRegistryChange();
+        }
+      });
+      (window as unknown as Record<string, unknown>).__registryWatchCleanup = cleanup;
+      window.addEventListener("beforeunload", () => {
+        const storedCleanup = (window as unknown as Record<string, unknown>).__registryWatchCleanup;
+        if (typeof storedCleanup === "function") {
+          storedCleanup();
+        }
+        delete (window as unknown as Record<string, unknown>).__registryWatchCleanup;
+      });
+    }
+    const actions = useDockStore.getState().actions;
+    if (actions?.fetchRegistry) {
+      void actions.fetchRegistry();
+    }
+  }
+}
+

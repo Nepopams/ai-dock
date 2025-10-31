@@ -17,7 +17,7 @@ export interface ServiceRegistryFile {
   clients: ServiceClient[];
 }
 
-const serviceCategories: ServiceCategory[] = ['chat', 'code', 'presentation', 'image_video', 'other'];
+export const serviceCategories: ServiceCategory[] = ['chat', 'code', 'presentation', 'image_video', 'other'];
 
 export const isServiceCategory = (value: unknown): value is ServiceCategory => {
   return typeof value === 'string' && serviceCategories.includes(value as ServiceCategory);
@@ -71,3 +71,4 @@ export const isRegistryFile = (value: unknown): value is ServiceRegistryFile => 
   }
   return true;
 };
+
