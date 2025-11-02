@@ -7,7 +7,13 @@ const rendererRoot = path.resolve(__dirname, "src/renderer/react");
 export default defineConfig({
   root: rendererRoot,
   base: "./",
-  plugins: [react()],
+  plugins: [
+    react({
+      fastRefresh: {
+        overlay: false
+      }
+    })
+  ],
   resolve: {
     alias: {
       "@renderer": rendererRoot
@@ -15,7 +21,13 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    strictPort: true
+    strictPort: true,
+    hmr: {
+      overlay: false
+    }
+  },
+  esbuild: {
+    sourcemap: false
   },
   build: {
     outDir: path.resolve(rendererRoot, "dist"),

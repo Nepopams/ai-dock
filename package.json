@@ -10,7 +10,8 @@
                     "preload:build":  "node scripts/build-preload.js --prod",
                     "preload:watch":  "node scripts/build-preload.js --watch",
                     "dev:new-ui":  "npm run preload:build && cross-env AI_DOCK_REACT_UI=true AI_DOCK_SKIP_AUTOTABS=1 concurrently \"npm:preload:watch\" \"npm:dev\" \"npm:electron:dev\"",
-                    "electron:dev":  "electron .",
+                    "electron:dev":  "cross-env NODE_OPTIONS=--max-old-space-size=4096 electron .",
+                    "electron:inspect":  "cross-env NODE_OPTIONS=--max-old-space-size=4096 electron --inspect=9229 .",
                     "electron:build":  "npm run preload:build && electron-builder --win nsis",
                     "lint":  "echo skip",
                     "test":  "node --test tests/**/*.test.js"

@@ -10,6 +10,7 @@ import {
   ChatMessageErrorMeta,
   ChatRetryPayload
 } from "../store/chatSlice";
+import { createDisposableBag } from "../../utils/disposables";
 
 const statusText: Record<string, string> = {
   idle: "Idle",
@@ -129,24 +130,22 @@ function ChatView() {
       return;
     }
 
-    const offChunk = window.chat.onChunk?.((payload: ChatChunkPayload) => {
+    const bag = createDisposableBag();
+    bag.add(window.chat.onChunk?.((payload: ChatChunkPayload) => {
       handleChatChunk(payload);
-    });
-    const offDone = window.chat.onDone?.((payload: ChatDonePayload) => {
+    }));
+    bag.add(window.chat.onDone?.((payload: ChatDonePayload) => {
       handleChatDone(payload);
-    });
-    const offError = window.chat.onError?.((payload: ChatErrorPayload) => {
+    }));
+    bag.add(window.chat.onError?.((payload: ChatErrorPayload) => {
       handleChatError(payload);
-    });
-    const offRetry = window.chat.onRetry?.((payload: ChatRetryPayload) => {
+    }));
+    bag.add(window.chat.onRetry?.((payload: ChatRetryPayload) => {
       handleChatRetry(payload);
-    });
+    }));
 
     return () => {
-      offChunk?.();
-      offDone?.();
-      offError?.();
-      offRetry?.();
+      bag.disposeAll();
     };
   }, [handleChatChunk, handleChatDone, handleChatError, handleChatRetry]);
 

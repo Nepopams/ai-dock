@@ -74,14 +74,7 @@ class TabManager {
     }
 
     const [tab] = this.tabs.splice(index, 1);
-    if (tab.view && !tab.view.webContents.isDestroyed()) {
-      try {
-        this.mainWindow.removeBrowserView(tab.view);
-      } catch (error) {
-        // ignore removal errors
-      }
-      tab.view.webContents.destroy();
-    }
+    this.#destroyTab(tab);
 
     if (this.activeTabId === tabId) {
       const nextTab = this.tabs[index] || this.tabs[index - 1] || this.tabs[0];
@@ -91,6 +84,50 @@ class TabManager {
         this.activeTabId = null;
       }
     }
+  }
+
+  #destroyTab(tab) {
+    if (!tab) {
+      return;
+    }
+    if (Array.isArray(tab.disposables)) {
+      while (tab.disposables.length) {
+        const dispose = tab.disposables.pop();
+        try {
+          dispose?.();
+        } catch (error) {
+          console.error("[AI Dock] Failed to dispose tab listener", error);
+        }
+      }
+    }
+    const view = tab.view;
+    if (!view) {
+      return;
+    }
+    try {
+      this.mainWindow.removeBrowserView(view);
+    } catch {
+      // ignore removal errors
+    }
+    const contents = view.webContents;
+    if (contents && !contents.isDestroyed()) {
+      contents.removeAllListeners();
+      try {
+        contents.stop();
+      } catch {
+        // ignore stop errors
+      }
+      if (contents.session?.clearCache) {
+        contents.session.clearCache().catch(() => {});
+      }
+      contents.destroy();
+    }
+    try {
+      view.destroy();
+    } catch {
+      // ignore destroy errors
+    }
+    tab.view = null;
   }
 
   list() {
@@ -250,7 +287,8 @@ class TabManager {
       title: title || this.#deriveTitle(url),
       url,
       partition: partitionName,
-      view
+      view,
+      disposables: []
     };
 
     this.tabs.push(tabRecord);

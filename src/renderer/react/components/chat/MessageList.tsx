@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChatMessage } from "../../store/chatSlice";
 import { useDockStore } from "../../store/useDockStore";
 import MessageItem from "./MessageItem";
+import { createDisposableBag } from "../../utils/disposables";
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -31,6 +32,8 @@ function MessageList({ messages, isStreaming }: MessageListProps) {
       return;
     }
 
+    const bag = createDisposableBag();
+
     const handleScroll = () => {
       const distance = getDistanceFromBottom(element);
       const atBottom = distance <= 50;
@@ -46,10 +49,10 @@ function MessageList({ messages, isStreaming }: MessageListProps) {
     };
 
     handleScroll();
-    element.addEventListener("scroll", handleScroll, { passive: true });
+    bag.addEventListener(element, "scroll", handleScroll, { passive: true });
 
     return () => {
-      element.removeEventListener("scroll", handleScroll);
+      bag.disposeAll();
     };
   }, []);
 
@@ -59,12 +62,16 @@ function MessageList({ messages, isStreaming }: MessageListProps) {
       return;
     }
 
+    const bag = createDisposableBag();
+
     if (!messages.length) {
       isAtBottomRef.current = true;
       lastMessageIdRef.current = null;
       setShowScrollIndicator(false);
       element.scrollTop = element.scrollHeight;
-      return;
+      return () => {
+        bag.disposeAll();
+      };
     }
 
     const lastMessage = messages[messages.length - 1];
@@ -76,7 +83,7 @@ function MessageList({ messages, isStreaming }: MessageListProps) {
 
     if (isInitialLoad || isAtBottomRef.current || atBottom) {
       isAtBottomRef.current = true;
-      requestAnimationFrame(() => {
+      const frameId = requestAnimationFrame(() => {
         if (!containerRef.current) {
           return;
         }
@@ -85,6 +92,7 @@ function MessageList({ messages, isStreaming }: MessageListProps) {
           behavior: isInitialLoad ? "auto" : "smooth"
         });
       });
+      bag.trackAnimationFrame(frameId);
       setShowScrollIndicator(false);
     } else if (isNewMessage) {
       setShowScrollIndicator((prev) => (prev ? prev : true));
@@ -93,6 +101,9 @@ function MessageList({ messages, isStreaming }: MessageListProps) {
     if (lastMessage) {
       lastMessageIdRef.current = lastMessage.id;
     }
+    return () => {
+      bag.disposeAll();
+    };
   }, [messages, isStreaming]);
 
   const handleScrollToBottom = () => {

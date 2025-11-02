@@ -1,5 +1,6 @@
 import { MouseEvent as ReactMouseEvent, useEffect, useRef, useState } from "react";
 import { ChatMessage } from "../../store/chatSlice";
+import { createDisposableBag } from "../../utils/disposables";
 
 interface MessageItemProps {
   message: ChatMessage;
@@ -77,6 +78,7 @@ function MessageItem({
     if (!menuPosition) {
       return;
     }
+    const bag = createDisposableBag();
     const handlePointer = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         closeMenu();
@@ -88,13 +90,11 @@ function MessageItem({
         closeMenu();
       }
     };
-    window.addEventListener("click", handlePointer);
-    window.addEventListener("contextmenu", handlePointer);
-    window.addEventListener("keydown", handleKeyDown);
+    bag.addEventListener(window, "click", handlePointer);
+    bag.addEventListener(window, "contextmenu", handlePointer);
+    bag.addEventListener(window, "keydown", handleKeyDown);
     return () => {
-      window.removeEventListener("click", handlePointer);
-      window.removeEventListener("contextmenu", handlePointer);
-      window.removeEventListener("keydown", handleKeyDown);
+      bag.disposeAll();
     };
   }, [menuPosition]);
 
