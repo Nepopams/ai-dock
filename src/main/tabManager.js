@@ -125,6 +125,13 @@ class TabManager {
   }
 
   restore(servicesRegistry) {
+    const skipAutoTabs = process.env.AI_DOCK_SKIP_AUTOTABS === "1";
+    if (skipAutoTabs) {
+      console.log("[AI Dock] Skipping tab restore (AI_DOCK_SKIP_AUTOTABS=1)");
+      this.focusNone();
+      return;
+    }
+
     const state = getState("tabs", null);
     if (!state || !Array.isArray(state.serviceOrder)) {
       return;

@@ -66,6 +66,17 @@ const resolvePreloadPath = () => {
   );
 };
 
+const logMemory = () => {
+  const heap = process.memoryUsage();
+  console.log(
+    `[mem] rss=${Math.round(heap.rss / 1024 / 1024)}MB ` +
+      `heapTotal=${Math.round(heap.heapTotal / 1024 / 1024)}MB ` +
+      `heapUsed=${Math.round(heap.heapUsed / 1024 / 1024)}MB`
+  );
+};
+
+setInterval(logMemory, 10_000).unref();
+
 const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 1200,

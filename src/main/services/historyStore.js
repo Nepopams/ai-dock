@@ -88,6 +88,12 @@ const loadThreads = () => {
 };
 
 const trimIndexes = () => {
+  if (messageQueue.length > MEMORY_LIMIT) {
+    console.warn(
+      `[history] trimIndexes start length=${messageQueue.length} limit=${MEMORY_LIMIT}`
+    );
+  }
+  let trimmed = 0;
   while (messageQueue.length > MEMORY_LIMIT) {
     const removed = messageQueue.shift();
     if (!removed) {
@@ -98,6 +104,12 @@ const trimIndexes = () => {
     if (removed.source?.clientId) {
       removeFromMapArray(byClient, removed.source.clientId, removed);
     }
+    trimmed += 1;
+  }
+  if (trimmed > 0) {
+    console.warn(
+      `[history] trimIndexes removed=${trimmed} newLength=${messageQueue.length}`
+    );
   }
 };
 
@@ -109,7 +121,15 @@ const indexMessage = (message) => {
     addToMapArray(byClient, message.source.clientId, message);
   }
   trimIndexes();
+  if (messageQueue.length % 5000 === 0) {
+    console.log(
+      `[history] queue length=${messageQueue.length} byThread=${byThread.size} ` +
+        `byAgent=${byAgent.size} byClient=${byClient.size}`
+    );
+  }
 };
+
+const APPROX_MESSAGE_BYTES = 512;
 
 const loadMessages = () => {
   const filePath = messagesFile();
@@ -121,7 +141,23 @@ const loadMessages = () => {
     threadCounts.clear();
     return;
   }
-  const raw = fs.readFileSync(filePath, "utf8");
+  const stats = fs.statSync(filePath);
+  const maxBytes = MEMORY_LIMIT * APPROX_MESSAGE_BYTES;
+  let raw;
+  if (stats.size > maxBytes) {
+    const offset = stats.size - maxBytes;
+    const fd = fs.openSync(filePath, "r");
+    const buffer = Buffer.alloc(maxBytes);
+    fs.readSync(fd, buffer, 0, maxBytes, offset);
+    fs.closeSync(fd);
+    raw = buffer.toString("utf8");
+    raw = raw.replace(/^[^\n]*\n/, "");
+    console.warn(
+      `[history] conversations.jsonl truncated read: size=${stats.size} offset=${offset}`
+    );
+  } else {
+    raw = fs.readFileSync(filePath, "utf8");
+  }
   const lines = raw.split(/\r?\n/);
   messageQueue.length = 0;
   byThread.clear();
@@ -129,7 +165,9 @@ const loadMessages = () => {
   byClient.clear();
   threadCounts.clear();
   let threadsDirty = false;
-  for (const line of lines) {
+  const startIndex = Math.max(0, lines.length - MEMORY_LIMIT);
+  for (let index = startIndex; index < lines.length; index += 1) {
+    const line = lines[index];
     if (!line.trim()) {
       continue;
     }
@@ -158,6 +196,10 @@ const loadMessages = () => {
   if (threadsDirty) {
     persistThreadsSync();
   }
+  console.log(
+    `[history] loaded messages=${messageQueue.length} lines=${lines.length} ` +
+      `threads=${threadMap.size} byThread=${byThread.size}`
+  );
 };
 
 const ensureLoaded = () => {

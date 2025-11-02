@@ -9,7 +9,7 @@
                     "start":  "npm run preload:build && electron .",
                     "preload:build":  "node scripts/build-preload.js --prod",
                     "preload:watch":  "node scripts/build-preload.js --watch",
-                    "dev:new-ui":  "npm run preload:build && cross-env AI_DOCK_REACT_UI=true concurrently \"npm:preload:watch\" \"npm:dev\" \"npm:electron:dev\"",
+                    "dev:new-ui":  "npm run preload:build && cross-env AI_DOCK_REACT_UI=true AI_DOCK_SKIP_AUTOTABS=1 concurrently \"npm:preload:watch\" \"npm:dev\" \"npm:electron:dev\"",
                     "electron:dev":  "electron .",
                     "electron:build":  "npm run preload:build && electron-builder --win nsis",
                     "lint":  "echo skip",

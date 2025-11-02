@@ -25,7 +25,7 @@ Electron-приложение для работы с множеством AI-к�
 `ash
 npm install
 npm run preload:build      # сборка sandbox-прелоада
-npm run dev:new-ui         # старт Vite + Electron с вотчером прелоада
+npm run dev:new-ui (auto-sets AI_DOCK_SKIP_AUTOTABS=1)         # старт Vite + Electron с вотчером прелоада
 `
 
 ### Основные npm-скрипты
