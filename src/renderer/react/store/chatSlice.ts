@@ -538,12 +538,14 @@ export const createChatSlice = <T extends ChatSlice & { actions: ChatSliceAction
     return startNewConversation();
   };
 
+  const HISTORY_FETCH_LIMIT = 200;
+
   const loadConversationHistory = async (conversationId: string) => {
     if (!conversationId || !window.chat?.getHistory) {
       return;
     }
     try {
-      const result = await window.chat.getHistory(conversationId);
+      const result = await window.chat.getHistory(conversationId, undefined, HISTORY_FETCH_LIMIT);
       const mappedMessages = Array.isArray(result?.messages)
         ? result.messages
             .map((message) => mapStoredMessageToChatMessage(conversationId, message))

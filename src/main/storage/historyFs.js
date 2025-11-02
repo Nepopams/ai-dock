@@ -189,6 +189,8 @@ const getMessages = async (conversationId, cursor, limit) => {
     if (cursorIndex !== -1) {
       startIndex = cursorIndex + 1;
     }
+  } else if (Number.isFinite(limit) && limit > 0 && messages.length > limit) {
+    startIndex = messages.length - limit;
   }
   let sliced = messages.slice(startIndex);
   if (Number.isFinite(limit) && limit > 0) {
