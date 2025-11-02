@@ -93,30 +93,7 @@ function Sidebar() {
   };
 
   const selectService = useDockStore((state) => state.actions.selectService);
-  const toggleDrawer = useDockStore((state) => state.actions.toggleDrawer);
-  const showToast = useDockStore((state) => state.actions.showToast);
   const focusLocalView = useDockStore((state) => state.actions.focusLocalView);
-
-  const bottomButtons = [
-    {
-      id: "prompts",
-      label: "Prompts",
-      icon: promptsIcon,
-      onClick: () => void toggleDrawer(true)
-    },
-    {
-      id: "about",
-      label: "About",
-      icon: infoIcon,
-      onClick: () => showToast("AI Dock v1.0.0")
-    },
-    {
-      id: "exit",
-      label: "Exit",
-      icon: exitIcon,
-      onClick: () => window.close()
-    }
-  ];
 
   const localViews = [
     {
@@ -126,6 +103,35 @@ function Sidebar() {
       isActive: activeLocalView === "chat",
       onClick: () => {
         void focusLocalView("chat");
+      }
+    },
+    {
+      id: "presets",
+      label: "Media Presets",
+      icon: promptsIcon,
+      isActive: activeLocalView === "presets",
+      onClick: () => {
+        void focusLocalView("presets");
+      }
+    }
+  ];
+
+  const bottomButtons = [
+    { id: "prompts",
+      label: "Prompts",
+      icon: promptsIcon,
+      isActive: activeLocalView === "prompts",
+      onClick: () => {
+        void focusLocalView("prompts");
+      }
+    },
+    {
+      id: "history",
+      label: "History",
+      icon: infoIcon,
+      isActive: activeLocalView === "history",
+      onClick: () => {
+        void focusLocalView("history");
       }
     },
     {
@@ -203,6 +209,8 @@ function Sidebar() {
 }
 
 export default Sidebar;
+
+
 
 
 

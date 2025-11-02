@@ -1,37 +1,156 @@
-﻿import { ForwardedRef, forwardRef, useMemo } from "react";
-import { useDockStore } from "../store/useDockStore";
+import { ForwardedRef, forwardRef, useCallback, useMemo, useState } from "react";
+import { useDockStore, TabMeta } from "../store/useDockStore";
+import InsertPromptDialog from "../views/prompts/InsertPromptDialog";
+import { PromptTemplate } from "../../../shared/types/templates";
+import { renderTemplate } from "../../../shared/utils/templateVars";
+
+const MAX_HISTORY_ITEMS = 12;
 
 const PromptRouter = forwardRef<HTMLDivElement>((_props, ref) => {
   const promptDraft = useDockStore((state) => state.promptDraft);
-  const promptHistory = useDockStore((state) => state.promptHistory);
   const promptPanelHidden = useDockStore((state) => state.promptPanelHidden);
   const selectedAgents = useDockStore((state) => state.selectedAgents);
+  const selectedTabIds = useDockStore((state) => state.selectedTabIds);
+  const tabs = useDockStore((state) => state.tabs);
   const services = useDockStore((state) => state.services);
+  const templates = useDockStore((state) => state.templates);
+  const promptHistoryEntries = useDockStore((state) => state.promptHistoryEntries);
+  const adapterStateByTab = useDockStore((state) => state.adapterStateByTab);
+
   const togglePromptPanel = useDockStore((state) => state.actions.togglePromptPanel);
   const setPromptDraft = useDockStore((state) => state.actions.setPromptDraft);
   const setSelectedAgents = useDockStore((state) => state.actions.setSelectedAgents);
+  const setSelectedTabs = useDockStore((state) => state.actions.setSelectedTabs);
+  const insertPromptToTabs = useDockStore((state) => state.actions.insertPromptToTabs);
   const sendPrompt = useDockStore((state) => state.actions.sendPrompt);
+  const showToast = useDockStore((state) => state.actions.showToast);
 
-  const historyOptions = useMemo(() => promptHistory.slice(0, 50), [promptHistory]);
+  const [isTemplatesOpen, setTemplatesOpen] = useState(false);
+
+  const aiTabs = useMemo<TabMeta[]>(() => tabs.filter((tab) => Boolean(tab.serviceId)), [tabs]);
+  const limitedHistory = useMemo(
+    () => promptHistoryEntries.slice(0, MAX_HISTORY_ITEMS),
+    [promptHistoryEntries]
+  );
+
+  const handleManualInsert = useCallback(
+    async (send: boolean) => {
+      const text = promptDraft.trim();
+      if (!text) {
+        showToast("Prompt is empty");
+        return;
+      }
+      const title = text.split("\n")[0].slice(0, 80) || "Manual prompt";
+      await insertPromptToTabs({
+        send,
+        text,
+        historyMeta: {
+          title,
+          renderedText: text
+        }
+      });
+    },
+    [insertPromptToTabs, promptDraft, showToast]
+  );
+
+  const handleTemplateSubmit = useCallback(
+    async ({
+      template,
+      values,
+      targetTabIds,
+      send
+    }: {
+      template: PromptTemplate;
+      values: Record<string, string>;
+      targetTabIds: string[];
+      send: boolean;
+    }) => {
+      const rendered = renderTemplate(template.body, values);
+      await insertPromptToTabs({
+        send,
+        text: rendered,
+        targetTabIds,
+        historyMeta: {
+          templateId: template.id,
+          title: template.title,
+          renderedText: rendered
+        }
+      });
+    },
+    [insertPromptToTabs]
+  );
+
+  const handleRecentRepeat = useCallback(
+    async (entryId: string) => {
+      const entry = promptHistoryEntries.find((item) => item.id === entryId);
+      if (!entry) {
+        return;
+      }
+      if (entry.targetTabIds?.length) {
+        setSelectedTabs(entry.targetTabIds);
+      }
+      await insertPromptToTabs({
+        send: entry.action === "insert_send",
+        text: entry.renderedPreview,
+        targetTabIds: entry.targetTabIds,
+        historyMeta: {
+          templateId: entry.templateId,
+          title: entry.title,
+          renderedText: entry.renderedPreview
+        }
+      });
+    },
+    [insertPromptToTabs, promptHistoryEntries, setSelectedTabs]
+  );
+
+  const renderAdapterStatus = () => {
+    if (!aiTabs.length) {
+      return null;
+    }
+    return (
+      <div className="adapter-status-list">
+        {aiTabs.map((tab) => {
+          const state = adapterStateByTab[tab.id];
+          let statusClass = "adapter-status--idle";
+          let statusText = "Idle";
+          if (state?.checking) {
+            statusClass = "adapter-status--checking";
+            statusText = "Checking…";
+          } else if (state?.lastError) {
+            statusClass = "adapter-status--error";
+            statusText = state.lastError;
+          } else if (state?.ready) {
+            statusClass = "adapter-status--ready";
+            statusText = "Ready";
+          }
+          return (
+            <div key={tab.id} className={`adapter-status ${statusClass}`}>
+              <span className="adapter-status-title">{tab.title || tab.id}</span>
+              <span className="adapter-status-text">{statusText}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div id="prompt-router-container" ref={ref as ForwardedRef<HTMLDivElement>}>
       <section id="prompt-router">
         <div id="prompt-toolbar">
           <button id="toggle-prompt" onClick={() => togglePromptPanel()}>
-            {promptPanelHidden ? "рџ“¤ Show" : "рџ‘Ѓ Hide"}
+            {promptPanelHidden ? "Show panel" : "Hide panel"}
           </button>
         </div>
         <div id="prompt-body" className={promptPanelHidden ? "hidden" : undefined}>
           <div className="prompt-router-row">
             <textarea
               id="prompt-input"
-              placeholder="Р’РІРµРґРёС‚Рµ РїСЂРѕРјС‚..."
-              rows={3}
+              placeholder="Write a prompt for the selected services…"
               value={promptDraft}
               onChange={(event) => setPromptDraft(event.target.value)}
               onKeyDown={(event) => {
-                if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+                if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
                   event.preventDefault();
                   void sendPrompt();
                 }
@@ -49,12 +168,12 @@ const PromptRouter = forwardRef<HTMLDivElement>((_props, ref) => {
                     setSelectedTabs(values);
                   }}
                 >
-                  {targetTabs.length === 0 && (
+                  {aiTabs.length === 0 && (
                     <option value="" disabled>
                       No AI tabs detected
                     </option>
                   )}
-                  {targetTabs.map((tab) => (
+                  {aiTabs.map((tab) => (
                     <option key={tab.id} value={tab.id}>
                       {tab.title || tab.id}
                     </option>
@@ -74,7 +193,7 @@ const PromptRouter = forwardRef<HTMLDivElement>((_props, ref) => {
                 >
                   {services.length === 0 && (
                     <option value="" disabled>
-                      �-���?�?�?����� �?��?�?��?�?�?...
+                      No services available
                     </option>
                   )}
                   {services.map((service) => (
@@ -88,86 +207,67 @@ const PromptRouter = forwardRef<HTMLDivElement>((_props, ref) => {
                 <button
                   type="button"
                   className="pill-btn ghost"
-                  onClick={() => {
-                    void insertPromptToTabs({ send: false });
-                  }}
+                  onClick={() => void handleManualInsert(false)}
                 >
                   Insert
                 </button>
                 <button
                   type="button"
                   className="pill-btn ghost"
-                  onClick={() => {
-                    void insertPromptToTabs({ send: true });
-                  }}
+                  onClick={() => void handleManualInsert(true)}
                 >
                   Insert + Send
                 </button>
                 <button
-                  id="prompt-send"
+                  type="button"
                   className="pill-btn"
-                  onClick={() => {
-                    void sendPrompt();
-                  }}
+                  onClick={() => setTemplatesOpen(true)}
+                >
+                  Templates
+                </button>
+                <button
+                  type="button"
+                  className="pill-btn ghost"
+                  onClick={() => void sendPrompt()}
                 >
                   Broadcast
                 </button>
-                <select
-                  id="prompt-history"
-                  value=""
-                  onChange={(event) => {
-                    if (event.target.value) {
-                      setPromptDraft(event.target.value);
-                      event.target.selectedIndex = 0;
-                    }
-                  }}
-                >
-                  <option value="">�?"? �?�?�'�?�?��? ���?�?�?�'�?�?</option>
-                  {historyOptions.map((prompt) => (
-                    <option key={prompt} value={prompt}>
-                      {prompt.length > 80 ? `${prompt.slice(0, 77)}...` : prompt}
-                    </option>
-                  ))}
-                </select>
               </div>
-              <div className="adapter-status-list">
-                {statusTabs.map((tab) => {
-                  const state = adapterStateByTab[tab.id];
-                  let statusText = "Idle";
-                  let statusClass = "idle";
-                  if (state?.checking) {
-                    statusText = "Checking…";
-                    statusClass = "checking";
-                  } else if (state?.lastError) {
-                    statusText = state.lastError;
-                    statusClass = "error";
-                  } else if (state?.ready) {
-                    statusText = "Ready";
-                    statusClass = "ready";
+              <select
+                id="prompt-history"
+                value=""
+                onChange={(event) => {
+                  const value = event.target.value;
+                  if (value) {
+                    void handleRecentRepeat(value);
                   }
-                  return (
-                    <div key={tab.id} className={`adapter-status adapter-status--${statusClass}`}>
-                      <span className="adapter-status-title">{tab.title || tab.id}</span>
-                      <span className="adapter-status-text">{statusText}</span>
-                    </div>
-                  );
-                })}
-              </div>
+                  event.currentTarget.selectedIndex = 0;
+                }}
+              >
+                <option value="">Recent inserts</option>
+                {limitedHistory.map((entry) => (
+                  <option key={entry.id} value={entry.id}>
+                    {entry.title.length > 60 ? `${entry.title.slice(0, 57)}…` : entry.title}
+                  </option>
+                ))}
+              </select>
+              {renderAdapterStatus()}
             </div>
           </div>
         </div>
       </section>
-      <hr className="router-separator" />
+      <InsertPromptDialog
+        open={isTemplatesOpen}
+        templates={templates}
+        tabs={aiTabs}
+        defaultTabIds={selectedTabIds}
+        onSubmit={handleTemplateSubmit}
+        onClose={() => setTemplatesOpen(false)}
+      />
     </div>
   );
 });
 
+PromptRouter.displayName = "PromptRouter";
+
 export default PromptRouter;
-
-
-
-
-
-
-
-

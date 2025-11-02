@@ -124,7 +124,11 @@ export const createAdapterStateSlice = <
       return false;
     }
 
-    const adapterId = client.adapterId as AdapterId;
+    const adapterId = resolveAdapterId(client.adapterId as string | undefined);
+    if (!adapterId) {
+      setAdapterError(tabId, "Adapter not configured");
+      return false;
+    }
     let adapter: IAgentAdapter;
     try {
       adapter = getAdapterById(adapterId);
@@ -203,7 +207,10 @@ export const createAdapterStateSlice = <
       return { ok: false, details: "Adapter not configured" };
     }
 
-    const adapterId = client.adapterId as AdapterId;
+    const adapterId = resolveAdapterId(client.adapterId as string | undefined);
+    if (!adapterId) {
+      return { ok: false, details: "Adapter not configured" };
+    }
     let adapter: IAgentAdapter;
     try {
       adapter = getAdapterById(adapterId);

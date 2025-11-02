@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs/promises");
+const fsSync = require("fs");
 const { app, BrowserWindow, ipcMain, shell, clipboard, dialog } = require("electron");
 const TabManager = require("./tabManager");
 const services = require("./services");
@@ -9,6 +10,11 @@ const { randomUUID } = require("crypto");
 const { registerChatIpc } = require("./ipc/chat");
 const { registerCompletionsIpc } = require("./ipc/completions");
 const { registerRegistryIpc } = require("./ipc/registry.ipc");
+const { registerJudgeIpc } = require("./ipc/judge.ipc");
+const { registerExportIpc } = require("./ipc/export.ipc");
+const { registerHistoryIpc } = require("./ipc/history.ipc");
+const { registerTemplatesIpc } = require("./ipc/templates.ipc");
+const { registerMediaPresetsIpc } = require("./ipc/mediaPresets.ipc");
 const { registerAdapterBridgeIpc } = require("./browserViews/adapterBridge");
 
 let mainWindow;
@@ -40,6 +46,26 @@ const getRendererUrl = () => {
   return path.join(__dirname, "..", "renderer", "index.html");
 };
 
+const resolvePreloadPath = () => {
+  if (process.env.AI_DOCK_PRELOAD_PATH) {
+    return process.env.AI_DOCK_PRELOAD_PATH;
+  }
+  const bundled = path.join(__dirname, "..", "preload", "preload.dist.js");
+  if (fsSync.existsSync(bundled)) {
+    return bundled;
+  }
+  if (isDev) {
+    console.warn(
+      `[preload] bundled file not found at ${bundled}. ` +
+        "Run `npm run preload:build` or start dev via `npm run dev:new-ui`."
+    );
+  }
+  throw new Error(
+    `Preload bundle is missing (expected at ${bundled}). ` +
+      "Set AI_DOCK_PRELOAD_PATH or run the preload build step."
+  );
+};
+
 const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -49,7 +75,7 @@ const createWindow = () => {
     show: true,
     autoHideMenuBar: true,
     webPreferences: {
-      preload: path.join(__dirname, "..", "preload", "preload.js"),
+      preload: resolvePreloadPath(),
       contextIsolation: true,
       sandbox: true,
       nodeIntegration: false,
@@ -122,6 +148,11 @@ const registerIpc = (tabManagerInstance) => {
   registerChatIpc();
   registerCompletionsIpc();
   registerRegistryIpc();
+  registerJudgeIpc();
+  registerExportIpc();
+  registerHistoryIpc();
+  registerTemplatesIpc();
+  registerMediaPresetsIpc();
   if (tabManagerInstance) {
     registerAdapterBridgeIpc(tabManagerInstance);
   }
@@ -230,7 +261,7 @@ const registerIpc = (tabManagerInstance) => {
     if (!activeView) {
       await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender) || mainWindow, {
         type: "info",
-        message: "Нет активного чата для сохранения."
+        message: "Could not find messages in the current chat."
       });
       return null;
     }
@@ -285,7 +316,7 @@ const registerIpc = (tabManagerInstance) => {
     if (!messages || !messages.length) {
       await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender) || mainWindow, {
         type: "info",
-        message: "Не удалось найти сообщения в текущем чате."
+        message: "No messages were detected in the current chat."
       });
       return null;
     }
@@ -347,5 +378,12 @@ app.on("window-all-closed", () => {
     app.quit();
   }
 });
+
+
+
+
+
+
+
 
 

@@ -2,6 +2,26 @@ export {};
 
 import type { ServiceClient, ServiceRegistryFile } from "../shared/types/registry";
 import type { RegistryListResponse, RegistrySaveResponse } from "../shared/ipc/contracts";
+import type { PromptTemplate, PromptHistoryEntry } from "../shared/types/templates";
+import type { MediaPreset } from "../shared/types/mediaPresets";
+import type { Thread as HistoryThread, Message as HistoryMessage, SearchQuery as HistorySearchQuery, SearchResult as HistorySearchResult } from "../shared/types/history";
+import type {
+  TemplatesListResponse,
+  TemplatesSaveResponse,
+  TemplatesExportResponse,
+  TemplatesImportResponse,
+  HistoryListResponse,
+  HistoryMutateResponse
+} from "../shared/ipc/templates.ipc";
+import type { JudgeInput, JudgeResult, JudgeExportPayload } from "../shared/types/judge";
+import type { JudgeRunResponse, JudgeProgressEvent } from "../shared/ipc/judge.ipc";
+import type { ExportResponse } from "../shared/ipc/export.ipc";
+import type {
+  MediaPresetsListResponse,
+  MediaPresetsSaveResponse,
+  MediaPresetsExportResponse,
+  MediaPresetsImportResponse
+} from "../shared/ipc/mediaPresets.ipc";
 
 type UnsubscribeFn = () => void;
 
@@ -163,6 +183,57 @@ interface CompletionsApi {
   testProfile: (name: string) => Promise<CompletionsTestResult>;
 }
 
+interface MediaPresetsApi {
+  list: () => Promise<MediaPresetsListResponse>;
+  save: (presets: MediaPreset[]) => Promise<MediaPresetsSaveResponse>;
+  export: (filePath?: string) => Promise<MediaPresetsExportResponse>;
+  import: (
+    options?: { filePath?: string; mergeById?: boolean; duplicateStrategy?: "overwrite" | "copy" }
+  ) => Promise<MediaPresetsImportResponse>;
+}
+
+interface TemplatesApi {
+  list: () => Promise<TemplatesListResponse>;
+  save: (
+    payload:
+      | { templates: PromptTemplate[] }
+      | PromptTemplate[]
+  ) => Promise<TemplatesSaveResponse>;
+  export: () => Promise<TemplatesExportResponse>;
+  import: () => Promise<TemplatesImportResponse>;
+  history: {
+    list: () => Promise<HistoryListResponse>;
+    append: (entry: PromptHistoryEntry) => Promise<HistoryMutateResponse>;
+    clear: () => Promise<HistoryMutateResponse>;
+  };
+}
+
+interface HistoryApi {
+  createThread: (title?: string) => Promise<{ ok: boolean; thread?: HistoryThread; error?: string }>;
+  addMessage: (message: HistoryMessage) => Promise<{ ok: boolean; error?: string }>;
+  listThreads: () => Promise<{ ok: boolean; threads?: HistoryThread[]; error?: string }>;
+  getThreadMessages: (
+    payload: { threadId: string; limit?: number; offset?: number }
+  ) => Promise<{ ok: boolean; messages?: HistoryMessage[]; error?: string }>;
+  search: (
+    query: HistorySearchQuery,
+    paging?: { limit?: number; offset?: number }
+  ) => Promise<{ ok: boolean; result?: HistorySearchResult; error?: string }>;
+  ingestLast: (
+    payload: { tabId: string; adapterId: string; threadId?: string; limit?: number }
+  ) => Promise<{ ok: boolean; added?: number; threadId?: string; error?: string; details?: string }>;
+}
+
+interface JudgeApi {
+  run: (input: JudgeInput) => Promise<JudgeRunResponse>;
+  onProgress: (cb: (event: JudgeProgressEvent) => void) => UnsubscribeFn;
+}
+
+interface ExporterApi {
+  judgeMarkdown: (payload: JudgeExportPayload) => Promise<ExportResponse>;
+  judgeJson: (payload: JudgeExportPayload) => Promise<ExportResponse>;
+}
+
 declare global {
   interface Window {
     api?: {
@@ -200,10 +271,17 @@ declare global {
     };
     chat?: ChatApi;
     completions?: CompletionsApi;
+    mediaPresets?: MediaPresetsApi;
+    templates?: TemplatesApi;
+    judge?: JudgeApi;
+    historyHub?: HistoryApi;
+    exporter?: ExporterApi;
     aiDock?: {
       saveChatMarkdown: () => Promise<void>;
     };
   }
 }
+
+
 
 

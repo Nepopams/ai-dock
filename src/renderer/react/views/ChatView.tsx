@@ -1,5 +1,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import MessageList from "../components/chat/MessageList";
+import CompareButton from "../components/CompareButton";
 import ConversationList from "../components/chat/ConversationList";
 import { useDockStore } from "../store/useDockStore";
 import {
@@ -336,6 +337,7 @@ function ChatView() {
                 </div>
               </div>
               <div className="chat-header-actions">
+                <CompareButton messages={messages} defaultJudgeProfile={activeProfileName} />
                 <button
                   type="button"
                   className="pill-btn ghost"

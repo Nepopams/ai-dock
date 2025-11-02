@@ -1,7 +1,7 @@
-const VARIABLE_PATTERN = /{{\s*([^{|}\s]+)(?:\s*\|\s*([^{}]*?))?\s*}}/g;
+export const VARIABLE_PATTERN = /{{\s*([^{|}\s]+)(?:\s*\|\s*([^{}]*?))?\s*}}/g;
 const ESCAPE_CAPTURE_PATTERN = /{{\s*({{[^{}]+}})\s*}}/g;
 
-const extractVariables = (body = "") => {
+export const extractVariables = (body = "") => {
   if (typeof body !== "string" || !body.length) {
     return [];
   }
@@ -48,7 +48,7 @@ const buildReplacer = (values) => {
   };
 };
 
-const renderTemplate = (body = "", values = {}) => {
+export const renderTemplate = (body = "", values = {}) => {
   if (typeof body !== "string" || !body.length) {
     return "";
   }
@@ -65,7 +65,7 @@ const renderTemplate = (body = "", values = {}) => {
   return rendered;
 };
 
-module.exports = {
+export default {
   extractVariables,
   renderTemplate
 };

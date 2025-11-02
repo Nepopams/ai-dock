@@ -1,7 +1,7 @@
 ﻿const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { extractVariables, renderTemplate } = require('../src/shared/utils/templateVars.js');
+const { extractVariables, renderTemplate } = require('../src/shared/utils/templateVars.cjs');
 
 test('extractVariables finds unique names and defaults', () => {
   const body = 'Hello {{name}}! Ticket {{ticketId|N/A}} and {{name}} again. Escaped {{ {{shouldStay}} }}';
