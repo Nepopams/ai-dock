@@ -78,6 +78,7 @@ const logMemory = () => {
 setInterval(logMemory, 10_000).unref();
 
 const createWindow = () => {
+  const skipAutoTabs = process.env.AI_DOCK_SKIP_AUTOTABS === "1";
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -123,7 +124,7 @@ const createWindow = () => {
   tabManager = new TabManager(mainWindow);
   mainWindow.tabManager = tabManager;
   tabManager.restore(services);
-  if (!tabManager.list().length) {
+  if (!skipAutoTabs && !tabManager.list().length && services?.chatgpt) {
     tabManager.createOrFocus(services.chatgpt);
   }
 
