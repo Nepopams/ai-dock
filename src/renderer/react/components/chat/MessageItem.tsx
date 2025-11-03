@@ -1,6 +1,6 @@
 import { MouseEvent as ReactMouseEvent, useEffect, useRef, useState } from "react";
 import { ChatMessage } from "../../store/chatSlice";
-import { createDisposableBag } from "../../utils/disposables";
+import { createDisposableBag } from "../../../utils/disposables";
 
 interface MessageItemProps {
   message: ChatMessage;

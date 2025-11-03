@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChatMessage } from "../../store/chatSlice";
 import { useDockStore } from "../../store/useDockStore";
 import MessageItem from "./MessageItem";
-import { createDisposableBag } from "../../utils/disposables";
+import { createDisposableBag } from "../../../utils/disposables";
 
 interface MessageListProps {
   messages: ChatMessage[];
