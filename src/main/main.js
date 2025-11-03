@@ -1,6 +1,7 @@
 const path = require("path");
 const fs = require("fs/promises");
 const fsSync = require("fs");
+const v8 = require("v8");
 const { app, BrowserWindow, ipcMain, shell, clipboard, dialog } = require("electron");
 const TabManager = require("./tabManager");
 const services = require("./services");
@@ -66,6 +67,12 @@ const resolvePreloadPath = () => {
   );
 };
 
+const SNAPSHOT_THRESHOLD =
+  Number(process.env.AI_DOCK_SNAPSHOT_THRESHOLD_MB || 1200) * 1024 * 1024;
+const SNAPSHOT_COOLDOWN_MS = 60_000;
+let lastSnapshotTs = 0;
+let snapshotIndex = 0;
+
 const logMemory = () => {
   const heap = process.memoryUsage();
   console.log(
@@ -73,6 +80,21 @@ const logMemory = () => {
       `heapTotal=${Math.round(heap.heapTotal / 1024 / 1024)}MB ` +
       `heapUsed=${Math.round(heap.heapUsed / 1024 / 1024)}MB`
   );
+
+  if (
+    heap.heapUsed > SNAPSHOT_THRESHOLD &&
+    Date.now() - lastSnapshotTs > SNAPSHOT_COOLDOWN_MS
+  ) {
+    try {
+      const snapshotName = `heap-main-${Date.now()}-${snapshotIndex++}.heapsnapshot`;
+      const targetPath = path.join(app.getPath("userData"), snapshotName);
+      v8.writeHeapSnapshot(targetPath);
+      lastSnapshotTs = Date.now();
+      console.log(`[mem] heap snapshot saved to ${targetPath}`);
+    } catch (error) {
+      console.error("[mem] failed to write heap snapshot", error);
+    }
+  }
 };
 
 setInterval(logMemory, 10_000).unref();
@@ -399,3 +421,20 @@ app.on("window-all-closed", () => {
 
 
 
+const logTabDiagnostics = () => {
+  if (!tabManager) {
+    return;
+  }
+  try {
+    const diagnostics = tabManager.getDiagnostics();
+    console.log(
+      `[tabs] total=${diagnostics.totalTabs} active=${diagnostics.activeTabId ?? "none"} ` +
+        `alive=${diagnostics.aliveViews} disposables=${diagnostics.totalDisposables} ` +
+        `destroyed=${diagnostics.destroyedViews}`
+    );
+  } catch (error) {
+    console.warn("[tabs] failed to collect diagnostics", error);
+  }
+};
+
+setInterval(logTabDiagnostics, 15_000).unref();

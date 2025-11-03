@@ -128,6 +128,7 @@ class TabManager {
       // ignore destroy errors
     }
     tab.view = null;
+    tab.disposables = [];
   }
 
   list() {
@@ -243,6 +244,26 @@ class TabManager {
     this.updateBounds();
   }
 
+  getDiagnostics() {
+    const totalTabs = this.tabs.length;
+    const activeTabId = this.activeTabId;
+    const aliveViews = this.tabs.filter(
+      (tab) => tab.view && tab.view.webContents && !tab.view.webContents.isDestroyed()
+    ).length;
+    const destroyedViews = totalTabs - aliveViews;
+    const totalDisposables = this.tabs.reduce(
+      (sum, tab) => sum + (Array.isArray(tab.disposables) ? tab.disposables.length : 0),
+      0
+    );
+    return {
+      totalTabs,
+      activeTabId,
+      aliveViews,
+      destroyedViews,
+      totalDisposables
+    };
+  }
+
   broadcastPrompt(text, agentIds = []) {
     if (!text || !agentIds || !agentIds.length) {
       return;
@@ -304,14 +325,26 @@ class TabManager {
 
   #wireViewEvents(tab) {
     const { view } = tab;
+    const cleanup = tab.disposables || (tab.disposables = []);
     view.webContents.setWindowOpenHandler((details) => this.#handleWindowOpen(tab, details));
-    view.webContents.on("context-menu", (event, params) => this.#handleContextMenu(tab, params));
-    view.webContents.on("page-title-updated", (_event, pageTitle) => {
+
+    const handleContextMenu = (_event, params) => this.#handleContextMenu(tab, params);
+    view.webContents.on("context-menu", handleContextMenu);
+    cleanup.push(() => view.webContents.removeListener("context-menu", handleContextMenu));
+
+    const handlePageTitleUpdated = (_event, pageTitle) => {
       tab.title = pageTitle || this.#deriveTitle(tab.url);
-    });
-    view.webContents.on("did-navigate", (_event, targetUrl) => {
+    };
+    view.webContents.on("page-title-updated", handlePageTitleUpdated);
+    cleanup.push(() =>
+      view.webContents.removeListener("page-title-updated", handlePageTitleUpdated)
+    );
+
+    const handleDidNavigate = (_event, targetUrl) => {
       tab.url = targetUrl;
-    });
+    };
+    view.webContents.on("did-navigate", handleDidNavigate);
+    cleanup.push(() => view.webContents.removeListener("did-navigate", handleDidNavigate));
   }
 
   #buildPromptInjectionScript(agentId, text) {
