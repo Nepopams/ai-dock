@@ -16,7 +16,10 @@ const { registerExportIpc } = require("./ipc/export.ipc");
 const { registerHistoryIpc } = require("./ipc/history.ipc");
 const { registerTemplatesIpc } = require("./ipc/templates.ipc");
 const { registerMediaPresetsIpc } = require("./ipc/mediaPresets.ipc");
+const { registerFormProfilesIpc } = require("./ipc/formProfiles.ipc");
+const { registerFormRunnerIpc } = require("./ipc/formRunner.ipc");
 const { registerAdapterBridgeIpc } = require("./browserViews/adapterBridge");
+const { loadRegistry } = require("./services/registry");
 
 let mainWindow;
 let tabManager;
@@ -158,10 +161,10 @@ const createWindow = () => {
 
   mainWindow.on("closed", () => {
     mainWindow = null;
-    tabManager = null;
-  });
+  tabManager = null;
+});
 
-  registerIpc(tabManager);
+registerIpc(tabManager);
 };
 
 const readPrompts = () => {
@@ -172,6 +175,91 @@ const readPrompts = () => {
 const writePrompts = (prompts) => {
   setState("prompts", prompts);
   return prompts;
+};
+
+const pickMetaString = (meta, keys) => {
+  if (!meta || typeof meta !== "object") {
+    return null;
+  }
+  for (const key of keys) {
+    const value = meta[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+  return null;
+};
+
+const normalizeUrl = (candidate) => {
+  if (typeof candidate !== "string") {
+    return null;
+  }
+  let url = candidate.trim();
+  if (!url) {
+    return null;
+  }
+  if (!/^https?:\/\//i.test(url)) {
+    url = `https://${url}`;
+  }
+  return url;
+};
+
+const deriveUrlFromClient = (client) => {
+  const metaUrl = pickMetaString(client.meta, ["defaultUrl", "startUrl", "homeUrl"]);
+  if (metaUrl) {
+    const normalizedMeta = normalizeUrl(metaUrl);
+    if (normalizedMeta) {
+      return normalizedMeta;
+    }
+  }
+  const pattern = Array.isArray(client.urlPatterns)
+    ? client.urlPatterns.find((entry) => typeof entry === "string" && entry.includes("http"))
+    : null;
+  if (pattern) {
+    const stripped = pattern.replace(/\*.*$/, "").trim();
+    const normalizedPattern = normalizeUrl(stripped);
+    if (normalizedPattern) {
+      return normalizedPattern.endsWith("/") ? normalizedPattern : `${normalizedPattern}/`;
+    }
+  }
+  return null;
+};
+
+const derivePartitionFromClient = (client) => {
+  const metaPartition = pickMetaString(client.meta, ["partition", "sessionPartition"]);
+  if (metaPartition) {
+    return metaPartition;
+  }
+  return `persist:svc-${client.id}`;
+};
+
+const resolveServiceById = async (serviceId) => {
+  const staticService = services[serviceId];
+  if (staticService) {
+    return staticService;
+  }
+
+  try {
+    const registry = await loadRegistry();
+    const client = registry.clients.find((entry) => entry.id === serviceId);
+    if (!client || client.enabled === false) {
+      return null;
+    }
+    const resolvedUrl = deriveUrlFromClient(client);
+    if (!resolvedUrl) {
+      console.warn(`[tabs] unable to determine launch url for service "${serviceId}"`);
+      return null;
+    }
+    return {
+      id: client.id,
+      title: client.title,
+      url: resolvedUrl,
+      partition: derivePartitionFromClient(client)
+    };
+  } catch (error) {
+    console.warn(`[tabs] failed to resolve service "${serviceId}" from registry`, error);
+    return null;
+  }
 };
 
 const registerIpc = (tabManagerInstance) => {
@@ -187,12 +275,14 @@ const registerIpc = (tabManagerInstance) => {
   registerHistoryIpc();
   registerTemplatesIpc();
   registerMediaPresetsIpc();
+  registerFormProfilesIpc();
+  registerFormRunnerIpc();
   if (tabManagerInstance) {
     registerAdapterBridgeIpc(tabManagerInstance);
   }
 
-  ipcMain.handle("tabs:createOrFocus", (_event, serviceId) => {
-    const service = services[serviceId];
+  ipcMain.handle("tabs:createOrFocus", async (_event, serviceId) => {
+    const service = await resolveServiceById(serviceId);
     if (!service) {
       throw new Error("Unknown service");
     }
@@ -307,7 +397,7 @@ const registerIpc = (tabManagerInstance) => {
     } else if (currentUrl.includes("claude.ai")) {
       service = "claude";
     } else if (currentUrl.includes("alice") || currentUrl.includes("dialogs.yandex")) {
-      service = "alisa";
+      service = services.alice ? "alice" : "alisa";
     } else if (currentUrl.includes("deepseek.com")) {
       service = "deepseek";
     }
@@ -326,6 +416,12 @@ const registerIpc = (tabManagerInstance) => {
         }));
       `,
       alisa: `
+        Array.from(document.querySelectorAll('.dialog__message')).map(el => ({
+          role: el.classList.contains('bot') ? 'alisa' : 'user',
+          text: (el.innerText || '').trim()
+        }));
+      `,
+      alice: `
         Array.from(document.querySelectorAll('.dialog__message')).map(el => ({
           role: el.classList.contains('bot') ? 'alisa' : 'user',
           text: (el.innerText || '').trim()

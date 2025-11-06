@@ -35,7 +35,8 @@ const loadPresets = async () => {
   const filePath = resolveFilePath();
   const data = await readJson(filePath);
   if (!data) {
-    await savePresets(() => []);
+    await ensureDirectory(filePath);
+    await fs.writeFile(filePath, "[]\n", "utf8");
     return [];
   }
   return filterPresets(data);

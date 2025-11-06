@@ -353,6 +353,7 @@ class TabManager {
       chatgpt: ["textarea[data-id='root']", "[contenteditable='true']"],
       claude: ["textarea[placeholder*='Message']", "textarea"],
       alisa: ["textarea", "input[type='text']"],
+      alice: ["textarea", "input[type='text']"],
       deepseek: [".prompt-textarea textarea", ".prompt-input textarea", "textarea"]
     };
 

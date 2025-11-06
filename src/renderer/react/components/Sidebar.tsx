@@ -17,6 +17,7 @@ const builtinIconMap: Record<string, string> = {
   chatgpt: gptIcon,
   claude: claudeIcon,
   alisa: alisaIcon,
+  alice: alisaIcon,
   deepseek: deepseekIcon,
   uxpilot: uxpilotIcon
 };
@@ -117,6 +118,15 @@ function Sidebar() {
   ];
 
   const bottomButtons = [
+    {
+      id: "formProfiles",
+      label: "Form Profiles",
+      icon: connectionsIcon,
+      isActive: activeLocalView === "formProfiles",
+      onClick: () => {
+        void focusLocalView("formProfiles");
+      }
+    },
     { id: "prompts",
       label: "Prompts",
       icon: promptsIcon,

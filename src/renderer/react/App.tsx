@@ -15,6 +15,8 @@ import TemplatesManager from "./views/prompts/TemplatesManager";
 import HistoryView from "./views/history/HistoryView";
 import CompareView from "./views/CompareView";
 import PresetsGallery from "./views/presets/PresetsGallery";
+import FormProfilesManager from "./views/forms/FormProfilesManager";
+import FormRunView from "./views/forms/FormRunView";
 import { useDockStore } from "./store/useDockStore";
 
 function App() {
@@ -35,6 +37,8 @@ function App() {
       <main id="content">
         {activeLocalView === "chat" && <ChatView />}
         {activeLocalView === "completions" && <ConnectionsSettings />}
+        {activeLocalView === "formProfiles" && <FormProfilesManager />}
+        {activeLocalView === "formRun" && <FormRunView />}
         {activeLocalView === "prompts" && <TemplatesManager />}
         {activeLocalView === "history" && <HistoryView />}
         {activeLocalView === "presets" && <PresetsGallery />}
