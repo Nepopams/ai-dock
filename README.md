@@ -1,76 +1,93 @@
-ï»¿# VR AI Dock
+# VR AI Dock
+ - **Form Runner (stream)** - SSE/NDJSON chanki, Abort, heartbeats/statusy i kopiya strima.
 
-Electron-Ð¿Ñ€Ð¸Ð»Ð¾Ð¶ÐµÐ½Ð¸Ðµ Ð´Ð»Ñ Ñ€Ð°Ð±Ð¾Ñ‚Ñ‹ Ñ Ð¼Ð½Ð¾Ð¶ÐµÑÑ‚Ð²Ð¾Ð¼ AI-ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð¾Ð² Ð² Ñ„Ð¾Ñ€Ð¼Ð°Ñ‚Ðµ Ð´Ð¾Ðº-Ð¿Ð°Ð½ÐµÐ»Ð¸. Ð˜Ð½Ñ‚ÐµÑ€Ñ„ÐµÐ¹Ñ Ð½Ð°Ð¿Ð¸ÑÐ°Ð½ Ð½Ð° React/Vite Ñ Zustand, Ð¾ÑÐ½Ð¾Ð²Ð½Ð°Ñ Ð»Ð¾Ð³Ð¸ÐºÐ° Ð¶Ð¸Ð²Ñ‘Ñ‚ Ð² Ð¿Ñ€Ð¾Ñ†ÐµÑÑÐµ Electron main, Ð¾Ð±Ð¼ÐµÐ½ Ñ renderer Ð¸Ð´Ñ‘Ñ‚ Ñ‡ÐµÑ€ÐµÐ· Ð¶Ñ‘ÑÑ‚ÐºÐ¾ Ñ‚Ð¸Ð¿Ð¸Ð·Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ðµ IPC-Ð¼Ð¾ÑÑ‚Ñ‹ Ð¸ sandboxed preload.
+Electron-ïðèëîæåíèå äëÿ ðàáîòû ñ ìíîæåñòâîì AI-êëèåíòîâ â ôîðìàòå äîê-ïàíåëè. Èíòåðôåéñ íàïèñàí íà React/Vite ñ Zustand, îñíîâíàÿ ëîãèêà æèâ¸ò â ïðîöåññå Electron main, îáìåí ñ renderer èä¸ò ÷åðåç æ¸ñòêî òèïèçèðîâàííûå IPC-ìîñòû è sandboxed preload.
 
-## ÐžÑÐ½Ð¾Ð²Ð½Ñ‹Ðµ Ð²Ð¾Ð·Ð¼Ð¾Ð¶Ð½Ð¾ÑÑ‚Ð¸
-- **Ð’ÐºÐ»Ð°Ð´ÐºÐ° Chat** â€” ÑÑ‚Ñ€Ð¸Ð¼Ð¸Ð½Ð³Ð¾Ð²Ñ‹Ðµ Ð´Ð¸Ð°Ð»Ð¾Ð³Ð¸ Ñ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÑÐ¼Ð¸ Ð¿Ñ€Ð¾Ð²Ð°Ð¹Ð´ÐµÑ€Ð¾Ð², Ð¿Ð¾Ð´Ð´ÐµÑ€Ð¶ÐºÐ° retry/abort, Ð¸ÑÑ‚Ð¾Ñ€Ð¸Ñ Ð´Ð¸Ð°Ð»Ð¾Ð³Ð¾Ð² Ð½Ð° Ð´Ð¸ÑÐºÐµ.
-- **Completions Profiles** â€” Ð±ÐµÐ·Ð¾Ð¿Ð°ÑÐ½Ð¾Ðµ Ñ…Ñ€Ð°Ð½ÐµÐ½Ð¸Ðµ Ñ‚Ð¾ÐºÐµÐ½Ð¾Ð², Ð´Ñ€Ð°Ð¹Ð²ÐµÑ€Ñ‹ OpenAI-compatible Ð¸ Generic HTTP, Ñ‚ÐµÑÑ‚ Ð¿Ð¾Ð´ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ñ.
-- **Media Presets** â€” Ð±Ð¸Ð±Ð»Ð¸Ð¾Ñ‚ÐµÐºÐ° Ð¿Ñ€ÐµÑÐµÑ‚Ð¾Ð² Ð´Ð»Ñ Ð³ÐµÐ½ÐµÑ€Ð°Ñ†Ð¸Ð¸ Ð¸Ð·Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ð¹/Ð²Ð¸Ð´ÐµÐ¾ Ñ Ð±Ñ‹ÑÑ‚Ñ€Ñ‹Ð¼ Ð¿Ñ€Ð¸Ð¼ÐµÐ½ÐµÐ½Ð¸ÐµÐ¼ Ðº Ð·Ð°Ñ€ÐµÐ³Ð¸ÑÑ‚Ñ€Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ð¼ ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð°Ð¼.
-- **History Hub** â€” Ð°Ð³Ñ€ÐµÐ³Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ðµ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ð¹ Ð¸Ð· Ñ€Ð°Ð·Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð² Ñ Ð¿Ð¾Ð¸ÑÐºÐ¾Ð¼ Ð¸ Ð¾Ñ‚ÐºÑ€Ñ‹Ñ‚Ð¸ÐµÐ¼ Ð² Ð¸ÑÑ…Ð¾Ð´Ð½Ð¾Ð¼ ÐºÐ»Ð¸ÐµÐ½Ñ‚Ðµ.
-- **Registry & Adapters** â€” Ñ€ÐµÐµÑÑ‚Ñ€ Ð²ÐµÐ±-ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð¾Ð², IPC-Ð¼Ð¾ÑÑ‚ Ð´Ð»Ñ Ð²Ñ‹Ð¿Ð¾Ð»Ð½ÐµÐ½Ð¸Ñ ÑÐºÑ€Ð¸Ð¿Ñ‚Ð¾Ð² Ð² Ð¸Ñ… Ð²ÐºÐ»Ð°Ð´ÐºÐ°Ñ….
+## Îñíîâíûå âîçìîæíîñòè
+- **Âêëàäêà Chat** — ñòðèìèíãîâûå äèàëîãè ñ ïðîôèëÿìè ïðîâàéäåðîâ, ïîääåðæêà retry/abort, èñòîðèÿ äèàëîãîâ íà äèñêå.
+- **Completions Profiles** — áåçîïàñíîå õðàíåíèå òîêåíîâ, äðàéâåðû OpenAI-compatible è Generic HTTP, òåñò ïîäêëþ÷åíèÿ.
+- **Form Runner (sync)** - zapusk form-profilya kak HTTP-zaprosa, preview (URL/headers/body) i kontrol timeoutov.
+ - **Form Runner (stream)** - SSE/NDJSON chanki, Abort, heartbeats/statusy i kopiya strima.
+- **Media Presets** — áèáëèîòåêà ïðåñåòîâ äëÿ ãåíåðàöèè èçîáðàæåíèé/âèäåî ñ áûñòðûì ïðèìåíåíèåì ê çàðåãèñòðèðîâàííûì êëèåíòàì.
+- **History Hub** — àãðåãèðîâàíèå ñîîáùåíèé èç ðàçíûõ èñòî÷íèêîâ ñ ïîèñêîì è îòêðûòèåì â èñõîäíîì êëèåíòå.
+- **Registry & Adapters** — ðååñòð âåá-êëèåíòîâ, IPC-ìîñò äëÿ âûïîëíåíèÿ ñêðèïòîâ â èõ âêëàäêàõ.
 
-## ÐÑ€Ñ…Ð¸Ñ‚ÐµÐºÑ‚ÑƒÑ€Ð°
-- src/main â€” Ð¿Ñ€Ð¾Ñ†ÐµÑÑ Electron: ÑÐ¾Ð·Ð´Ð°Ð½Ð¸Ðµ Ð¾ÐºÐ¾Ð½, IPC, ÑÐ»ÑƒÐ¶Ð±Ñ‹ (chatBridge, settings, historyStore, mediaPresets Ð¸ Ð´Ñ€.).
-- src/preload â€” sandbox-Ð¼Ð¾ÑÑ‚ Ð¼ÐµÐ¶Ð´Ñƒ renderer Ð¸ main. Ð¡Ð±Ð¾Ñ€ÐºÐ° Ð²Ñ‹Ð¿Ð¾Ð»Ð½ÑÐµÑ‚ÑÑ Ð² ÐµÐ´Ð¸Ð½Ñ‹Ð¹ Ð±Ð°Ð½Ð´Ð» preload.dist.js.
-- src/renderer/react â€” React/Vite UI (Views, Components, Zustand store, Tailwind ÑÑ‚Ð¸Ð»Ð¸).
-- src/shared â€” Ð¾Ð±Ñ‰Ð¸Ðµ Ñ‚Ð¸Ð¿Ñ‹, ÐºÐ¾Ð½Ñ‚Ñ€Ð°ÐºÑ‚Ñ‹ IPC, ÑƒÑ‚Ð¸Ð»Ð¸Ñ‚Ñ‹.
-- scripts â€” Ð²ÑÐ¿Ð¾Ð¼Ð¾Ð³Ð°Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ðµ ÑÑ†ÐµÐ½Ð°Ñ€Ð¸Ð¸ (build-preload, smoke-Ð³Ð°Ð¹Ð´Ñ‹).
+## Àðõèòåêòóðà
+- src/main — ïðîöåññ Electron: ñîçäàíèå îêîí, IPC, ñëóæáû (chatBridge, settings, historyStore, mediaPresets è äð.).
+- src/preload — sandbox-ìîñò ìåæäó renderer è main. Ñáîðêà âûïîëíÿåòñÿ â åäèíûé áàíäë preload.dist.js.
+- src/renderer/react — React/Vite UI (Views, Components, Zustand store, Tailwind ñòèëè).
+- src/shared — îáùèå òèïû, êîíòðàêòû IPC, óòèëèòû.
+- scripts — âñïîìîãàòåëüíûå ñöåíàðèè (build-preload, smoke-ãàéäû).
 
-## Ð¢Ñ€ÐµÐ±Ð¾Ð²Ð°Ð½Ð¸Ñ
+## Òðåáîâàíèÿ
 - Node.js 20+
 - npm 10+
-- Windows (Ð¿Ð¾Ð´Ð´ÐµÑ€Ð¶Ð¸Ð²Ð°ÑŽÑ‚ÑÑ Ð¸ Ð´Ñ€ÑƒÐ³Ð¸Ðµ Ð¿Ð»Ð°Ñ‚Ñ„Ð¾Ñ€Ð¼Ñ‹, Ð½Ð¾ ÑÐ±Ð¾Ñ€ÐºÐ° Ñ‚ÐµÑÑ‚Ð¸Ñ€Ð¾Ð²Ð°Ð»Ð°ÑÑŒ Ð² Windows Ð¾ÐºÑ€ÑƒÐ¶ÐµÐ½Ð¸Ð¸).
+- Windows (ïîääåðæèâàþòñÿ è äðóãèå ïëàòôîðìû, íî ñáîðêà òåñòèðîâàëàñü â Windows îêðóæåíèè).
 
-## Ð£ÑÑ‚Ð°Ð½Ð¾Ð²ÐºÐ° Ð¸ Ð·Ð°Ð¿ÑƒÑÐº
+## Óñòàíîâêà è çàïóñê
 `ash
 npm install
-npm run preload:build      # ÑÐ±Ð¾Ñ€ÐºÐ° sandbox-Ð¿Ñ€ÐµÐ»Ð¾Ð°Ð´Ð°
-npm run dev:new-ui (auto-sets AI_DOCK_SKIP_AUTOTABS=1)         # ÑÑ‚Ð°Ñ€Ñ‚ Vite + Electron Ñ Ð²Ð¾Ñ‚Ñ‡ÐµÑ€Ð¾Ð¼ Ð¿Ñ€ÐµÐ»Ð¾Ð°Ð´Ð°
+npm run preload:build      # ñáîðêà sandbox-ïðåëîàäà
+npm run dev:new-ui (auto-sets AI_DOCK_SKIP_AUTOTABS=1)         # ñòàðò Vite + Electron ñ âîò÷åðîì ïðåëîàäà
 `
 
-### ÐžÑÐ½Ð¾Ð²Ð½Ñ‹Ðµ npm-ÑÐºÑ€Ð¸Ð¿Ñ‚Ñ‹
-| Ð¡ÐºÑ€Ð¸Ð¿Ñ‚ | ÐÐ°Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ðµ |
+### Îñíîâíûå npm-ñêðèïòû
+| Ñêðèïò | Íàçíà÷åíèå |
 | --- | --- |
 | 
-pm run dev | Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Vite (renderer) |
+pm run dev | òîëüêî Vite (renderer) |
 | 
-pm run preload:watch | Ð²Ð¾Ñ‚Ñ‡ÐµÑ€ esbuild Ð´Ð»Ñ Ð¿Ñ€ÐµÐ»Ð¾Ð°Ð´Ð° |
+pm run preload:watch | âîò÷åð esbuild äëÿ ïðåëîàäà |
 | 
-pm run dev:new-ui | Ð¿Ð°Ñ€Ð°Ð»Ð»ÐµÐ»ÑŒÐ½Ð¾ preload watch + Vite + Electron |
+pm run dev:new-ui | ïàðàëëåëüíî preload watch + Vite + Electron |
 | 
-pm run build | production-ÑÐ±Ð¾Ñ€ÐºÐ° React UI |
+pm run build | production-ñáîðêà React UI |
 | 
-pm run preload:build | production-Ð±Ð°Ð½Ð´Ð» Ð¿Ñ€ÐµÐ»Ð¾Ð°Ð´Ð° |
+pm run preload:build | production-áàíäë ïðåëîàäà |
 | 
-pm run start | Ð·Ð°Ð¿ÑƒÑÐº Electron cÐ¾ ÑÐ²ÐµÐ¶Ð¸Ð¼ Ð¿Ñ€ÐµÐ»Ð¾Ð°Ð´Ð¾Ð¼ Ð¸ prod UI |
+pm run start | çàïóñê Electron cî ñâåæèì ïðåëîàäîì è prod UI |
 | 
-pm run electron:build | ÑÐ±Ð¾Ñ€ÐºÐ° Ð´Ð¸ÑÑ‚Ñ€Ð¸Ð±ÑƒÑ‚Ð¸Ð²Ð° Ñ‡ÐµÑ€ÐµÐ· electron-builder |
+pm run electron:build | ñáîðêà äèñòðèáóòèâà ÷åðåç electron-builder |
 | 
-pm test | Node test runner (ÑÐ¼. 	ests/) |
+pm test | Node test runner (ñì. 	ests/) |
 
-## Ð¡Ñ‚Ñ€ÑƒÐºÑ‚ÑƒÑ€Ð° ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³Ð¾Ð²
+## Ñòðóêòóðà êàòàëîãîâ
 `	ext
 src/
-  main/            # Ð­Ð»ÐµÐºÑ‚Ñ€Ð¾Ð½ main Ð¿Ñ€Ð¾Ñ†ÐµÑÑ Ð¸ ÑÐµÑ€Ð²Ð¸ÑÑ‹
-  preload/         # index.ts + modules/* + utils/* (esbuild Ð±Ð°Ð½Ð´Ð»)
-  renderer/react/  # React/Bvite UI, Zustand store, Tailwind ÑÑ‚Ð¸Ð»Ð¸
-  shared/          # Ñ‚Ð¸Ð¿Ñ‹, IPC ÐºÐ¾Ð½Ñ‚Ñ€Ð°ÐºÑ‚Ñ‹, Ð¾Ð±Ñ‰Ð¸Ðµ ÑƒÑ‚Ð¸Ð»Ð¸Ñ‚Ñ‹
-scripts/           # build-preload, smoke/ ÑÑ†ÐµÐ½Ð°Ñ€Ð¸Ð¸ Ð¸ Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚Ð°Ñ†Ð¸Ñ
+  main/            # Ýëåêòðîí main ïðîöåññ è ñåðâèñû
+  preload/         # index.ts + modules/* + utils/* (esbuild áàíäë)
+  renderer/react/  # React/Bvite UI, Zustand store, Tailwind ñòèëè
+  shared/          # òèïû, IPC êîíòðàêòû, îáùèå óòèëèòû
+scripts/           # build-preload, smoke/ ñöåíàðèè è äîêóìåíòàöèÿ
 `
 
-## Ð¢ÐµÑÑ‚Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ðµ
-- Node Ñ‚ÐµÑÑ‚Ñ‹ (
-pm test) Ð¿Ð¾ÐºÑ€Ñ‹Ð²Ð°ÑŽÑ‚ ÑƒÑ‚Ð¸Ð»Ð¸Ñ‚Ñ‹ Ð¸ Ð¾ÑÐ½Ð¾Ð²Ð½Ñ‹Ðµ ÑÐµÑ€Ð²Ð¸ÑÑ‹.
-- Smoke-ÑÑ†ÐµÐ½Ð°Ñ€Ð¸Ð¸ Ð² scripts/smoke/*.md Ð¿Ð¾Ð¼Ð¾Ð³Ð°ÑŽÑ‚ Ð²Ñ€ÑƒÑ‡Ð½ÑƒÑŽ Ð¿Ñ€Ð¾Ð²ÐµÑ€Ð¸Ñ‚ÑŒ ÐºÐ»ÑŽÑ‡ÐµÐ²Ñ‹Ðµ Ñ„Ð¸Ñ‡Ð¸ (history, media presets, prompt utilities Ð¸ Ñ‚.Ð´.).
+## Òåñòèðîâàíèå
+- Node òåñòû (
+pm test) ïîêðûâàþò óòèëèòû è îñíîâíûå ñåðâèñû.
+- Smoke-ñöåíàðèè â scripts/smoke/*.md ïîìîãàþò âðó÷íóþ ïðîâåðèòü êëþ÷åâûå ôè÷è (history, media presets, prompt utilities è ò.ä.).
 
-## Ð’Ð½ÐµÑÐµÐ½Ð¸Ðµ Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ð¹
-1. Ð—Ð°Ð¿ÑƒÑÐºÐ°Ð¹Ñ‚Ðµ 
-pm run dev:new-ui, Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð°Ð²Ñ‚Ð¾Ð¼Ð°Ñ‚Ð¾Ð¼ Ð¿ÐµÑ€ÐµÑÐ¾Ð±Ð¸Ñ€Ð°Ñ‚ÑŒ preload Ð¸ UI.
-2. ÐŸÑ€Ð¸ Ð´Ð¾Ð±Ð°Ð²Ð»ÐµÐ½Ð¸Ð¸ IPC Ð¾Ð±Ð½Ð¾Ð²Ð»ÑÐ¹Ñ‚Ðµ Ñ‚Ð¸Ð¿Ñ‹ Ð² src/shared/ipc Ð¸ ÑÐ¾Ð¾Ñ‚Ð²ÐµÑ‚ÑÑ‚Ð²ÑƒÑŽÑ‰Ð¸Ðµ Ð¸Ð½Ñ‚ÐµÑ€Ñ„ÐµÐ¹ÑÑ‹ Ð² src/types/renderer.d.ts.
-3. ÐŸÐµÑ€ÐµÐ´ PR/commit Ð¿Ñ€Ð¾Ð²ÐµÑ€ÑÐ¹Ñ‚Ðµ 
-pm test, smoke-Ð³Ð°Ð¹Ð´Ñ‹ Ð¸ Ð½Ðµ Ð·Ð°Ð±Ñ‹Ð²Ð°Ð¹Ñ‚Ðµ Ð¿Ñ€Ð¾ 
+## Âíåñåíèå èçìåíåíèé
+1. Çàïóñêàéòå 
+pm run dev:new-ui, ÷òîáû àâòîìàòîì ïåðåñîáèðàòü preload è UI.
+2. Ïðè äîáàâëåíèè IPC îáíîâëÿéòå òèïû â src/shared/ipc è ñîîòâåòñòâóþùèå èíòåðôåéñû â src/types/renderer.d.ts.
+3. Ïåðåä PR/commit ïðîâåðÿéòå 
+pm test, smoke-ãàéäû è íå çàáûâàéòå ïðî 
 pm run preload:build.
-4. ÐÐ¾Ð²Ñ‹Ðµ Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚Ñ‹ ÐºÐ»Ð°Ð´Ð¸Ñ‚Ðµ Ð² docs/ Ð¸Ð»Ð¸ scripts/smoke Ð² Ð·Ð°Ð²Ð¸ÑÐ¸Ð¼Ð¾ÑÑ‚Ð¸ Ð¾Ñ‚ Ñ„Ð¾Ñ€Ð¼Ð°Ñ‚Ð°.
+4. Íîâûå äîêóìåíòû êëàäèòå â docs/ èëè scripts/smoke â çàâèñèìîñòè îò ôîðìàòà.
 
-## Ð›Ð¸Ñ†ÐµÐ½Ð·Ð¸Ñ
-ÐŸÐ¾ ÑƒÐ¼Ð¾Ð»Ñ‡Ð°Ð½Ð¸ÑŽ Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ÑÑ Ð»Ð¸Ñ†ÐµÐ½Ð·Ð¸Ñ Ð¸Ð· ÐºÐ¾Ñ€Ð½ÐµÐ²Ð¾Ð³Ð¾ package.json (Ð¿Ñ€Ð¸ Ð½ÐµÐ¾Ð±Ñ…Ð¾Ð´Ð¸Ð¼Ð¾ÑÑ‚Ð¸ Ð¾Ð±Ð½Ð¾Ð²Ð¸Ñ‚Ðµ Ñ€Ð°Ð·Ð´ÐµÐ»).
+## Ëèöåíçèÿ
+Ïî óìîë÷àíèþ èñïîëüçóåòñÿ ëèöåíçèÿ èç êîðíåâîãî package.json (ïðè íåîáõîäèìîñòè îáíîâèòå ðàçäåë).
+
+## Form Runner (sync)
+- Otkryite Form Profiles -> knopka "Open Run..." dlya vibora profilja.
+- V levoy kolonke zapolnite pola po sheme (checkbox/file pole otrazhaetsya tolko dlya informacii).
+- Upravlyaite connect/total timeout (ms) pered zapuskom, knopka Run otpravlyaet sync HTTP zapros.
+- Panel "Request Preview" pokazyvaet tekushchiy URL, method, zagolovki i body (bez sekretnyh znacheniy).
+- V bloke "Last Response" vidny status, latency, zagolovki i telo (json/text/empty), est knopki copy.
+
+## Form Runner (stream)
+- Vyberite profil so stream-mode (sse/ndjson) v Form Profiles pered otkrytiem Run.
+- Zapolnite formu i zadayte connect/idle/total timeouty; knopka "Run (Stream)" nachinaet potok, knopka Abort ostanavlivaet ?500 ms.
+- Panel "Stream Output" pokazhet status (open/heartbeat/closed), kol-vo simvolov, vremya poslednego chanka i knopku "Copy streamed text".
+- Pri otkljuchenii autoscrolla pojavljaetsja knopka "Scroll to latest" dlya bystrogo vozvraschenija k hvostu potoka.
+- Timeouty connect/idle/total sozdayut oshibku v status-pane i zakryvajut strim, sootvetstvuyuscij state vidno v UI.

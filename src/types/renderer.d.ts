@@ -22,6 +22,28 @@ import type {
   MediaPresetsExportResponse,
   MediaPresetsImportResponse
 } from "../shared/ipc/mediaPresets.ipc";
+import type {
+  FormProfilesListRes,
+  FormProfilesSaveReq,
+  FormProfilesSaveRes,
+  FormProfilesDeleteReq,
+  FormProfilesDeleteRes,
+  FormProfilesDuplicateReq,
+  FormProfilesDuplicateRes,
+  FormProfilesTestReq,
+  FormProfilesTestRes
+} from "../shared/ipc/formProfiles.contracts";
+import type {
+  RunRes,
+  RunSource,
+  StreamReq,
+  StreamStarted,
+  StreamAbortReq,
+  StreamDelta,
+  StreamDone,
+  StreamError,
+  StreamStatus
+} from "../shared/ipc/formRunner.contracts";
 
 type UnsubscribeFn = () => void;
 
@@ -183,6 +205,32 @@ interface CompletionsApi {
   testProfile: (name: string) => Promise<CompletionsTestResult>;
 }
 
+interface FormProfilesApi {
+  list: () => Promise<FormProfilesListRes>;
+  save: (req: FormProfilesSaveReq) => Promise<FormProfilesSaveRes>;
+  delete: (req: FormProfilesDeleteReq) => Promise<FormProfilesDeleteRes>;
+  duplicate: (req: FormProfilesDuplicateReq) => Promise<FormProfilesDuplicateRes>;
+  test: (req: FormProfilesTestReq) => Promise<FormProfilesTestRes>;
+}
+
+interface FormRunnerApi {
+  runSync: (
+    source: RunSource,
+    options?: {
+      connectTimeoutMs?: number;
+      totalTimeoutMs?: number;
+    }
+  ) => Promise<RunRes>;
+  stream: {
+    start: (req: StreamReq) => Promise<StreamStarted>;
+    abort: (req: StreamAbortReq) => Promise<{ ok: true }>;
+    onDelta: (cb: (ev: StreamDelta) => void) => UnsubscribeFn;
+    onDone: (cb: (ev: StreamDone) => void) => UnsubscribeFn;
+    onError: (cb: (ev: StreamError) => void) => UnsubscribeFn;
+    onStatus: (cb: (ev: StreamStatus) => void) => UnsubscribeFn;
+  };
+}
+
 interface MediaPresetsApi {
   list: () => Promise<MediaPresetsListResponse>;
   save: (presets: MediaPreset[]) => Promise<MediaPresetsSaveResponse>;
@@ -271,6 +319,8 @@ declare global {
     };
     chat?: ChatApi;
     completions?: CompletionsApi;
+    formProfiles?: FormProfilesApi;
+    formRunner?: FormRunnerApi;
     mediaPresets?: MediaPresetsApi;
     templates?: TemplatesApi;
     judge?: JudgeApi;

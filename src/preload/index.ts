@@ -11,6 +11,8 @@ import registerJudge from "./modules/judge";
 import registerExporter from "./modules/exporter";
 import registerAdapterBridge from "./modules/adapterBridge";
 import registerRegistry from "./modules/registry";
+import registerFormProfiles from "./modules/formProfiles";
+import registerFormRunner from "./modules/formRunner";
 import {
   IPC_HISTORY_THREAD_CREATE,
   IPC_HISTORY_MESSAGE_ADD,
@@ -42,6 +44,22 @@ import {
   IPC_EXPORT_JUDGE_MD,
   IPC_EXPORT_JUDGE_JSON
 } from "../shared/ipc/export.ipc";
+import {
+  FORM_PROFILES_LIST,
+  FORM_PROFILES_SAVE,
+  FORM_PROFILES_DELETE,
+  FORM_PROFILES_DUPLICATE,
+  FORM_PROFILES_TEST
+} from "../shared/ipc/formProfiles.contracts";
+import {
+  FORM_RUN_SYNC,
+  FORM_RUN_STREAM_START,
+  FORM_RUN_STREAM_ABORT,
+  FORM_RUN_STREAM_DELTA,
+  FORM_RUN_STREAM_DONE,
+  FORM_RUN_STREAM_ERROR,
+  FORM_RUN_STREAM_STATUS
+} from "../shared/ipc/formRunner.contracts";
 
 const IPC_REGISTRY_LIST = "registry:list";
 const IPC_REGISTRY_SAVE = "registry:save";
@@ -155,5 +173,31 @@ registerRegistry({
     WATCH_START: IPC_REGISTRY_WATCH_START,
     WATCH_STOP: IPC_REGISTRY_WATCH_STOP,
     CHANGED: IPC_REGISTRY_CHANGED
+  }
+});
+registerFormProfiles({
+  contextBridge,
+  safeInvoke,
+  validateString,
+  IPC: {
+    LIST: FORM_PROFILES_LIST,
+    SAVE: FORM_PROFILES_SAVE,
+    DELETE: FORM_PROFILES_DELETE,
+    DUPLICATE: FORM_PROFILES_DUPLICATE,
+    TEST: FORM_PROFILES_TEST
+  }
+});
+registerFormRunner({
+  contextBridge,
+  safeInvoke,
+  ipcRenderer,
+  IPC: {
+    RUN_SYNC: FORM_RUN_SYNC,
+    STREAM_START: FORM_RUN_STREAM_START,
+    STREAM_ABORT: FORM_RUN_STREAM_ABORT,
+    STREAM_DELTA: FORM_RUN_STREAM_DELTA,
+    STREAM_DONE: FORM_RUN_STREAM_DONE,
+    STREAM_ERROR: FORM_RUN_STREAM_ERROR,
+    STREAM_STATUS: FORM_RUN_STREAM_STATUS
   }
 });

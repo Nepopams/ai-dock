@@ -25,6 +25,21 @@ import {
   createMediaPresetsSlice
 } from "../../store/mediaPresetsSlice";
 import {
+  FormProfilesSlice,
+  FormProfilesActions,
+  createFormProfilesSlice
+} from "../../store/formProfilesSlice";
+import {
+  FormStreamSlice,
+  FormStreamActions,
+  createFormStreamSlice
+} from "../../store/formStreamSlice";
+import {
+  FormRunSlice,
+  FormRunActions,
+  createFormRunSlice
+} from "../../store/formRunSlice";
+import {
   PromptHistorySlice,
   PromptHistoryActions,
   createPromptHistorySlice
@@ -139,6 +154,8 @@ interface ToastState {
 type LocalViewId =
   | "chat"
   | "completions"
+  | "formProfiles"
+  | "formRun"
   | "prompts"
   | "history"
   | "presets"
@@ -183,6 +200,9 @@ export type DockActions = BaseActions &
   RegistrySliceActions &
   AdapterStateActions &
   TemplatesSliceActions &
+  FormProfilesActions &
+  FormStreamActions &
+  FormRunActions &
   MediaPresetsActions &
   HistoryActions &
   PromptHistoryActions &
@@ -193,6 +213,9 @@ export interface DockState
     RegistrySlice,
     AdapterStateSlice,
     TemplatesSlice,
+    FormProfilesSlice,
+    FormStreamSlice,
+    FormRunSlice,
     MediaPresetsSlice,
     HistorySlice,
     PromptHistorySlice,
@@ -235,6 +258,18 @@ export const useDockStore = create<DockState>((set, get) => {
     get as any
   );
   const templatesSlice = createTemplatesSlice<DockState & { actions: DockActions }>(
+    set,
+    get as any
+  );
+  const formProfilesSlice = createFormProfilesSlice<DockState & { actions: DockActions }>(
+    set,
+    get as any
+  );
+  const formStreamSlice = createFormStreamSlice<DockState & { actions: DockActions }>(
+    set,
+    get as any
+  );
+  const formRunSlice = createFormRunSlice<DockState & { actions: DockActions }>(
     set,
     get as any
   );
@@ -745,6 +780,9 @@ export const useDockStore = create<DockState>((set, get) => {
     ...registrySlice.state,
     ...adapterSlice.state,
     ...templatesSlice.state,
+    ...formProfilesSlice.state,
+    ...formStreamSlice.state,
+    ...formRunSlice.state,
     ...mediaPresetsSlice.state,
     ...promptHistorySlice.state,
     ...historySlice.state,
@@ -755,6 +793,9 @@ export const useDockStore = create<DockState>((set, get) => {
       ...registrySlice.actions,
       ...adapterSlice.actions,
       ...templatesSlice.actions,
+      ...formProfilesSlice.actions,
+      ...formStreamSlice.actions,
+      ...formRunSlice.actions,
       ...mediaPresetsSlice.actions,
       ...promptHistorySlice.actions,
       ...historySlice.actions,
@@ -949,6 +990,9 @@ if (typeof window !== "undefined") {
   const actions = useDockStore.getState().actions;
   if (actions?.fetchTemplates) {
     void actions.fetchTemplates();
+  }
+  if (actions?.fetchFormProfiles) {
+    void actions.fetchFormProfiles();
   }
   if (actions?.fetchMediaPresets) {
     void actions.fetchMediaPresets();
