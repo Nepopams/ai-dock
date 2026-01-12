@@ -731,6 +731,16 @@ const FormRunView = () => {
               </div>
             )}
             {!profile && !formProfilesLoading && (
+              <div className="rounded border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-slate-300">
+                Select a profile to start running a form.
+              </div>
+            )}
+            {profile && (
+              <div className="space-y-4">
+                {profile.schema.fields.map((field) => renderField(field))}
+              </div>
+            )}
+          </div>
           <div className="flex items-center justify-between border-t border-slate-900 px-6 py-3">
             <div className="flex items-center gap-2">
               <button
@@ -769,19 +779,6 @@ const FormRunView = () => {
                 </button>
               )}
             </div>
-            <button
-              type="button"
-              onClick={runRequest}
-              disabled={!profile || formRunRunning}
-              className={`rounded px-4 py-2 text-sm font-medium ${
-                !profile || formRunRunning
-                  ? "cursor-not-allowed bg-slate-700 text-slate-400"
-                  : "bg-emerald-600 text-white hover:bg-emerald-500"
-              }`}
-            >
-              {formRunRunning ? "Running�" : "Run"}
-            </button>
-          </div>
             <button
               type="button"
               onClick={runRequest}
