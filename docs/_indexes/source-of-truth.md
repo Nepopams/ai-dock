@@ -41,6 +41,8 @@
 26. `docs/architecture/react-renderer-smoke-report.md` - Human-provided manual smoke evidence closing React renderer default confidence after IN-2026-009.
 27. `docs/architecture/non-react-renderer-support-ownership.md` - Ownership audit for top-level non-React renderer support modules used by React.
 28. `docs/architecture/decisions/ADR-004-renderer-support-namespace-strategy.md` - Proposed namespace strategy for active renderer support modules.
+29. `docs/architecture/judge-mode-evaluation-studio.md` - Product/architecture report for Judge Mode as Evaluation Studio.
+30. `docs/architecture/decisions/ADR-005-judge-mode-evaluation-architecture.md` - Proposed target architecture for Judge Mode / Evaluation Studio.
 
 ## Initiative layer references
 13. `.codex/workflows/initiative-to-delivery.md` — полный workflow инициативы до delivery report.
