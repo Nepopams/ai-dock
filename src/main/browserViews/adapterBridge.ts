@@ -5,7 +5,14 @@ import {
   IPC_ADAPTER_EXEC,
   IPC_ADAPTER_PING
 } from "../../shared/ipc/adapterBridge.ipc";
-import TabManager = require("../tabManager");
+
+type AdapterBridgeTabManager = {
+  getView(tabId: string): BrowserView | null;
+};
+
+type AdapterBridgeIpcContext = {
+  getTabManager?: () => AdapterBridgeTabManager | null | undefined;
+};
 
 const isFunctionSourceSafe = (source: unknown): source is string => {
   if (typeof source !== "string") {
@@ -34,7 +41,7 @@ const buildExecutionScript = (fnSource: string, args: unknown[]): string => {
 };
 
 export const execInView = async (
-  tabManager: InstanceType<typeof TabManager>,
+  tabManager: AdapterBridgeTabManager,
   tabId: string,
   fnSource: string,
   args: unknown[] = []
@@ -57,9 +64,29 @@ export const execInView = async (
   return result;
 };
 
-export const registerAdapterBridgeIpc = (tabManager: InstanceType<typeof TabManager>): void => {
+const createAdapterBridgeError = (message: string, code: string): Error => {
+  const error = new Error(message);
+  error.name = code;
+  return error;
+};
+
+const resolveTabManager = (
+  getTabManager: AdapterBridgeIpcContext["getTabManager"]
+): AdapterBridgeTabManager => {
+  if (typeof getTabManager !== "function") {
+    throw createAdapterBridgeError("TAB_MANAGER_UNAVAILABLE", "TAB_MANAGER_UNAVAILABLE");
+  }
+  const tabManager = getTabManager();
+  if (!tabManager) {
+    throw createAdapterBridgeError("TAB_MANAGER_UNAVAILABLE", "TAB_MANAGER_UNAVAILABLE");
+  }
+  return tabManager;
+};
+
+export const registerAdapterBridgeIpc = ({ getTabManager }: AdapterBridgeIpcContext): void => {
   ipcMain.handle(IPC_ADAPTER_EXEC, async (_event, payload: AdapterExecRequest): Promise<AdapterExecResult> => {
     try {
+      const tabManager = resolveTabManager(getTabManager);
       const data = await execInView(tabManager, payload.tabId, payload.fnSource, payload.args ?? []);
       return { ok: true, data };
     } catch (error) {
