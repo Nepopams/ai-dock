@@ -6,6 +6,7 @@ export interface JudgeSlice {
   judgeRunning: boolean;
   judgeResult: JudgeResult | null;
   judgeError: string | null;
+  judgeErrorCode: string | null;
   judgeErrorDetails: string | null;
   judgeProgress: JudgeProgressEvent | null;
 }
@@ -13,7 +14,7 @@ export interface JudgeSlice {
 export interface JudgeActions {
   runJudge: (input: Parameters<NonNullable<Window["judge"]>["run"]>[0]) => Promise<JudgeResult | null>;
   clearJudge: () => void;
-  setJudgeError: (message: string | null, details?: string | null) => void;
+  setJudgeError: (message: string | null, details?: string | null, code?: string | null) => void;
   handleJudgeProgress: (event: JudgeProgressEvent) => void;
 }
 
@@ -33,6 +34,7 @@ export const createJudgeSlice = <
       setState({
         judgeRunning: false,
         judgeError: "Judge API unavailable",
+        judgeErrorCode: "unknown",
         judgeErrorDetails: null
       });
       return null;
@@ -40,7 +42,8 @@ export const createJudgeSlice = <
     setState({
       judgeRunning: true,
       judgeError: null,
-       judgeErrorDetails: null,
+      judgeErrorCode: null,
+      judgeErrorDetails: null,
       judgeProgress: null
     });
     try {
@@ -50,6 +53,7 @@ export const createJudgeSlice = <
         setState({
           judgeRunning: false,
           judgeError: message,
+          judgeErrorCode: response?.code || "unknown",
           judgeErrorDetails: response?.details || null
         });
         return null;
@@ -58,6 +62,7 @@ export const createJudgeSlice = <
         judgeRunning: false,
         judgeResult: response.result,
         judgeError: null,
+        judgeErrorCode: null,
         judgeErrorDetails: null
       });
       return response.result;
@@ -67,7 +72,8 @@ export const createJudgeSlice = <
       setState({
         judgeRunning: false,
         judgeError: message,
-        judgeErrorDetails: error instanceof Error && error.stack ? error.stack : null
+        judgeErrorCode: "unknown",
+        judgeErrorDetails: null
       });
       return null;
     }
@@ -77,14 +83,16 @@ export const createJudgeSlice = <
     setState({
       judgeResult: null,
       judgeError: null,
+      judgeErrorCode: null,
       judgeErrorDetails: null,
       judgeProgress: null
     });
   };
 
-  const setJudgeError: JudgeActions["setJudgeError"] = (message, details) => {
+  const setJudgeError: JudgeActions["setJudgeError"] = (message, details, code) => {
     setState({
       judgeError: message,
+      judgeErrorCode: code ?? null,
       judgeErrorDetails: details ?? null
     });
   };
@@ -103,6 +111,7 @@ export const createJudgeSlice = <
       judgeRunning: false,
       judgeResult: null,
       judgeError: null,
+      judgeErrorCode: null,
       judgeErrorDetails: null,
       judgeProgress: null
     } as JudgeSlice,

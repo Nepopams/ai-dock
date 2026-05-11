@@ -44,6 +44,76 @@ const createJudgeSanitizers = ({ validateString, ensureRequestId }) => {
     return normalized;
   };
 
+  const sanitizeOptionalString = (value) =>
+    typeof value === "string" && value.trim() ? value.trim() : undefined;
+
+  const sanitizeJsonLikeValue = (value) => {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+    try {
+      return JSON.parse(JSON.stringify(value));
+    } catch {
+      return undefined;
+    }
+  };
+
+  const sanitizeJudgeMetadata = (metadata) => {
+    if (!metadata || typeof metadata !== "object") {
+      return undefined;
+    }
+    const sanitized = {};
+    for (const key of [
+      "schemaVersion",
+      "contractVersion",
+      "judgeProfileId",
+      "driver",
+      "model",
+      "finishReason",
+      "responseFormat",
+      "parseState",
+      "partialReason"
+    ]) {
+      const value = sanitizeOptionalString(metadata[key]);
+      if (value) {
+        sanitized[key] = value;
+      }
+    }
+    if (Number.isFinite(metadata.durationMs) && metadata.durationMs >= 0) {
+      sanitized.durationMs = Number(metadata.durationMs);
+    }
+    const usage = sanitizeJsonLikeValue(metadata.usage);
+    if (usage && typeof usage === "object") {
+      sanitized.usage = usage;
+    }
+    return Object.keys(sanitized).length ? sanitized : undefined;
+  };
+
+  const sanitizeJudgeScoreForExport = (score, path, fallbackAgentId) => {
+    if (!score || typeof score !== "object") {
+      throw new Error(`Invalid score at ${path}`);
+    }
+    const sanitized = {
+      criterion: sanitizeJudgeCriterion(score.criterion, `${path}.criterion`),
+      score: Number.isFinite(score.score)
+        ? Number(score.score)
+        : (() => {
+            throw new Error(`Invalid score at ${path}.score`);
+          })()
+    };
+    const agentId =
+      typeof score.agentId === "string" && score.agentId.trim()
+        ? score.agentId.trim()
+        : fallbackAgentId;
+    if (agentId) {
+      sanitized.agentId = agentId;
+    }
+    if (typeof score.rationale === "string" && score.rationale.trim()) {
+      sanitized.rationale = score.rationale.trim();
+    }
+    return sanitized;
+  };
+
   const sanitizeJudgeResultForExport = (result) => {
     if (!result || typeof result !== "object") {
       throw new Error("export payload is missing judge result");
@@ -58,18 +128,15 @@ const createJudgeSanitizers = ({ validateString, ensureRequestId }) => {
 
     if (Array.isArray(result.scores)) {
       sanitized.scores = {
-        default: result.scores.map((score, index) => ({
-          agentId: validateString(score.agentId, `result.scores[${index}].agentId`),
-          criterion: sanitizeJudgeCriterion(
-            score.criterion,
-            `result.scores[${index}].criterion`
-          ),
-          score: Number.isFinite(score.score)
-            ? Number(score.score)
-            : (() => {
-                throw new Error(`Invalid score at result.scores[${index}].score`);
-              })()
-        }))
+        default: result.scores.map((score, index) =>
+          sanitizeJudgeScoreForExport(
+            score,
+            `result.scores[${index}]`,
+            typeof score?.agentId === "string" && score.agentId.trim()
+              ? score.agentId.trim()
+              : `score_${index + 1}`
+          )
+        )
       };
     } else if (result.scores && typeof result.scores === "object") {
       sanitized.scores = {};
@@ -77,25 +144,26 @@ const createJudgeSanitizers = ({ validateString, ensureRequestId }) => {
         if (!Array.isArray(scores)) {
           continue;
         }
-        sanitized.scores[key] = scores.map((score, index) => ({
-          agentId: validateString(score.agentId, `result.scores.${key}[${index}].agentId`),
-          criterion: sanitizeJudgeCriterion(
-            score.criterion,
-            `result.scores.${key}[${index}].criterion`
-          ),
-          score: Number.isFinite(score.score)
-            ? Number(score.score)
-            : (() => {
-                throw new Error(`Invalid score at result.scores.${key}[${index}].score`);
-              })()
-        }));
+        sanitized.scores[key] = scores.map((score, index) =>
+          sanitizeJudgeScoreForExport(score, `result.scores.${key}[${index}]`)
+        );
       }
     }
 
-    if (Array.isArray(result.notes)) {
-      sanitized.notes = result.notes
+    if (typeof result.notes === "string" && result.notes.trim()) {
+      sanitized.notes = result.notes.trim();
+    } else if (Array.isArray(result.notes)) {
+      const notes = result.notes
         .filter((note) => typeof note === "string" && note.trim())
         .map((note, index) => validateString(note, `result.notes[${index}]`));
+      if (notes.length) {
+        sanitized.notes = notes.join("\n");
+      }
+    }
+
+    const metadata = sanitizeJudgeMetadata(result.metadata);
+    if (metadata) {
+      sanitized.metadata = metadata;
     }
 
     return sanitized;

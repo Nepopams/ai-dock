@@ -5,6 +5,11 @@ const isString = (value) => typeof value === "string";
 const isJudgeCriterion = (value) =>
   value === "coherence" || value === "factuality" || value === "helpfulness";
 
+const isOptionalString = (value) => value === undefined || isString(value);
+
+const isOptionalNumber = (value) =>
+  value === undefined || (typeof value === "number" && !Number.isNaN(value));
+
 const isJudgeScore = (value) => {
   if (!isObject(value)) {
     return false;
@@ -16,6 +21,27 @@ const isJudgeScore = (value) => {
     return false;
   }
   if (value.rationale !== undefined && !isString(value.rationale)) {
+    return false;
+  }
+  return true;
+};
+
+const isJudgeResultMetadata = (value) => {
+  if (!isObject(value)) {
+    return false;
+  }
+  if (
+    !isOptionalString(value.schemaVersion) ||
+    !isOptionalString(value.contractVersion) ||
+    !isOptionalString(value.judgeProfileId) ||
+    !isOptionalString(value.driver) ||
+    !isOptionalString(value.model) ||
+    !isOptionalNumber(value.durationMs) ||
+    !isOptionalString(value.finishReason) ||
+    !isOptionalString(value.responseFormat) ||
+    !isOptionalString(value.parseState) ||
+    !isOptionalString(value.partialReason)
+  ) {
     return false;
   }
   return true;
@@ -65,6 +91,9 @@ const isJudgeResult = (value) => {
   if (value.notes !== undefined && !isString(value.notes)) {
     return false;
   }
+  if (value.metadata !== undefined && !isJudgeResultMetadata(value.metadata)) {
+    return false;
+  }
   return true;
 };
 
@@ -95,6 +124,7 @@ const isJudgeExportPayload = (value) => {
 module.exports = {
   isJudgeInput,
   isJudgeResult,
+  isJudgeResultMetadata,
   isJudgeScore,
   isJudgeExportPayload
 };

@@ -341,6 +341,8 @@ function CompareView() {
                 {judgeProgress.stage === "queued" && "Queued…"}
                 {judgeProgress.stage === "running" && "Evaluating answers…"}
                 {judgeProgress.stage === "parsing" && "Parsing result…"}
+                {judgeProgress.stage === "done" && "Evaluation complete"}
+                {judgeProgress.stage === "failed" && "Evaluation failed"}
               </span>
             </div>
           )}

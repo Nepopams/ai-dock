@@ -6,6 +6,22 @@ export interface JudgeScore {
   rationale?: string;
 }
 
+export type JudgeResultParseState = "strict_json" | "extracted_json" | "failed";
+
+export interface JudgeResultMetadata {
+  schemaVersion?: string;
+  contractVersion?: string;
+  judgeProfileId?: string;
+  driver?: string;
+  model?: string;
+  durationMs?: number;
+  finishReason?: string;
+  usage?: unknown;
+  responseFormat?: string;
+  parseState?: JudgeResultParseState | string;
+  partialReason?: string;
+}
+
 export interface JudgeInputAnswer {
   agentId: string;
   text: string;
@@ -27,6 +43,7 @@ export interface JudgeResult {
   notes?: string;
   rawResponse?: unknown;
   partial?: boolean;
+  metadata?: JudgeResultMetadata;
 }
 
 export interface JudgeExportPayload {
@@ -44,6 +61,12 @@ const isString = (value: unknown): value is string => typeof value === "string";
 const isJudgeCriterion = (value: unknown): value is JudgeCriterion =>
   value === "coherence" || value === "factuality" || value === "helpfulness";
 
+const isOptionalString = (value: unknown): value is string | undefined =>
+  value === undefined || isString(value);
+
+const isOptionalNumber = (value: unknown): value is number | undefined =>
+  value === undefined || (typeof value === "number" && !Number.isNaN(value));
+
 export const isJudgeScore = (value: unknown): value is JudgeScore => {
   if (!isObject(value)) {
     return false;
@@ -55,6 +78,27 @@ export const isJudgeScore = (value: unknown): value is JudgeScore => {
     return false;
   }
   if (value.rationale !== undefined && !isString(value.rationale)) {
+    return false;
+  }
+  return true;
+};
+
+export const isJudgeResultMetadata = (value: unknown): value is JudgeResultMetadata => {
+  if (!isObject(value)) {
+    return false;
+  }
+  if (
+    !isOptionalString(value.schemaVersion) ||
+    !isOptionalString(value.contractVersion) ||
+    !isOptionalString(value.judgeProfileId) ||
+    !isOptionalString(value.driver) ||
+    !isOptionalString(value.model) ||
+    !isOptionalNumber(value.durationMs) ||
+    !isOptionalString(value.finishReason) ||
+    !isOptionalString(value.responseFormat) ||
+    !isOptionalString(value.parseState) ||
+    !isOptionalString(value.partialReason)
+  ) {
     return false;
   }
   return true;
@@ -102,6 +146,9 @@ export const isJudgeResult = (value: unknown): value is JudgeResult => {
     return false;
   }
   if (value.notes !== undefined && !isString(value.notes)) {
+    return false;
+  }
+  if (value.metadata !== undefined && !isJudgeResultMetadata(value.metadata)) {
     return false;
   }
   return true;
