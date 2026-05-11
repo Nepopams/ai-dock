@@ -31,7 +31,7 @@
 ## 5) BrowserView / TabManager
 - **Responsibility:** управление web-клиентами и вкладками BrowserView/WebContents.
 - **Owned files:** `src/main/tabManager.js`, `src/main/browserViews/adapterBridge.ts/js`.
-- **IPC dependencies:** adapter bridge channels.
+- **IPC dependencies:** adapter bridge channels registered through the main IPC bootstrap with late-bound `getTabManager` access.
 - **Data storage:** runtime state вкладок + persisted tab metadata (если применяется).
 - **Test/smoke expectations:** create/switch/close tab, cleanup, safe external navigation.
 

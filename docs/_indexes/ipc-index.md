@@ -16,7 +16,7 @@
 - `mediaPresets.ipc.ts/js`
 - `formProfiles.ipc.ts/js`
 - `formRunner.ipc.ts/js`
-- BrowserView bridge: `src/main/browserViews/adapterBridge.ts/js`
+- BrowserView bridge: `src/main/browserViews/adapterBridge.ts/js` (`adapter:exec`, `adapter:ping`; main registration uses late-bound `getTabManager` context)
 
 `src/main/main.js` создаёт окно/`TabManager` и вызывает bootstrap-регистрацию, но не содержит inline IPC handler registrations.
 

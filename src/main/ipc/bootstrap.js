@@ -30,9 +30,7 @@ const registerMainIpc = ({ getMainWindow, getTabManager, tabManager }) => {
   registerFormProfilesIpc();
   registerFormRunnerIpc();
 
-  if (tabManager) {
-    registerAdapterBridgeIpc(tabManager);
-  }
+  registerAdapterBridgeIpc({ getTabManager });
 
   registerShellIpc({
     getMainWindow,

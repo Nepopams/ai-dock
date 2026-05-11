@@ -49,9 +49,27 @@ const execInView = async (tabManager, tabId, fnSource, args = []) => {
   return result;
 };
 
-const registerAdapterBridgeIpc = (tabManager) => {
+const createAdapterBridgeError = (message, code) => {
+  const error = new Error(message);
+  error.name = code;
+  return error;
+};
+
+const resolveTabManager = (getTabManager) => {
+  if (typeof getTabManager !== "function") {
+    throw createAdapterBridgeError("TAB_MANAGER_UNAVAILABLE", "TAB_MANAGER_UNAVAILABLE");
+  }
+  const tabManager = getTabManager();
+  if (!tabManager) {
+    throw createAdapterBridgeError("TAB_MANAGER_UNAVAILABLE", "TAB_MANAGER_UNAVAILABLE");
+  }
+  return tabManager;
+};
+
+const registerAdapterBridgeIpc = ({ getTabManager }) => {
   ipcMain.handle(IPC_ADAPTER_EXEC, async (_event, payload) => {
     try {
+      const tabManager = resolveTabManager(getTabManager);
       const data = await execInView(tabManager, payload.tabId, payload.fnSource, payload.args ?? []);
       return { ok: true, data };
     } catch (error) {
