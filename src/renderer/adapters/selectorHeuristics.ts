@@ -1,5 +1,7 @@
 import { AdapterSelectors } from "./IAgentAdapter";
 
+// Parity note: selectorHeuristics.js mirrors these defaults for Node tests.
+// Update the CommonJS parity file and tests when selector defaults change.
 const visibleTextInputs = [
   "textarea:not([disabled])",
   "textarea[contenteditable='false']",

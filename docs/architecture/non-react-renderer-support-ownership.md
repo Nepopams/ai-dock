@@ -55,6 +55,8 @@ These are Zustand slice modules composed into the React store by `src/renderer/r
 
 The TypeScript adapter modules are runtime support for React-driven BrowserView interactions. The JavaScript `selectorHeuristics.js` file is currently a test-facing parity/migration file.
 
+IN-2026-021 refined this ownership rule: `selectorHeuristics.js` remains a CommonJS test-facing parity artifact for Node tests while the React adapter runtime continues to use `selectorHeuristics.ts`. `tests/selectorHeuristics.test.js` guards the JS defaults against the TS source arrays. Any future selector default or merge-behavior change must update the TS runtime source, the JS parity artifact, and the parity tests together.
+
 ### `src/renderer/components/**`
 - `src/renderer/components/ConfirmDialog.tsx`
 - `src/renderer/components/KeyValueEditor.tsx`
@@ -157,7 +159,7 @@ These files were observed on disk as generated React build output. They are not 
 | `src/renderer/adapters/adapterBridgeClient.ts` | `adapter-runtime-support` | adapter implementations | yes, indirectly | no | no | no | Keep; migration requires adapter smoke and preload/main IPC awareness. | high | IN-2026-019 |
 | `src/renderer/adapters/impl/*.adapter.ts` | `adapter-runtime-support` | `adapters.ts` | yes, indirectly | no | no | no | Keep; migrate only with adapter import update and BrowserView smoke. | high | IN-2026-019 |
 | `src/renderer/adapters/selectorHeuristics.ts` | `adapter-runtime-support` | adapter implementations | yes, indirectly | no | no | no | Keep; pair any move with JS parity decision. | medium | IN-2026-019 / IN-2026-021 |
-| `src/renderer/adapters/selectorHeuristics.js` | `migration-residue` | `tests/selectorHeuristics.test.js` | no | no | unknown | no | Investigate JS/TS parity; do not delete while test imports it. | medium | IN-2026-021 |
+| `src/renderer/adapters/selectorHeuristics.js` | `migration-residue` | `tests/selectorHeuristics.test.js` | no | no | unknown | no | Keep as test-facing CommonJS parity artifact until a gated TS test strategy replaces it; do not delete while tests import it. | medium | future TS test strategy if needed |
 | `src/renderer/components/ConfirmDialog.tsx` | `react-owned-shared-support` | `FormProfilesManager.tsx` | yes | no | no | no | Keep; candidate for `react/shared` or `react/components/shared` after strategy. | medium | IN-2026-020 |
 | `src/renderer/components/KeyValueEditor.tsx` | `react-owned-shared-support` | `FormEditor.tsx` | yes | no | no | no | Keep; candidate for `react/shared` or `react/components/shared` after strategy. | medium | IN-2026-020 |
 | `src/renderer/utils/disposables.ts` | `renderer-shared-support` | `ChatView.tsx`, `MessageItem.tsx`, `MessageList.tsx` | yes | no | no | no | Keep; namespace decision should decide React-owned vs renderer-shared. | medium | IN-2026-017 |
@@ -199,7 +201,7 @@ Plan any movement of `src/renderer/adapters/**` and adapter-coupled utils, inclu
 Plan any movement of `ConfirmDialog` and `KeyValueEditor` into a React-owned shared component namespace.
 
 ### IN-2026-021 SelectorHeuristics JS/TS Parity Cleanup
-Decide whether `selectorHeuristics.js` remains as a test-facing CommonJS parity file, moves to a generated/test helper path, or is replaced by a TS-compatible test strategy.
+Completed scoped parity cleanup: `selectorHeuristics.js` remains as a test-facing CommonJS parity artifact, and Node tests guard its defaults against `selectorHeuristics.ts`. Replacement with a TS-compatible test strategy remains a future gated decision if duplication becomes too costly.
 
 ### IN-2026-022 Legacy Icons Ownership Cleanup
 Separate legacy icon ownership from any main/service references, especially `src/renderer/icons/deepseek.svg`, before legacy icon archive or deletion.
@@ -209,7 +211,7 @@ Separate legacy icon ownership from any main/service references, especially `src
 - Any move requires import updates, Vite/TS path consideration, build/test/smoke, and rollback.
 - Any delete requires fresh `git grep` evidence and Human Gate approval.
 - Legacy entrypoint retirement must not include shared support modules.
-- `selectorHeuristics.js` cannot be deleted while tests import it.
+- `selectorHeuristics.js` cannot be deleted while tests import it; selector default or merge-behavior changes must update the TS source, JS parity artifact, and parity tests together.
 - Top-level icons cannot be deleted as a group while `src/main/services.js` references `src/renderer/icons/deepseek.svg`.
 - Generated `src/renderer/react/dist/**` files must be governed as build output, not source ownership.
 
