@@ -14,7 +14,7 @@
 
 ## Планируемые/расширяемые модули
 - Chat Exporter
-- Judge LLM
+- Judge Mode / Evaluation Studio
 - Cross-history
 - RAG Agent
 - n8n Connector
