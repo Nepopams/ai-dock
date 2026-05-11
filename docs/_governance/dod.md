@@ -10,3 +10,11 @@
 6. Нет утечки секретов в коде/доках/логах.
 7. Не добавлены новые зависимости без обоснования и согласования.
 8. Review Gate пройден (A/B/C/D согласно governance).
+
+## Executor layer criteria
+9. Выбранный executor не вышел за scope.
+10. Verification commands выполнены и зафиксированы.
+11. Связанные docs/indexes обновлены при изменении runtime контрактов.
+12. Review Gate подтвердил path discipline и корректный routing executor.
+13. Нет скрытых изменений зависимостей.
+14. Security impact отражён и закрыт (или зафиксирован residual risk с планом).

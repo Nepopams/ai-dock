@@ -43,6 +43,15 @@ VR AI Dock — desktop-shell на Electron для безопасной и рас
 - Для каждой задачи: **PLAN → Human Gate → APPLY → REVIEW**.
 - Если scope выходит за workpack — остановка и возврат на PLAN/Gate.
 
+## Executor Layer
+- Executor roles могут менять runtime-код **только** при наличии утверждённого workpack.
+- Каждая runtime-задача обязана содержать список affected modules.
+- Allowed paths должны быть зафиксированы явно.
+- Forbidden paths должны быть зафиксированы явно.
+- Ни один executor не может менять чужой слой без stop-the-line и возврата на Human Gate.
+- Тесты и обновление docs/indexes — часть implementation, а не опциональный шаг.
+- Итоговый output executor обязан включать: files consulted, files changed, commands run, verification, risks.
+
 ## Обязательный формат ответа Codex
 В каждом итоговом ответе обязательно указывать:
 1. `Files consulted`
