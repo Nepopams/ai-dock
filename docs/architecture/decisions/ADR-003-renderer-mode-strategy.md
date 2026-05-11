@@ -1,7 +1,7 @@
 # ADR-003: Renderer Mode Strategy
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 VR AI Dock currently contains two renderer paths.
@@ -30,25 +30,27 @@ The React renderer is rooted at:
 
 `vite.config.js` uses `src/renderer/react` as its Vite root and builds to `src/renderer/react/dist`.
 
-`src/main/main.js` selects renderer mode through `AI_DOCK_REACT_UI === "true"`:
+`src/main/main.js` selects renderer mode through explicit fallback/runtime flags:
 
-- Dev React mode loads `http://localhost:5173`.
-- Packaged React mode loads `src/renderer/react/dist/index.html`.
-- Default mode loads `src/renderer/index.html`.
+- `AI_DOCK_LEGACY_UI === "true"` loads `src/renderer/index.html`.
+- Dev default mode loads React from `http://localhost:5173`.
+- `AI_DOCK_REACT_DIST === "true"` and packaged/runtime mode load `src/renderer/react/dist/index.html`.
 
 `package.json` currently has:
 
 - `dev`: starts Vite only.
-- `dev:new-ui`: builds preload, sets `AI_DOCK_REACT_UI=true` and `AI_DOCK_SKIP_AUTOTABS=1`, then runs preload watch, Vite, and Electron dev concurrently.
-- `start`: builds preload, then runs Electron without `AI_DOCK_REACT_UI`.
-- `electron:build`: builds preload, then runs electron-builder without `AI_DOCK_REACT_UI` and without an explicit `vite build` step.
+- `dev:app`: builds preload, sets `AI_DOCK_SKIP_AUTOTABS=1`, then runs preload watch, Vite, and Electron dev concurrently.
+- `dev:new-ui`: compatibility alias for `dev:app`.
+- `start`: builds preload and React renderer, then runs Electron with `AI_DOCK_REACT_DIST=true`.
+- `start:legacy`: builds preload and runs Electron with `AI_DOCK_LEGACY_UI=true`.
+- `electron:build`: builds preload and React renderer before packaging.
 
-This creates ambiguity. A developer or Codex can easily run or validate the legacy UI even when the React renderer is the current active product UI.
+This removes the old ambiguity where a developer or Codex could easily validate the legacy UI by default when the React renderer is the current active product UI.
 
 ## Decision
-React renderer should become the intended default development and runtime UI for VR AI Dock.
+React renderer is the intended default development and runtime UI for VR AI Dock.
 
-Legacy plain renderer should be retained temporarily only as an explicit fallback until the React start/build path has stable smoke coverage. This ADR does not change runtime code, package scripts, build scripts, or renderer source files. It records the target strategy and requires separate implementation workpacks for any behavior change.
+Legacy plain renderer is retained temporarily only as an explicit fallback until the React start/build path has stable smoke coverage and a separate retirement decision. This ADR records the accepted strategy; IN-2026-009 implemented the initial runtime/build default switch, and future behavior changes still require separate implementation workpacks.
 
 ## Options considered
 ### Option A: Keep current dual mode
@@ -146,30 +148,28 @@ Verification:
 - Legacy fallback smoke until retirement.
 
 ## Recommendation
-Recommended now: Adopt Option B as the proposed strategy in docs. React renderer should become the default development/runtime UI through a separate runtime/build workpack. Legacy should remain temporarily as an explicit fallback only.
+Accepted strategy: Adopt Option B. React renderer is the default development/runtime UI, and legacy remains temporarily available only through explicit fallback mode.
 
 Target state: React is the normal Dock UI for development, `start`, and packaged runtime. Legacy can be invoked only through an explicit fallback mode or is removed after a stable React smoke period.
 
-Not now: Do not delete legacy renderer, edit `main.js`, edit package scripts, or change Electron build behavior in this initiative.
+Implementation note: IN-2026-009 implemented the React default runtime/build switch. Further behavior changes, including legacy renderer deletion or retirement, still require separate gated workpacks.
 
 Next workpacks:
-- IN-2026-009: React renderer default runtime/build switch.
-- IN-2026-010: Legacy renderer fallback/archive/retirement plan.
-- Workpack: rename `dev:new-ui` to a clearer script such as `dev:app` or `dev:react`.
-- Workpack: React renderer start/build smoke checklist.
+- Legacy renderer fallback/archive/retirement plan.
+- React renderer manual smoke closure for release confidence.
+- Non-React renderer support module ownership audit.
 
 ## Consequences
 - Codex and developers should treat React as the intended UI when planning renderer work.
 - Workpacks touching renderer startup must explicitly state whether they affect React default, legacy fallback, or both.
 - Legacy renderer remains present until a separate approved workpack changes or removes it.
 - Non-React renderer support modules need explicit ownership classification before deletion or migration.
-- Current runtime behavior remains unchanged until a Human Gate approves implementation.
+- ADR acceptance itself does not authorize additional runtime behavior changes beyond completed approved workpacks.
 
 ## Follow-up workpacks
-- Renderer default runtime/build switch.
-- Script naming and developer command cleanup.
+- Legacy renderer fallback/archive/retirement decision.
+- React manual smoke closure.
 - Production packaging path validation.
-- Legacy renderer retirement decision.
 - Non-React renderer support module ownership audit.
 
 ## Strong gates
