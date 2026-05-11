@@ -1,3 +1,5 @@
+// CommonJS parity artifact for Node tests; mirrors selectorHeuristics.ts.
+// Update both files and tests when selector defaults or merge behavior changes.
 const visibleTextInputs = [
   "textarea:not([disabled])",
   "textarea[contenteditable='false']",
