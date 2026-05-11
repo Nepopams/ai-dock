@@ -32,6 +32,10 @@
 11. `docs/planning/workpacks/_template/workpack.md` — шаблон для новых workpack.
 12. `docs/planning/workpacks/ST-C0-001-ipc-registration-audit/workpack.md` — pilot-workpack для аудита IPC registration.
 
+## Architecture decision records
+21. `docs/architecture/decisions/**` - ADR/architecture decisions.
+22. `docs/architecture/decisions/ADR-002-main-process-typescript-source-strategy.md` - Proposed strategy for `src/main/**` JS/TS source-of-truth.
+
 ## Initiative layer references
 13. `.codex/workflows/initiative-to-delivery.md` — полный workflow инициативы до delivery report.
 14. `.codex/prompts/initiative-runner-template.md` — главный prompt запуска Initiative Runner.
