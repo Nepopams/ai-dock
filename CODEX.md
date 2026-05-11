@@ -22,6 +22,45 @@
 9. Review Gate checks diff.
 10. Fixpack if NO-GO.
 
+## Initiative Runner mode
+**Initiative Runner** используется, когда пользователь даёт не готовый workpack, а инициативу: цель, проблему или направление delivery.
+
+Он работает поверх ручного workpack flow и ведёт полный цикл:
+
+`initiative -> epics -> sprint -> workpacks -> prompt-packs -> PLAN -> APPLY -> REVIEW -> fixpack -> delivery-report`.
+
+### Как запустить инициативу
+1. Используй prompt `.codex/prompts/initiative-runner-template.md`.
+2. Передай initiative input: title, goal, problem, user value, constraints, in/out scope и желаемый autonomy level.
+3. Codex создаёт file-backed артефакты в `docs/planning/initiatives/<initiative-id>/`.
+4. Для scoped delivery Codex создаёт workpack'и в `docs/planning/workpacks/<workpack-id>/`.
+
+### Отличие от ручного workpack flow
+- Ручной workpack flow начинается с уже подготовленного workpack.
+- Initiative Runner начинается с инициативы и сам создаёт decomposition, orchestration plan, task queue, workpack'и, prompt-pack'и и delivery report.
+- `codex-plan-apply-review.md` остаётся inner loop для каждого workpack.
+
+### Когда Codex может продолжать без подтверждения
+- Создание и обновление initiative docs.
+- Создание epics/sprint mapping/workpack drafts/prompt-pack drafts.
+- Docs-only и workflow-only APPLY в явно разрешённых путях, если нет strong human gate.
+- Soft gates: naming, ordering, queue/run-state updates, targeted docs validation.
+
+### Когда Codex обязан остановиться
+- Runtime APPLY без валидного workpack и PLAN.
+- Неясные allowed/forbidden paths, selected executor или verification commands.
+- Новый dependency, изменение `package.json` или lockfile.
+- Новый IPC/preload bridge/channel без contract plan.
+- Security invariant risk: sandbox/contextIsolation/renderer Node access/secrets.
+- Data migration, history/profile format changes или неясный rollback.
+- Giant APPLY вместо очереди scoped workpack'ов.
+
+### Где смотреть состояние
+- `docs/planning/initiatives/<initiative-id>/run-state.md` — текущая фаза, blockers, commands и next action.
+- `docs/planning/initiatives/<initiative-id>/task-queue.md` — очередь workpack'ов и статусы PLAN/APPLY/REVIEW.
+- `docs/planning/initiatives/<initiative-id>/gates.md` — soft/strong gates и решения.
+- `docs/planning/initiatives/<initiative-id>/delivery-report.md` — итог, verification, risks и merge recommendation.
+
 ## Routing examples
 - IPC task → `preload-ipc-implementer` + `main-process-implementer`.
 - UI task → `renderer-ui-implementer`.

@@ -43,6 +43,42 @@ VR AI Dock — desktop-shell на Electron для безопасной и рас
 - Для каждой задачи: **PLAN → Human Gate → APPLY → REVIEW**.
 - Если scope выходит за workpack — остановка и возврат на PLAN/Gate.
 
+## Initiative-first policy
+- Если пользователь даёт инициативу вместо готового workpack, Codex должен использовать Initiative Runner layer.
+- Initiative Runner создаёт file-backed initiative artifacts в `docs/planning/initiatives/**`.
+- Initiative Runner может создавать epics, sprint mapping, workpack'и и prompt-pack'и автономно.
+- Существующий workpack flow не удаляется: он становится inner loop для каждого workpack инициативы.
+
+## Strong Human Gate policy
+Codex обязан остановиться и запросить решение человека, если:
+- требуется runtime APPLY без валидного workpack и PLAN;
+- allowed/forbidden paths, selected executor или verification commands неясны;
+- требуется изменение security invariants, IPC/preload boundary, data format или dependency metadata;
+- executor должен выйти за свой слой или за allowed paths;
+- REVIEW Must Fix меняет scope, risk profile или routing.
+
+## No giant APPLY rule
+- Multi-layer runtime initiative нельзя выполнять единым большим APPLY.
+- Scope должен быть разложен на последовательные workpack'и с отдельными allowed paths, verification и REVIEW.
+- Если decomposition невозможна без решения человека — stop-the-line и возврат на Human Gate.
+
+## File-backed run-state rule
+- Состояние инициативы нельзя держать только в чате.
+- Для каждой инициативы должны существовать `run-state.md`, `task-queue.md`, `gates.md` и `delivery-report.md`.
+- После каждого PLAN/APPLY/REVIEW/fixpack шага Codex обновляет run-state и queue.
+
+## Initiative Runner output requirements
+Итоговый output Initiative Runner обязан включать:
+- что создано и обновлено;
+- files consulted;
+- files changed;
+- commands run;
+- runtime scope check;
+- verification;
+- risks;
+- follow-ups;
+- current run-state path и recommended next action.
+
 ## Executor Layer
 - Executor roles могут менять runtime-код **только** при наличии утверждённого workpack.
 - Каждая runtime-задача обязана содержать список affected modules.

@@ -90,6 +90,15 @@
 - **Handoff partners:** любой runtime executor + review roles.
 - **Review focus:** minimal testable changes, no relaxed security flags, explicit residual risks.
 
+## 12) Initiative orchestration
+- **Executor subagent:** `ai-dock-initiative-runner`
+- **Primary skill:** `ai-dock-initiative-runner`
+- **Type:** orchestration, not runtime executor.
+- **Owned paths:** `.codex/skills/ai-dock-initiative-runner/**`, `.codex/workflows/initiative-to-delivery.md`, `.codex/prompts/initiative-runner-template.md`, `docs/planning/initiatives/**`, generated workpack/prompt-pack docs.
+- **Typical tasks:** initiative intake, epic decomposition, sprint mapping, workpack queue, autonomous PLAN/APPLY/REVIEW loop orchestration, run-state, delivery report.
+- **Handoff partners:** `ai-dock-orchestrator`, runtime executors by workpack, `test-qa-implementer`, `security-hardening-implementer`, `ai-dock-code-reviewer`.
+- **Review focus:** no giant APPLY, strong human gates, file-backed run-state, workpack validity before runtime APPLY.
+
 
 ## Development workpack references
 - Dev template: `docs/planning/workpacks/_dev-template/workpack.md`

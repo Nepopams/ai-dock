@@ -1,5 +1,14 @@
 # Codex PLAN → APPLY → REVIEW Workflow
 
+## Relationship to Initiative Runner
+Этот workflow остаётся базовым inner loop для scoped workpack'ов.
+
+- Для одиночных задач используется ручной workpack-runner flow: `Workpack -> PLAN -> Human Gate -> APPLY -> REVIEW`.
+- Для multi-task delivery используется initiative-runner flow из `.codex/workflows/initiative-to-delivery.md`.
+- Initiative Runner создаёт инициативу, decomposition, task queue, workpack'и и prompt-pack'и, а затем запускает этот workflow по каждому workpack отдельно.
+- Runtime APPLY по-прежнему запрещён без валидного workpack, валидного PLAN, ясных allowed/forbidden paths, selected executor и verification commands.
+- Giant APPLY запрещён: multi-layer runtime scope должен быть разбит на последовательные workpack'и.
+
 ## 1) Idea
 - Зафиксировать идею/проблему и ожидаемый результат.
 
