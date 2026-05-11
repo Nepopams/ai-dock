@@ -40,6 +40,7 @@
 25. `docs/architecture/renderer-retirement-plan.md` - Planning report for legacy renderer retirement, ownership classification, and staged follow-up workpacks.
 26. `docs/architecture/react-renderer-smoke-report.md` - Human-provided manual smoke evidence closing React renderer default confidence after IN-2026-009.
 27. `docs/architecture/non-react-renderer-support-ownership.md` - Ownership audit for top-level non-React renderer support modules used by React.
+28. `docs/architecture/decisions/ADR-004-renderer-support-namespace-strategy.md` - Proposed namespace strategy for active renderer support modules.
 
 ## Initiative layer references
 13. `.codex/workflows/initiative-to-delivery.md` — полный workflow инициативы до delivery report.
