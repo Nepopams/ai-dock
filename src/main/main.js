@@ -24,14 +24,15 @@ app.on("second-instance", () => {
 });
 
 const getRendererUrl = () => {
-  const useViteUi = process.env.AI_DOCK_REACT_UI === "true";
-  if (isDev && useViteUi) {
+  const useLegacyUi = process.env.AI_DOCK_LEGACY_UI === "true";
+  const useReactDist = process.env.AI_DOCK_REACT_DIST === "true";
+  if (useLegacyUi) {
+    return path.join(__dirname, "..", "renderer", "index.html");
+  }
+  if (isDev && !useReactDist) {
     return "http://localhost:5173";
   }
-  if (useViteUi) {
-    return path.join(__dirname, "..", "renderer", "react", "dist", "index.html");
-  }
-  return path.join(__dirname, "..", "renderer", "index.html");
+  return path.join(__dirname, "..", "renderer", "react", "dist", "index.html");
 };
 
 const resolvePreloadPath = () => {
@@ -45,7 +46,7 @@ const resolvePreloadPath = () => {
   if (isDev) {
     console.warn(
       `[preload] bundled file not found at ${bundled}. ` +
-        "Run `npm run preload:build` or start dev via `npm run dev:new-ui`."
+        "Run `npm run preload:build` or start dev via `npm run dev:app`."
     );
   }
   throw new Error(

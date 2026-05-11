@@ -17,6 +17,7 @@
 ## 3) Renderer React/Vite
 - **Responsibility:** UI/UX, пользовательские сценарии, визуализация состояния.
 - **Owned files:** `src/renderer/react/**`, legacy/aux files в `src/renderer/**`.
+- **Runtime mode:** React renderer is the default UI; legacy `src/renderer/index.html` is an explicit fallback via `AI_DOCK_LEGACY_UI=true`.
 - **IPC dependencies:** только через preload namespaces.
 - **Data storage:** локальный UI-state + Zustand state.
 - **Test/smoke expectations:** базовые view flows, error states, loading states.

@@ -28,27 +28,30 @@ Electron-приложение для работы с множеством AI-клиентов в формате док-панели. Ин
 `ash
 npm install
 npm run preload:build      # сборка sandbox-прелоада
-npm run dev:new-ui (auto-sets AI_DOCK_SKIP_AUTOTABS=1)         # старт Vite + Electron с вотчером прелоада
+npm run dev:app (auto-sets AI_DOCK_SKIP_AUTOTABS=1)         # старт Vite + Electron с вотчером прелоада
+npm run start:legacy                                           # explicit legacy renderer fallback (AI_DOCK_LEGACY_UI=true)
 `
 
 ### Основные npm-скрипты
 | Скрипт | Назначение |
 | --- | --- |
-| 
+|
 pm run dev | только Vite (renderer) |
-| 
+|
 pm run preload:watch | вотчер esbuild для прелоада |
-| 
-pm run dev:new-ui | параллельно preload watch + Vite + Electron |
-| 
+|
+pm run dev:app | параллельно preload watch + Vite + Electron |
+|
 pm run build | production-сборка React UI |
-| 
+|
 pm run preload:build | production-бандл прелоада |
-| 
+|
 pm run start | запуск Electron cо свежим прелоадом и prod UI |
-| 
+|
+pm run start:legacy | explicit legacy renderer fallback via AI_DOCK_LEGACY_UI=true |
+|
 pm run electron:build | сборка дистрибутива через electron-builder |
-| 
+|
 pm test | Node test runner (см. 	ests/) |
 
 ## Структура каталогов
@@ -68,7 +71,7 @@ pm test) покрывают утилиты и основные сервисы.
 
 ## Внесение изменений
 1. Запускайте 
-pm run dev:new-ui, чтобы автоматом пересобирать preload и UI.
+pm run dev:app, чтобы автоматом пересобирать preload и UI.
 2. При добавлении IPC обновляйте типы в src/shared/ipc и соответствующие интерфейсы в src/types/renderer.d.ts.
 3. Перед PR/commit проверяйте 
 pm test, smoke-гайды и не забывайте про 

@@ -36,6 +36,7 @@
 21. `docs/architecture/decisions/**` - ADR/architecture decisions.
 22. `docs/architecture/decisions/ADR-002-main-process-typescript-source-strategy.md` - Accepted strategy for `src/main/**` JS/TS source-of-truth.
 23. `docs/architecture/main-ts-parity-audit.md` - Audit of `src/main/**/*.ts` counterparts against current JS runtime source-of-truth.
+24. `docs/architecture/decisions/ADR-003-renderer-mode-strategy.md` - Proposed strategy for React renderer default mode and legacy renderer fallback/retirement.
 
 ## Initiative layer references
 13. `.codex/workflows/initiative-to-delivery.md` — полный workflow инициативы до delivery report.
