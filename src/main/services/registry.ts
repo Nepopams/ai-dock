@@ -1,198 +1,33 @@
-import { app } from "electron";
-import { existsSync, watch, FSWatcher } from "fs";
-import { promises as fs } from "fs";
-import path from "path";
-import {
+import type {
+  ServiceCategory,
   ServiceClient,
-  ServiceRegistryFile,
-  isRegistryFile,
-  isServiceClient
+  ServiceRegistryFile
 } from "../../shared/types/registry";
-import { debounce } from "../../shared/utils/debounce";
 
-const REGISTRY_FILE_NAME = "registry.json";
-
-let registryCache: ServiceRegistryFile | null = null;
-
-const cloneRegistry = (registry: ServiceRegistryFile): ServiceRegistryFile =>
-  JSON.parse(JSON.stringify(registry));
-
-const createDefaultClients = (): ServiceClient[] => [
-  {
-    id: "chatgpt",
-    title: "ChatGPT",
-    category: "chat",
-    urlPatterns: ["https://chat.openai.com/*"],
-    adapterId: "openai.chatgpt",
-    icon: "builtin:chatgpt",
-    enabled: true
-  },
-  {
-    id: "claude",
-    title: "Claude",
-    category: "chat",
-    urlPatterns: ["https://claude.ai/*"],
-    adapterId: "anthropic.claude",
-    icon: "builtin:claude",
-    enabled: true
-  },
-  {
-    id: "deepseek",
-    title: "DeepSeek",
-    category: "chat",
-    urlPatterns: ["https://www.deepseek.com/*"],
-    adapterId: "deepseek.chat",
-    icon: "builtin:deepseek",
-    enabled: true
-  }
-];
-
-const buildDefaultRegistry = (): ServiceRegistryFile => ({
-  version: 1,
-  updatedAt: new Date().toISOString(),
-  clients: createDefaultClients()
-});
-
-export const getRegistryPath = (): string => {
-  return path.join(app.getPath("userData"), REGISTRY_FILE_NAME);
+type RegistryRuntime = {
+  getRegistryPath: () => string;
+  loadRegistry: () => Promise<ServiceRegistryFile>;
+  saveRegistry: (
+    updater: (current: ServiceRegistryFile) => ServiceRegistryFile
+  ) => Promise<ServiceRegistryFile>;
+  clearRegistryCache: () => void;
+  watchRegistry: (onChange: () => void) => Promise<() => void>;
+  stopRegistryWatcher: () => void;
+  serviceCategories: ServiceCategory[];
+  isServiceCategory: (value: unknown) => value is ServiceCategory;
+  isServiceClient: (value: unknown) => value is ServiceClient;
 };
 
-const readRegistryFromDisk = async (filePath: string): Promise<ServiceRegistryFile | null> => {
-  try {
-    const raw = await fs.readFile(filePath, "utf8");
-    const parsed = JSON.parse(raw);
-    if (isRegistryFile(parsed)) {
-      return parsed;
-    }
-    console.warn("[registry] Invalid registry format detected, rebuilding default file");
-    return null;
-  } catch (error) {
-    console.warn("[registry] Failed to read registry file", error);
-    return null;
-  }
-};
+declare const require: (path: string) => RegistryRuntime;
 
-const writeRegistryToDisk = async (filePath: string, registry: ServiceRegistryFile): Promise<void> => {
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, `${JSON.stringify(registry, null, 2)}\n`, "utf8");
-};
+const runtime = require("./registry.js");
 
-const ensureRegistryFile = async (): Promise<ServiceRegistryFile> => {
-  const filePath = getRegistryPath();
-  if (!existsSync(filePath)) {
-    const defaults = buildDefaultRegistry();
-    await writeRegistryToDisk(filePath, defaults);
-    return defaults;
-  }
-  const loaded = await readRegistryFromDisk(filePath);
-  if (loaded) {
-    return loaded;
-  }
-  const fallback = buildDefaultRegistry();
-  await writeRegistryToDisk(filePath, fallback);
-  return fallback;
-};
-
-export const loadRegistry = async (): Promise<ServiceRegistryFile> => {
-  if (!registryCache) {
-    registryCache = await ensureRegistryFile();
-  }
-  return cloneRegistry(registryCache);
-};
-
-export const saveRegistry = async (
-  updater: (current: ServiceRegistryFile) => ServiceRegistryFile
-): Promise<ServiceRegistryFile> => {
-  const current = await loadRegistry();
-  const next = updater(cloneRegistry(current));
-  if (!next || typeof next !== "object") {
-    throw new Error("Registry updater must return an object");
-  }
-  if (next.version !== 1) {
-    throw new Error("Unsupported registry version");
-  }
-  if (!Array.isArray(next.clients) || next.clients.some((client) => !isServiceClient(client))) {
-    throw new Error("Registry contains invalid clients");
-  }
-  const stamped: ServiceRegistryFile = {
-    ...next,
-    version: 1,
-    updatedAt: new Date().toISOString()
-  };
-  const filePath = getRegistryPath();
-  await writeRegistryToDisk(filePath, stamped);
-  registryCache = stamped;
-  return cloneRegistry(stamped);
-};
-
-export const clearRegistryCache = (): void => {
-  registryCache = null;
-};
-
-let fsWatcher: FSWatcher | null = null;
-const watcherListeners = new Set<() => void>();
-
-const notifyListeners = (eventError?: unknown) => {
-  watcherListeners.forEach((listener) => {
-    try {
-      listener();
-    } catch (listenerError) {
-      console.error("[registry] watcher listener error", listenerError);
-    }
-  });
-  if (eventError) {
-    console.warn("[registry] watcher event handled with error", eventError);
-  }
-};
-
-const emitRegistryChange = debounce(() => {
-  clearRegistryCache();
-  loadRegistry()
-    .catch((error) => {
-      console.warn("[registry] reload failed after change", error);
-    })
-    .finally(() => {
-      notifyListeners();
-    });
-}, 250);
-
-const ensureFsWatcher = async () => {
-  if (fsWatcher) {
-    return;
-  }
-  try {
-    await ensureRegistryFile();
-  } catch (error) {
-    console.error("[registry] failed to ensure registry file", error);
-    throw error;
-  }
-  try {
-    fsWatcher = watch(getRegistryPath(), { persistent: false }, () => emitRegistryChange());
-    fsWatcher.on("error", (error) => {
-      console.error("[registry] watcher error", error);
-      emitRegistryChange();
-    });
-  } catch (error) {
-    console.error("[registry] failed to start watcher", error);
-    throw error;
-  }
-};
-
-export const watchRegistry = async (onChange: () => void): Promise<() => void> => {
-  watcherListeners.add(onChange);
-  await ensureFsWatcher();
-  return () => {
-    watcherListeners.delete(onChange);
-    if (watcherListeners.size === 0) {
-      stopRegistryWatcher();
-    }
-  };
-};
-
-export const stopRegistryWatcher = (): void => {
-  if (fsWatcher) {
-    fsWatcher.close();
-    fsWatcher = null;
-  }
-  watcherListeners.clear();
-};
+export const getRegistryPath = runtime.getRegistryPath;
+export const loadRegistry = runtime.loadRegistry;
+export const saveRegistry = runtime.saveRegistry;
+export const clearRegistryCache = runtime.clearRegistryCache;
+export const watchRegistry = runtime.watchRegistry;
+export const stopRegistryWatcher = runtime.stopRegistryWatcher;
+export const serviceCategories = runtime.serviceCategories;
+export const isServiceCategory = runtime.isServiceCategory;
+export const isServiceClient = runtime.isServiceClient;

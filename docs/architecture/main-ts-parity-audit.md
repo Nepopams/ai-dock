@@ -13,9 +13,11 @@ Inventory:
 - TS files included by `tsconfig.json`: 0.
 
 High risk drift candidates:
-- `src/main/services/registry.ts` - stale counterpart: JS exports `serviceCategories`, `isServiceCategory`, and `isServiceClient`; TS does not.
 - `src/main/services/formProfiles.ts` - large parallel parity implementation with data normalization/storage behavior.
 - `src/main/browserViews/adapterBridge.ts` - parity counterpart for BrowserView IPC lifecycle; recently required manual parity repair in IN-2026-003.
+
+Resolved drift candidates:
+- `src/main/services/registry.ts` - remediated by IN-2026-007; now a typed wrapper over `registry.js` with the complete JS export surface.
 
 ## Classification model
 - `wrapper` - TS requires the JS runtime counterpart and re-exports a typed surface. Behavioral drift risk is low, but type drift is still possible.
@@ -47,7 +49,7 @@ High risk drift candidates:
 | `src/main/services/ingest.ts` | `src/main/services/ingest.js` | wrapper | yes | medium | Keep as wrapper; verify before adapter/history ingest work. | `WP-FUTURE-main-ts-history-ingest-audit` | TS types adapter import surface; behavior is JS. |
 | `src/main/services/judgePipeline.ts` | `src/main/services/judgePipeline.js` | wrapper | yes | medium | Keep as wrapper; audit before Judge work. | `WP-FUTURE-main-ts-judge-contract-audit` | JS runtime owns model/provider/export composition. |
 | `src/main/services/mediaPresets.ts` | `src/main/services/mediaPresets.js` | wrapper | yes | medium | Keep as wrapper; verify typed import options when media presets change. | `WP-FUTURE-main-ts-media-presets-type-audit` | Runtime supports duplicate import strategy; TS export type already exposes it. |
-| `src/main/services/registry.ts` | `src/main/services/registry.js` | stale-counterpart | yes | high | Do not use as source; sync export surface or convert to wrapper in a follow-up. | `WP-FUTURE-main-ts-registry-service-sync` | JS exports `serviceCategories`, `isServiceCategory`, `isServiceClient`; TS does not. |
+| `src/main/services/registry.ts` | `src/main/services/registry.js` | wrapper | yes | low | Keep as typed wrapper; JS remains source-of-truth under ADR-002. | `WP-FUTURE-main-ts-wrapper-contract-audit` | Synced in IN-2026-007; wrapper exports `getRegistryPath`, `loadRegistry`, `saveRegistry`, `clearRegistryCache`, `watchRegistry`, `stopRegistryWatcher`, `serviceCategories`, `isServiceCategory`, `isServiceClient`. |
 | `src/main/services/settings.ts` | `src/main/services/settings.js` | wrapper | yes | medium | Keep as wrapper; audit before completions/provider profile changes. | `WP-FUTURE-main-ts-settings-type-audit` | TS owns type mirrors for profile config while JS owns sanitization/storage. |
 | `src/main/services/templates.ts` | `src/main/services/templates.js` | parity-counterpart | yes | medium | Keep temporarily; consider converting to wrapper to reduce duplicate storage logic. | `WP-FUTURE-main-ts-templates-service-parity` | Full implementation close to JS runtime. |
 | `src/main/storage/historyFs.ts` | `src/main/storage/historyFs.js` | wrapper | yes | medium | Keep as wrapper; audit before cross-history data work. | `WP-FUTURE-main-ts-history-storage-type-audit` | TS exports storage interfaces and wraps JS behavior. |
@@ -56,7 +58,7 @@ High risk drift candidates:
 
 ## Priority follow-ups
 Sync-now candidates:
-- `WP-FUTURE-main-ts-registry-service-sync`: decide whether to sync `src/main/services/registry.ts` with JS export surface or convert it to a typed wrapper.
+- None currently identified by this audit. `WP-FUTURE-main-ts-registry-service-sync` was completed by IN-2026-007.
 
 Document-only candidates:
 - `WP-FUTURE-main-ts-wrapper-contract-audit`: record the wrapper rule for low-risk wrappers and define how workpacks should verify type surfaces.
