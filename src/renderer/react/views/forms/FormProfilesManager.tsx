@@ -59,22 +59,12 @@ const createDraftProfile = (template?: FormProfile): FormProfile => {
 };
 
 const FormProfilesManager = () => {
-  const {
-    formProfiles,
-    formProfilesLoading,
-    formProfilesError,
-    formProfilesFilter,
-    formProfilesSelectedId,
-    formProfilesLastTest
-  } = useDockStore((state) => ({
-    formProfiles: state.formProfiles,
-    formProfilesLoading: state.formProfilesLoading,
-    formProfilesError: state.formProfilesError,
-    formProfilesFilter: state.formProfilesFilter,
-    formProfilesSelectedId: state.formProfilesSelectedId,
-    formProfilesLastTest: state.formProfilesLastTest
-  }));
-
+  const formProfiles = useDockStore((state) => state.formProfiles);
+  const formProfilesLoading = useDockStore((state) => state.formProfilesLoading);
+  const formProfilesError = useDockStore((state) => state.formProfilesError);
+  const formProfilesFilter = useDockStore((state) => state.formProfilesFilter);
+  const formProfilesSelectedId = useDockStore((state) => state.formProfilesSelectedId);
+  const formProfilesLastTest = useDockStore((state) => state.formProfilesLastTest);
   const actions = useDockStore((state) => state.actions);
 
   const [editingProfile, setEditingProfile] = useState<FormProfile | null>(null);

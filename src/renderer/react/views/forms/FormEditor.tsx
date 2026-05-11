@@ -1149,7 +1149,7 @@ const PreviewPanel = ({
             Sample values
           </h3>
           <p className="mt-1 text-xs text-slate-500">
-            Эти значения подставляются вместо {{variable}} в шаблоне.
+            Эти значения подставляются вместо {"{{variable}}"} в шаблоне.
           </p>
           <KeyValueEditor
             items={items}
