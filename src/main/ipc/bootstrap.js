@@ -13,7 +13,7 @@ const { registerShellIpc } = require("./shell");
 
 let registered = false;
 
-const registerMainIpc = ({ getMainWindow, getTabManager, tabManager }) => {
+const registerMainIpc = ({ getMainWindow, getTabManager }) => {
   if (registered) {
     return;
   }
