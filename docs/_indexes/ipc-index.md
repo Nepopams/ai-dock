@@ -4,6 +4,8 @@
 
 ## 1) Main IPC modules
 Основные модули регистрации IPC в `src/main/ipc/**`:
+- bootstrap/registry layer: `bootstrap.js`
+- shell-level handlers: `shell.js` (`tabs:*`, `prompts:*`, `clipboard:*`, `layout:*`, `promptRouter:*`, `save-chat-md`)
 - `chat.js`
 - `completions.js`
 - `registry.ipc.ts/js`
@@ -15,6 +17,8 @@
 - `formProfiles.ipc.ts/js`
 - `formRunner.ipc.ts/js`
 - BrowserView bridge: `src/main/browserViews/adapterBridge.ts/js`
+
+`src/main/main.js` создаёт окно/`TabManager` и вызывает bootstrap-регистрацию, но не содержит inline IPC handler registrations.
 
 ## 2) Preload exposed APIs
 Основные preload-модули в `src/preload/modules/**`:

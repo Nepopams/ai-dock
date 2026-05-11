@@ -1,9 +1,9 @@
 # Service Catalog — VR AI Dock
 
 ## 1) Main process
-- **Responsibility:** lifecycle приложения, BrowserWindow, IPC registration, orchestration сервисов.
+- **Responsibility:** lifecycle приложения, BrowserWindow, IPC bootstrap handoff, orchestration сервисов.
 - **Owned files:** `src/main/main.js`, `src/main/ipc/**`, `src/main/services/**`, `src/main/tabManager.js`.
-- **IPC dependencies:** все доменные IPC handlers + adapter bridge.
+- **IPC dependencies:** `src/main/ipc/bootstrap.js`, shell-level IPC handlers, все доменные IPC handlers + adapter bridge.
 - **Data storage:** state/store и файловые хранилища (history/registry/settings, где применимо).
 - **Test/smoke expectations:** smoke сценарии запуска IPC + безопасная навигация + отсутствие утечек при закрытии вкладок.
 
