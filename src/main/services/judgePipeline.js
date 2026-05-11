@@ -9,6 +9,9 @@ const { send: sendOpenAI } = require("../providers/openaiCompatible");
 const { send: sendGenericHttp } = require("../providers/genericHttp");
 const { isJudgeInput, isJudgeScore } = require("../../shared/types/judge.js");
 
+const JUDGE_RESULT_SCHEMA_VERSION = "judge.result.v1";
+const JUDGE_CONTRACT_VERSION = "judge.compat.v1";
+
 const SYSTEM_PROMPT = (() => {
   try {
     return fs.readFileSync(
@@ -117,7 +120,8 @@ const extractJson = (raw) => {
   try {
     return {
       data: JSON.parse(trimmed),
-      partial: false
+      partial: false,
+      parseState: "strict_json"
     };
   } catch {
     // continue
@@ -127,7 +131,8 @@ const extractJson = (raw) => {
     try {
       return {
         data: JSON.parse(fenced[1].trim()),
-        partial: true
+        partial: true,
+        parseState: "extracted_json"
       };
     } catch {
       // continue
@@ -140,7 +145,8 @@ const extractJson = (raw) => {
     try {
       return {
         data: JSON.parse(slice),
-        partial: true
+        partial: true,
+        parseState: "extracted_json"
       };
     } catch {
       // ignore
@@ -148,6 +154,28 @@ const extractJson = (raw) => {
   }
   return null;
 };
+
+const buildResultMetadata = ({
+  input,
+  profile,
+  completion,
+  durationMs,
+  parseState,
+  partialReason
+}) => ({
+  schemaVersion: JUDGE_RESULT_SCHEMA_VERSION,
+  contractVersion: JUDGE_CONTRACT_VERSION,
+  judgeProfileId: input.judgeProfileId,
+  driver: profile?.driver === "generic-http" ? "generic-http" : "openai-compatible",
+  model: profile?.defaultModel,
+  durationMs,
+  finishReason:
+    typeof completion?.finishReason === "string" ? completion.finishReason : undefined,
+  usage: completion?.usage,
+  responseFormat: "json_object",
+  parseState,
+  partialReason
+});
 
 const normalizeScores = (input, payloadScores) => {
   const result = {};
@@ -164,7 +192,7 @@ const normalizeScores = (input, payloadScores) => {
   return result;
 };
 
-const buildFallbackResult = (input, raw, reason) => {
+const buildFallbackResult = (input, raw, reason, metadata = {}) => {
   const scores = {};
   for (let index = 0; index < input.answers.length; index += 1) {
     const key = answerKey(index);
@@ -177,7 +205,12 @@ const buildFallbackResult = (input, raw, reason) => {
     verdict: "Unable to determine winner",
     notes: reason,
     rawResponse: raw,
-    partial: true
+    partial: true,
+    metadata: {
+      ...metadata,
+      parseState: "failed",
+      partialReason: reason || "Failed to parse judge response"
+    }
   };
 };
 
@@ -188,6 +221,7 @@ const runJudge = async (input) => {
     throw err;
   }
 
+  const startedAt = Date.now();
   const { profile, runtimeProfile } = await resolveProfile(input.judgeProfileId);
   const messages = [
     { role: "system", content: SYSTEM_PROMPT },
@@ -216,16 +250,26 @@ const runJudge = async (input) => {
     const err = new Error(
       typeof error?.message === "string" ? error.message : "Judge request failed"
     );
-    err.code = error?.code || error?.status || "judge_failed";
+    err.code = "provider_failed";
+    err.upstreamCode = error?.code || error?.status;
     throw err;
   }
 
   const parsed = extractJson(completion.content);
+  const durationMs = Date.now() - startedAt;
   if (!parsed || !parsed.data || typeof parsed.data !== "object") {
     return buildFallbackResult(
       input,
       completion.content,
-      "Judge response is not valid JSON"
+      "Judge response is not valid JSON",
+      buildResultMetadata({
+        input,
+        profile,
+        completion,
+        durationMs,
+        parseState: "failed",
+        partialReason: "Judge response is not valid JSON"
+      })
     );
   }
 
@@ -246,7 +290,15 @@ const runJudge = async (input) => {
     summary,
     verdict,
     rawResponse: completion.content,
-    partial: Boolean(parsed.partial)
+    partial: Boolean(parsed.partial),
+    metadata: buildResultMetadata({
+      input,
+      profile,
+      completion,
+      durationMs,
+      parseState: parsed.parseState,
+      partialReason: parsed.partial ? "Judge JSON was extracted from a larger response" : undefined
+    })
   };
 };
 
