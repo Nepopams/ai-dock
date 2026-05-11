@@ -34,7 +34,7 @@
 
 ## Architecture decision records
 21. `docs/architecture/decisions/**` - ADR/architecture decisions.
-22. `docs/architecture/decisions/ADR-002-main-process-typescript-source-strategy.md` - Proposed strategy for `src/main/**` JS/TS source-of-truth.
+22. `docs/architecture/decisions/ADR-002-main-process-typescript-source-strategy.md` - Accepted strategy for `src/main/**` JS/TS source-of-truth.
 
 ## Initiative layer references
 13. `.codex/workflows/initiative-to-delivery.md` — полный workflow инициативы до delivery report.

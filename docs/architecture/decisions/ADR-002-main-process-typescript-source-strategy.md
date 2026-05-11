@@ -1,7 +1,7 @@
 # ADR-002: Main Process TypeScript Source Strategy
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 The Electron main process currently starts from `package.json` `main = "src/main/main.js"`. Main-process modules are loaded through CommonJS `require`, and extensionless requires resolve to `.js` files in the current runtime. `tsconfig.json` includes `src/renderer/react` and `src/types`, but not `src/main/**`. `vite.config.js` builds the renderer, and `scripts/build-preload.js` bundles only `src/preload/index.ts`.
