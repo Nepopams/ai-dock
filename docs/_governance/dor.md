@@ -14,4 +14,13 @@
    - IPC boundary;
    - риск утечки секретов/токенов.
 
+## Дополнительно для runtime tasks
+9. Явно перечислены affected modules.
+10. Выбран executor subagent.
+11. Allowed paths и forbidden paths зафиксированы явно и без двусмысленности.
+12. Зафиксирован expected IPC impact (`none` допустимо).
+13. Зафиксирован expected state impact (`none` допустимо).
+14. Зафиксирован expected tests (unit/smoke/manual QA).
+15. Rollback strategy детализирована для runtime-изменений.
+
 Если хотя бы один пункт не выполнен — сначала PLAN и Human Gate.
