@@ -1,6 +1,6 @@
 # AI Dock UI v2 Workpack Roadmap
 
-This roadmap decomposes UI v2 implementation into bounded workpacks. Only `WP-UI-001` is performed by this initiative. Runtime workpacks require separate PLAN, Human Gate, APPLY, and REVIEW.
+This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, and `WP-UI-002` establishes the runtime token/primitives foundation. Remaining runtime workpacks require separate PLAN, Human Gate, APPLY, and REVIEW.
 
 ## WP-UI-001 Design Handoff Inventory
 | Field | Detail |
@@ -15,6 +15,7 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. Only `WP-UI
 ## WP-UI-002 Global Design Tokens and UI Primitives
 | Field | Detail |
 | --- | --- |
+| Status | Done by `IN-UI-002-global-design-tokens-primitives`; screen adoption remains deferred. |
 | Goal | Map UI v2 tokens to existing `global.css` variables/classes and define stable shared states for buttons, inputs, cards, tables, chips, tabs, modals, focus, disabled, loading, empty, warning, and error. |
 | Affected files | `src/renderer/react/styles/global.css`; limited shared component class callsites only if PLAN proves necessary. |
 | Forbidden files | `package.json`, `package-lock.json`, `src/main/**`, `src/preload/**`, `src/shared/**`, `scripts/**`, build/release outputs, unrelated views. |
@@ -80,4 +81,4 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. Only `WP-UI
 5. `WP-UI-006` should precede `WP-UI-007` if form/control primitives need hardening.
 
 ## Next recommended runtime workpack
-`WP-UI-002 Global Design Tokens and UI Primitives` is the next runtime workpack after this initiative.
+`WP-UI-003 Shell Restyle` is the next runtime workpack after the `WP-UI-002` token/primitives foundation.
