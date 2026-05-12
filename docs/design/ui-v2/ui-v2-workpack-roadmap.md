@@ -1,6 +1,6 @@
 # AI Dock UI v2 Workpack Roadmap
 
-This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, `WP-UI-004` applied the Local Chat restyle, and `WP-UI-005` applies the Evaluation Studio restyle. Remaining runtime workpacks require separate PLAN, Human Gate, APPLY, and REVIEW.
+This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, `WP-UI-004` applied the Local Chat restyle, `WP-UI-005` applied the Evaluation Studio restyle, and `WP-UI-006` applied the Connections/Form Profiles restyle. Remaining runtime workpacks require separate PLAN, Human Gate, APPLY, and REVIEW.
 
 ## WP-UI-001 Design Handoff Inventory
 | Field | Detail |
@@ -59,6 +59,7 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 ## WP-UI-006 Connections/Form Profiles Restyle
 | Field | Detail |
 | --- | --- |
+| Status | Done by `IN-UI-006-connections-form-profiles-restyle`; provider/profile/form/registry behavior remains unchanged. |
 | Goal | Apply UI v2 to Connections and Form Profiles settings surfaces with consistent forms, tabs, validation, dirty, confirm, and test states. |
 | Affected files | `ConnectionsSettings.tsx`, `CompletionsSettings.tsx`, `views/settings/**`, `FormProfilesManager.tsx`, `FormEditor.tsx`, `ConfirmDialog.tsx`, `global.css`. |
 | Forbidden files | Provider/profile storage contracts, registry contracts, main/preload/shared IPC, package/config/build/scripts files. |
@@ -84,4 +85,4 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 5. `WP-UI-006` should precede `WP-UI-007` if form/control primitives need hardening.
 
 ## Next recommended runtime workpack
-`WP-UI-006 Connections/Form Profiles Restyle` is the next runtime workpack after the `WP-UI-005` Evaluation Studio Restyle.
+`WP-UI-007 Remaining Views Restyle` is the next runtime workpack after the `WP-UI-006` Connections/Form Profiles Restyle.

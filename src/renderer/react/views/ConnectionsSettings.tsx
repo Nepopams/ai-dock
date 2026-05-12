@@ -16,6 +16,12 @@ const ConnectionsSettings = () => {
 
   return (
     <div className="connections-settings">
+      <header className="connections-header">
+        <div>
+          <h1>Connections</h1>
+          <p>Completion profiles, service registry, and adapter overrides</p>
+        </div>
+      </header>
       <div className="connections-tabs" role="tablist">
         {tabs.map((tab) => (
           <button

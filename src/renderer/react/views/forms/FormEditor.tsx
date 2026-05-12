@@ -386,7 +386,7 @@ const FormEditor = ({
 
   if (!profile) {
     return (
-      <div className="flex h-full items-center justify-center rounded border border-dashed border-slate-700 bg-slate-900 text-slate-400">
+      <div className="form-editor-empty">
         Select or create a form profile to begin editing.
       </div>
     );
@@ -397,10 +397,10 @@ const FormEditor = ({
   const bodyKind = profile.template.bodyKind ?? (profile.template.body ? "json" : "none");
 
   return (
-    <div className="flex h-full gap-6">
-      <div className="flex min-h-0 flex-1 flex-col rounded border border-slate-800 bg-slate-950">
-        <div className="border-b border-slate-800">
-          <nav className="flex gap-2 px-4 pt-3 text-sm">
+    <div className="form-editor">
+      <div className="form-editor-main">
+        <div className="form-editor-tabbar">
+          <nav className="form-editor-tabs" aria-label="Form profile sections">
             <TabButton active={activeTab === "profile"} onClick={() => setActiveTab("profile")}>
               Profile
             </TabButton>
@@ -412,7 +412,7 @@ const FormEditor = ({
             </TabButton>
           </nav>
         </div>
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="form-editor-content">
           {activeTab === "profile" && (
             <ProfileTab
               profile={profile}
@@ -460,15 +460,15 @@ const FormEditor = ({
             />
           )}
         </div>
-        <div className="border-t border-slate-800 bg-slate-950 px-6 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex flex-col gap-1 text-xs text-amber-400">
+        <div className="form-editor-footer">
+          <div className="form-editor-footer-inner">
+            <div className="form-editor-validation">
               {validationIssues.map((issue) => (
                 <span key={issue}>- {issue}</span>
               ))}
               {jsonError && <span>- JSON body: {jsonError}</span>}
             </div>
-            <div className="flex gap-2">
+            <div className="form-editor-actions">
               {onOpenRun && profile && (
                 <button
                   type="button"
@@ -479,11 +479,7 @@ const FormEditor = ({
                     !!jsonError ||
                     saving
                   }
-                  className={`rounded border px-4 py-2 text-sm ${
-                    dirty || validationIssues.length > 0 || !!jsonError || saving
-                      ? "cursor-not-allowed border-slate-700 text-slate-500"
-                      : "border-indigo-600 text-indigo-200 hover:border-indigo-400 hover:text-indigo-100"
-                  }`}
+                  className="form-editor-button form-editor-button--secondary"
                 >
                   Open Run...
                 </button>
@@ -491,7 +487,7 @@ const FormEditor = ({
               <button
                 type="button"
                 onClick={onCancel}
-                className="rounded border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-slate-500"
+                className="form-editor-button form-editor-button--secondary"
               >
                 Cancel
               </button>
@@ -499,11 +495,7 @@ const FormEditor = ({
                 type="button"
                 onClick={runSave}
                 disabled={saving || !dirty || validationIssues.length > 0 || !!jsonError}
-                className={`rounded px-4 py-2 text-sm font-medium ${
-                  saving || !dirty || validationIssues.length > 0 || !!jsonError
-                    ? "cursor-not-allowed bg-slate-700 text-slate-400"
-                    : "bg-indigo-600 text-white hover:bg-indigo-500"
-                }`}
+                className="form-editor-button form-editor-button--primary"
               >
                 {saving ? "Saving..." : "Save"}
               </button>
@@ -536,9 +528,7 @@ const TabButton = ({ active, children, onClick }: TabButtonProps) => (
   <button
     type="button"
     onClick={onClick}
-    className={`rounded-t px-3 py-2 transition ${
-      active ? "bg-slate-900 text-slate-100" : "text-slate-400 hover:text-slate-100"
-    }`}
+    className={`form-editor-tab${active ? " active" : ""}`}
   >
     {children}
   </button>
@@ -551,7 +541,7 @@ interface ProfileTabProps {
 }
 
 const ProfileTab = ({ profile, streamMode, onChange }: ProfileTabProps) => (
-  <div className="space-y-4">
+  <div className="form-editor-section">
     <div>
       <label className="block text-sm font-medium text-slate-200">Label</label>
       <input
@@ -673,7 +663,7 @@ const RequestTab = ({
   onJsonChange,
   onFormBodyChange
 }: RequestTabProps) => (
-  <div className="space-y-6">
+  <div className="form-editor-section form-editor-section--wide">
     <div className="grid gap-4 md:grid-cols-[120px_1fr]">
       <div>
         <label className="block text-sm font-medium text-slate-200">Method</label>
@@ -722,17 +712,13 @@ const RequestTab = ({
     </div>
     <div>
       <label className="block text-sm font-medium text-slate-200">Body</label>
-      <div className="mt-2 flex flex-wrap gap-2 text-xs">
+      <div className="form-editor-segmented">
         {(Object.keys(BODY_KIND_LABEL) as BodyKind[]).map((kind) => (
           <button
             key={kind}
             type="button"
             onClick={() => onBodyKindChange(kind)}
-            className={`rounded px-3 py-1 ${
-              bodyKind === kind
-                ? "bg-indigo-600 text-white"
-                : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-            }`}
+            className={`form-editor-segment${bodyKind === kind ? " active" : ""}`}
           >
             {BODY_KIND_LABEL[kind]}
           </button>
@@ -809,23 +795,19 @@ const SchemaTab = ({
   }, [selectedField]);
 
   return (
-    <div className="grid gap-6 md:grid-cols-[260px_1fr]">
-      <div className="space-y-4 rounded border border-slate-800 bg-slate-900 p-3">
+    <div className="form-editor-schema">
+      <div className="form-editor-schema-list">
         <div className="space-y-2">
           {profile.schema.fields.map((field, index) => {
             const isActive = field.id === selectedFieldId;
             return (
               <div
                 key={field.id}
-                className={`rounded border px-3 py-2 text-sm ${
-                  isActive
-                    ? "border-indigo-500 bg-slate-800 text-slate-100"
-                    : "border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500"
-                }`}
+                className={`form-editor-field-card${isActive ? " active" : ""}`}
               >
                 <button
                   type="button"
-                  className="w-full text-left"
+                  className="form-editor-field-select"
                   onClick={() => onSelectField(field.id)}
                 >
                   <div className="flex items-center justify-between">
@@ -834,13 +816,13 @@ const SchemaTab = ({
                   </div>
                   <div className="text-xs text-slate-500">{field.name}</div>
                 </button>
-                <div className="mt-2 flex items-center justify-between text-xs">
-                  <div className="space-x-2">
+                <div className="form-editor-field-actions">
+                  <div className="form-editor-field-move">
                     <button
                       type="button"
                       onClick={() => onMoveField(field.id, -1)}
                       disabled={index === 0}
-                      className="rounded border border-slate-700 px-2 py-1 hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="form-editor-mini-button"
                     >
                       ▲
                     </button>
@@ -848,7 +830,7 @@ const SchemaTab = ({
                       type="button"
                       onClick={() => onMoveField(field.id, 1)}
                       disabled={index === profile.schema.fields.length - 1}
-                      className="rounded border border-slate-700 px-2 py-1 hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="form-editor-mini-button"
                     >
                       ▼
                     </button>
@@ -856,7 +838,7 @@ const SchemaTab = ({
                   <button
                     type="button"
                     onClick={() => onRemoveField(field.id)}
-                    className="rounded border border-slate-700 px-2 py-1 text-rose-400 hover:border-rose-500 hover:text-rose-300"
+                    className="form-editor-mini-button form-editor-mini-button--danger"
                   >
                     Delete
                   </button>
@@ -864,7 +846,7 @@ const SchemaTab = ({
               </div>
             );
           })}
-          <div className="rounded border border-dashed border-slate-700 bg-slate-900 p-3 text-sm">
+          <div className="form-editor-add-field">
             <label className="block text-xs font-semibold uppercase text-slate-400">
               Add field
             </label>
@@ -874,7 +856,7 @@ const SchemaTab = ({
                   key={option.value}
                   type="button"
                   onClick={() => onAddField(option.value)}
-                  className="rounded border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:border-indigo-500 hover:text-indigo-200"
+                  className="form-editor-button form-editor-button--secondary"
                 >
                   {option.label}
                 </button>
@@ -883,7 +865,7 @@ const SchemaTab = ({
           </div>
         </div>
       </div>
-      <div className="rounded border border-slate-800 bg-slate-900 p-4">
+      <div className="form-editor-field-detail">
         {selectedField ? (
           <FieldEditor
             field={selectedField}
@@ -1135,15 +1117,15 @@ const PreviewPanel = ({
   };
 
   return (
-    <aside className="flex w-96 flex-col rounded border border-slate-800 bg-slate-950">
-      <div className="border-b border-slate-800 px-4 py-3">
+    <aside className="form-editor-preview">
+      <div className="form-editor-preview-header">
         <h2 className="text-sm font-semibold text-slate-200">Preview & Test</h2>
         <p className="text-xs text-slate-400">
           Dry-run без сети. Stream mode:{" "}
           <span className="uppercase text-slate-100">{streamMode}</span>
         </p>
       </div>
-      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+      <div className="form-editor-preview-body">
         <div>
           <h3 className="text-xs font-semibold uppercase text-slate-400">
             Sample values
@@ -1164,16 +1146,12 @@ const PreviewPanel = ({
             type="button"
             onClick={onTest}
             disabled={testing || dirty}
-            className={`w-full rounded px-4 py-2 text-sm font-medium ${
-              testing || dirty
-                ? "cursor-not-allowed bg-slate-700 text-slate-400"
-                : "bg-emerald-600 text-white hover:bg-emerald-500"
-            }`}
+            className="form-editor-button form-editor-button--primary form-editor-button--full"
           >
             {testing ? "Running..." : dirty ? "Save changes to test" : "Run Test"}
           </button>
         </div>
-        <div className="rounded border border-slate-800 bg-slate-900 p-3 text-sm text-slate-200">
+        <div className="form-editor-test-result">
           {testResult ? (
             testResult.ok ? (
               <div className="space-y-2">
