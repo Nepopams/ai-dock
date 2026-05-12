@@ -2,7 +2,10 @@ const { BrowserWindow, dialog, ipcMain } = require("electron");
 const path = require("path");
 const fs = require("fs/promises");
 const { IPC_EXPORT_JUDGE_MD, IPC_EXPORT_JUDGE_JSON } = require("../../shared/ipc/export.ipc");
-const { isJudgeExportPayload, isJudgeResult, isJudgeScore } = require("../../shared/types/judge.js");
+const {
+  isJudgeExportPayloadForEvaluationRun,
+  mapJudgeExportPayloadToEvaluationRun
+} = require("../../shared/types/evaluationRun.js");
 
 const ok = (filePath) => ({
   ok: true,
@@ -22,12 +25,64 @@ const formatBlockquote = (text) =>
     .map((line) => `> ${line}`)
     .join("\n");
 
+const escapeMarkdownTableCell = (value) =>
+  String(value ?? "")
+    .replace(/\|/g, "\\|")
+    .replace(/\r?\n/g, "<br>");
+
+const isScoreEntry = (value) =>
+  value &&
+  typeof value === "object" &&
+  typeof value.criterion === "string" &&
+  value.criterion.trim() &&
+  typeof value.score === "number" &&
+  Number.isFinite(value.score);
+
+const discoverCriteria = (payload) => {
+  const criteria = [];
+  const seen = new Set();
+  const scores = payload.result?.scores || {};
+  const buckets = [];
+
+  for (let index = 0; index < (payload.answers || []).length; index += 1) {
+    const bucket = scores[answerKey(index)];
+    if (Array.isArray(bucket)) {
+      buckets.push(bucket);
+    }
+  }
+
+  for (const bucket of Object.values(scores)) {
+    if (Array.isArray(bucket) && !buckets.includes(bucket)) {
+      buckets.push(bucket);
+    }
+  }
+
+  for (const bucket of buckets) {
+    for (const score of bucket) {
+      if (!isScoreEntry(score)) {
+        continue;
+      }
+      const criterion = score.criterion.trim();
+      if (!seen.has(criterion)) {
+        seen.add(criterion);
+        criteria.push(criterion);
+      }
+    }
+  }
+
+  return criteria;
+};
+
 const formatMarkdownTable = (payload) => {
   const answers = payload.answers || [];
   const headers = ["Criterion"].concat(
     answers.map((answer, index) => `Answer ${index + 1} (${answer.agentId || `agent_${index + 1}`})`)
   );
-  const criteria = ["coherence", "factuality", "helpfulness"];
+  const criteria = discoverCriteria(payload);
+  if (!criteria.length) {
+    return "_No scores provided._";
+  }
+
   const rows = criteria.map((criterion) => {
     const cells = [criterion];
     for (let index = 0; index < answers.length; index += 1) {
@@ -35,22 +90,94 @@ const formatMarkdownTable = (payload) => {
       const scoreEntry = Array.isArray(bucket)
         ? bucket.find((item) => item?.criterion === criterion)
         : null;
-      if (scoreEntry && isJudgeScore(scoreEntry)) {
-        const scoreText = Number.isFinite(scoreEntry.score) ? scoreEntry.score.toFixed(1).replace(/\.0$/, "") : "—";
-        const rationale = scoreEntry.rationale ? ` — ${scoreEntry.rationale}` : "";
+      if (scoreEntry && isScoreEntry(scoreEntry)) {
+        const scoreText = scoreEntry.score.toFixed(1).replace(/\.0$/, "");
+        const rationale =
+          typeof scoreEntry.rationale === "string" && scoreEntry.rationale.trim()
+            ? ` - ${scoreEntry.rationale.trim()}`
+            : "";
         cells.push(`${scoreText}${rationale}`);
       } else {
-        cells.push("—");
+        cells.push("-");
       }
     }
     return cells;
   });
 
-  const headerLine = `| ${headers.join(" | ")} |`;
+  const headerLine = `| ${headers.map(escapeMarkdownTableCell).join(" | ")} |`;
   const separatorLine = `| ${headers.map(() => "---").join(" | ")} |`;
-  const rowLines = rows.map((row) => `| ${row.join(" | ")} |`);
+  const rowLines = rows.map((row) => `| ${row.map(escapeMarkdownTableCell).join(" | ")} |`);
   return [headerLine, separatorLine, ...rowLines].join("\n");
 };
+
+const formatValidatorFindings = (validatorResults) => {
+  if (!Array.isArray(validatorResults) || !validatorResults.length) {
+    return [];
+  }
+  const headers = ["Answer", "Type", "Status", "Key/Path", "Expected", "Actual", "Message"];
+  const rows = validatorResults.map((finding) => [
+    finding.answerKey || "-",
+    finding.type || "-",
+    finding.status || "-",
+    finding.key || finding.path || "-",
+    Array.isArray(finding.expected) && finding.expected.length ? finding.expected.join(", ") : "-",
+    finding.actual || "-",
+    finding.message || "-"
+  ]);
+  return [
+    "## Validator Findings",
+    "",
+    `| ${headers.map(escapeMarkdownTableCell).join(" | ")} |`,
+    `| ${headers.map(() => "---").join(" | ")} |`,
+    ...rows.map((row) => `| ${row.map(escapeMarkdownTableCell).join(" | ")} |`)
+  ];
+};
+
+const formatMetadata = (metadata) => {
+  if (!metadata || typeof metadata !== "object") {
+    return [];
+  }
+
+  const rows = [];
+  const addString = (label, value) => {
+    if (typeof value === "string" && value.trim()) {
+      rows.push([label, value.trim()]);
+    }
+  };
+
+  addString("Profile ID", metadata.judgeProfileId);
+  addString("Driver", metadata.driver);
+  addString("Model", metadata.model);
+  addString("Validation mode", metadata.validationMode);
+  addString("Parse state", metadata.parseState);
+  if (Number.isFinite(metadata.durationMs) && metadata.durationMs >= 0) {
+    rows.push(["Duration", `${Number(metadata.durationMs)} ms`]);
+  }
+  if (typeof metadata.customPromptApplied === "boolean") {
+    rows.push(["Custom prompt applied", metadata.customPromptApplied ? "true" : "false"]);
+  }
+  addString("Rubric source", metadata.rubricSource);
+
+  if (!rows.length) {
+    return [];
+  }
+
+  return [
+    "## Metadata",
+    "",
+    "| Field | Value |",
+    "| --- | --- |",
+    ...rows.map((row) => `| ${row.map(escapeMarkdownTableCell).join(" | ")} |`)
+  ];
+};
+
+const buildJsonExportObject = (payload) => ({
+  question: payload.question,
+  answers: payload.answers,
+  result: payload.result,
+  generatedAt: payload.generatedAt,
+  evaluationRun: mapJudgeExportPayloadToEvaluationRun(payload)
+});
 
 const buildMarkdownReport = (payload) => {
   const generatedAt = (() => {
@@ -96,12 +223,18 @@ const buildMarkdownReport = (payload) => {
     payload.result?.verdict || "No verdict provided."
   ];
 
-  if (payload.result?.partial) {
-    lines.push("", "> ⚠️ Parsed with warnings.", "");
+  const validatorLines = formatValidatorFindings(payload.result?.validatorResults);
+  if (validatorLines.length) {
+    lines.push("", ...validatorLines);
   }
 
-  if (payload.result?.rawResponse) {
-    lines.push("## Raw Response", "", "```json", JSON.stringify(payload.result.rawResponse, null, 2), "```");
+  const metadataLines = formatMetadata(payload.result?.metadata);
+  if (metadataLines.length) {
+    lines.push("", ...metadataLines);
+  }
+
+  if (payload.result?.partial) {
+    lines.push("", "> Parsed with warnings.", "");
   }
 
   return lines.join("\n");
@@ -118,14 +251,9 @@ const extractTimestamp = (value) => {
 };
 
 const ensurePayload = (payload) => {
-  if (!isJudgeExportPayload(payload)) {
+  if (!isJudgeExportPayloadForEvaluationRun(payload)) {
     const error = new Error("Invalid judge export payload");
     error.code = "invalid_payload";
-    throw error;
-  }
-  if (!isJudgeResult(payload.result)) {
-    const error = new Error("Judge result is not provided");
-    error.code = "invalid_result";
     throw error;
   }
   return payload;
@@ -168,12 +296,7 @@ const registerExportIpc = () => {
       if (canceled || !filePath) {
         return fail("Export cancelled");
       }
-      const serializable = {
-        question: normalized.question,
-        answers: normalized.answers,
-        result: normalized.result,
-        generatedAt: normalized.generatedAt
-      };
+      const serializable = buildJsonExportObject(normalized);
       await fs.writeFile(filePath, `${JSON.stringify(serializable, null, 2)}\n`, "utf8");
       return ok(filePath);
     } catch (error) {
@@ -183,5 +306,14 @@ const registerExportIpc = () => {
 };
 
 module.exports = {
-  registerExportIpc
+  registerExportIpc,
+  _private: {
+    buildJsonExportObject,
+    buildMarkdownReport,
+    discoverCriteria,
+    ensurePayload,
+    formatMarkdownTable,
+    formatMetadata,
+    formatValidatorFindings
+  }
 };

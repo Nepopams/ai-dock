@@ -148,9 +148,6 @@ const createJudgeSanitizers = ({ validateString, ensureRequestId }) => {
 
   const sanitizeJudgeCriterion = (value, path) => {
     const normalized = validateString(value, path);
-    if (normalized !== "coherence" && normalized !== "factuality" && normalized !== "helpfulness") {
-      throw new Error(`Invalid criterion at ${path}`);
-    }
     return normalized;
   };
 
