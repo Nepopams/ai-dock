@@ -144,6 +144,7 @@ export interface CompareDraft {
   answers: CompareDraftAnswer[];
   judgeProfileId?: string;
   rubric?: string;
+  customPrompt?: string;
 }
 
 interface ToastState {
@@ -190,6 +191,7 @@ type BaseActions = {
     answers: Array<{ agentId?: string; text: string; id?: string }>;
     judgeProfileId?: string;
     rubric?: string;
+    customPrompt?: string;
     requestId?: string;
   }) => Promise<void>;
   updateCompareDraft: (partial: Partial<CompareDraft>) => void;
@@ -748,7 +750,9 @@ export const useDockStore = create<DockState>((set, get) => {
             text: answer.text
           })),
           judgeProfileId: payload?.judgeProfileId,
-          rubric: payload?.rubric
+          rubric: payload?.rubric,
+          customPrompt:
+            typeof payload?.customPrompt === "string" ? payload.customPrompt : undefined
         }
       }));
       await get().actions.focusLocalView("compare");

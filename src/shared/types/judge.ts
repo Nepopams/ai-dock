@@ -14,6 +14,8 @@ export interface JudgeResultMetadata {
   judgeProfileId?: string;
   driver?: string;
   model?: string;
+  rubricSource?: "default" | "custom";
+  customPromptApplied?: boolean;
   durationMs?: number;
   finishReason?: string;
   usage?: unknown;
@@ -33,6 +35,7 @@ export interface JudgeInput {
   question: string;
   answers: JudgeInputAnswer[];
   rubric?: string;
+  customPrompt?: string;
 }
 
 export interface JudgeResult {
@@ -67,6 +70,12 @@ const isOptionalString = (value: unknown): value is string | undefined =>
 const isOptionalNumber = (value: unknown): value is number | undefined =>
   value === undefined || (typeof value === "number" && !Number.isNaN(value));
 
+const isOptionalBoolean = (value: unknown): value is boolean | undefined =>
+  value === undefined || typeof value === "boolean";
+
+const isOptionalRubricSource = (value: unknown): value is "default" | "custom" | undefined =>
+  value === undefined || value === "default" || value === "custom";
+
 export const isJudgeScore = (value: unknown): value is JudgeScore => {
   if (!isObject(value)) {
     return false;
@@ -93,6 +102,8 @@ export const isJudgeResultMetadata = (value: unknown): value is JudgeResultMetad
     !isOptionalString(value.judgeProfileId) ||
     !isOptionalString(value.driver) ||
     !isOptionalString(value.model) ||
+    !isOptionalRubricSource(value.rubricSource) ||
+    !isOptionalBoolean(value.customPromptApplied) ||
     !isOptionalNumber(value.durationMs) ||
     !isOptionalString(value.finishReason) ||
     !isOptionalString(value.responseFormat) ||
@@ -124,6 +135,9 @@ export const isJudgeInput = (value: unknown): value is JudgeInput => {
     return false;
   }
   if (value.rubric !== undefined && !isString(value.rubric)) {
+    return false;
+  }
+  if (value.customPrompt !== undefined && !isString(value.customPrompt)) {
     return false;
   }
   return true;

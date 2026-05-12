@@ -16,7 +16,7 @@ const createSanitizers = () =>
     ensureRequestId: (value) => (typeof value === "string" && value.trim() ? value.trim() : "generated-id")
   });
 
-test("sanitizeJudgeInput normalizes request id, answers, and rubric", () => {
+test("sanitizeJudgeInput normalizes request id, answers, rubric, and custom prompt", () => {
   const { sanitizeJudgeInput } = createSanitizers();
   const input = sanitizeJudgeInput({
     judgeProfileId: " default ",
@@ -25,7 +25,8 @@ test("sanitizeJudgeInput normalizes request id, answers, and rubric", () => {
       { text: " Answer A " },
       { agentId: " model-b ", text: " Answer B " }
     ],
-    rubric: " Custom rubric "
+    rubric: " Custom rubric ",
+    customPrompt: " Prefer evidence-backed answers. "
   });
 
   assert.deepEqual(input, {
@@ -36,8 +37,31 @@ test("sanitizeJudgeInput normalizes request id, answers, and rubric", () => {
       { agentId: "agent_1", text: "Answer A" },
       { agentId: "model-b", text: "Answer B" }
     ],
-    rubric: "Custom rubric"
+    rubric: "Custom rubric",
+    customPrompt: "Prefer evidence-backed answers."
   });
+});
+
+test("sanitizeJudgeInput omits empty custom prompt and rejects non-string custom prompt", () => {
+  const { sanitizeJudgeInput } = createSanitizers();
+  const sanitized = sanitizeJudgeInput({
+    judgeProfileId: "default",
+    question: "Question",
+    answers: [{ text: "Answer A" }, { text: "Answer B" }],
+    customPrompt: "   "
+  });
+
+  assert.equal(sanitized.customPrompt, undefined);
+  assert.throws(
+    () =>
+      sanitizeJudgeInput({
+        judgeProfileId: "default",
+        question: "Question",
+        answers: [{ text: "Answer A" }, { text: "Answer B" }],
+        customPrompt: ["not allowed"]
+      }),
+    /customPrompt must be a string/
+  );
 });
 
 test("sanitizeJudgeInput rejects fewer than two answers", () => {
@@ -80,12 +104,15 @@ test("sanitizeJudgeExportPayload handles object score buckets without agent ids"
         judgeProfileId: "default",
         driver: "openai-compatible",
         model: "gpt-test",
+        rubricSource: "custom",
+        customPromptApplied: true,
         durationMs: 25,
         finishReason: "stop",
         usage: { total_tokens: 25 },
         responseFormat: "json_object",
         parseState: "strict_json",
-        baseUrl: "https://example.invalid"
+        baseUrl: "https://example.invalid",
+        customPrompt: "Do not export this text"
       }
     },
     generatedAt: "2026-05-11T00:00:00.000Z"
@@ -95,7 +122,10 @@ test("sanitizeJudgeExportPayload handles object score buckets without agent ids"
   assert.equal(payload.result.scores.answer_1[0].rationale, "Clear");
   assert.equal(payload.result.scores.answer_1[0].agentId, undefined);
   assert.equal(payload.result.metadata.schemaVersion, "judge.result.v1");
+  assert.equal(payload.result.metadata.rubricSource, "custom");
+  assert.equal(payload.result.metadata.customPromptApplied, true);
   assert.equal(payload.result.metadata.baseUrl, undefined);
+  assert.equal(payload.result.metadata.customPrompt, undefined);
 });
 
 test("sanitizeJudgeExportPayload rejects invalid score criteria", () => {
