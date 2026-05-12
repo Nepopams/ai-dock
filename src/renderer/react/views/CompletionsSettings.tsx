@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useDockStore } from "../store/useDockStore";
+import { inferCompletionsProfileLabels } from "../../../shared/utils/completionsProfileLabels";
 
 interface HeaderRow {
   id: string;
@@ -243,6 +244,10 @@ const CompletionsSettings = () => {
   const selectedProfile = useMemo(
     () => profiles.find((profile) => profile.id === selectedId) || profiles[0],
     [profiles, selectedId]
+  );
+  const selectedProfileLabels = useMemo(
+    () => inferCompletionsProfileLabels(selectedProfile),
+    [selectedProfile]
   );
 
   useEffect(() => {
@@ -968,6 +973,7 @@ const handleAddProfile = () => {
             {profiles.map((profile) => {
               const isActiveProfile = activeName === profile.name;
               const isSelected = selectedProfile.id === profile.id;
+              const labels = inferCompletionsProfileLabels(profile);
               return (
                 <button
                   key={profile.id}
@@ -978,7 +984,7 @@ const handleAddProfile = () => {
                   <div className="completions-list-info">
                     <span className="completions-list-name">{profile.name}</span>
                     <span className="completions-list-meta">
-                      {profile.driver === "generic-http" ? "Generic HTTP" : "OpenAI"}
+                      {labels.summaryLabel}
                     </span>
                   </div>
                   {isActiveProfile && <span className="completions-list-badge">Active</span>}
@@ -992,6 +998,8 @@ const handleAddProfile = () => {
             <div>
               <h3>{selectedProfile.name}</h3>
               <p>{selectedProfile.driver === "openai-compatible" ? "Standard OpenAI-compatible /v1/chat/completions endpoint." : "Generic HTTP driver with templated payloads for custom providers."}</p>
+              <p>{selectedProfileLabels.summaryLabel}</p>
+              <p>{selectedProfileLabels.privacyHint}</p>
             </div>
             <div className="completions-editor-actions">
               <button

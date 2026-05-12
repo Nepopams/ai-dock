@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDockStore, CompareDraftAnswer } from "../store/useDockStore";
 import type { JudgeResult } from "../../../shared/types/judge";
+import { inferCompletionsProfileLabels } from "../../../shared/utils/completionsProfileLabels";
 
 type JudgeProfileOption = {
   name: string;
@@ -15,13 +16,17 @@ const buildProfileOptions = (payload: any): JudgeProfileOption[] => {
   if (!payload || !Array.isArray(payload.profiles)) {
     return [];
   }
-  return payload.profiles.map((profile: any) => ({
-    name: typeof profile.name === "string" ? profile.name : "",
-    label:
+  return payload.profiles.map((profile: any) => {
+    const name =
       typeof profile.name === "string" && profile.name.trim()
         ? profile.name.trim()
-        : "Unnamed profile"
-  }));
+        : "Unnamed profile";
+    const labels = inferCompletionsProfileLabels(profile);
+    return {
+      name: typeof profile.name === "string" ? profile.name : "",
+      label: `${name} - ${labels.summaryLabel}`
+    };
+  });
 };
 
 const ensureArray = <T,>(value: T[] | undefined | null): T[] => (Array.isArray(value) ? value : []);
@@ -343,6 +348,9 @@ function CompareView() {
                 </option>
               ))}
             </select>
+            <span className="compare-label-hint">
+              Local/private labels are inferred from profile endpoint and are not a privacy guarantee.
+            </span>
           </label>
           <label className="compare-field">
             <span className="compare-label">
