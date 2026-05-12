@@ -107,6 +107,15 @@ function Sidebar() {
       }
     },
     {
+      id: "compare",
+      label: "Judge",
+      icon: infoIcon,
+      isActive: activeLocalView === "compare",
+      onClick: () => {
+        void focusLocalView("compare");
+      }
+    },
+    {
       id: "presets",
       label: "Media Presets",
       icon: promptsIcon,
