@@ -1,6 +1,6 @@
 # AI Dock UI v2 Workpack Roadmap
 
-This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, `WP-UI-004` applied the Local Chat restyle, `WP-UI-005` applied the Evaluation Studio restyle, and `WP-UI-006` applied the Connections/Form Profiles restyle. Remaining runtime workpacks require separate PLAN, Human Gate, APPLY, and REVIEW.
+This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, `WP-UI-004` applied the Local Chat restyle, `WP-UI-005` applied the Evaluation Studio restyle, `WP-UI-006` applied the Connections/Form Profiles restyle, and `WP-UI-007A` applied the Form Runner restyle. Remaining runtime workpacks require separate PLAN, Human Gate, APPLY, and REVIEW.
 
 ## WP-UI-001 Design Handoff Inventory
 | Field | Detail |
@@ -67,22 +67,44 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 | Manual smoke | Connections tabs switch; profiles load/save/test; registry/adapters render; form profile create/duplicate/delete/save/cancel/test/open runner. |
 | Risks | Utility-class screens may need scoped styling decisions; mitigate by keeping visual-only changes and avoiding schema/persistence edits. |
 
-## WP-UI-007 Remaining Views Restyle
+## WP-UI-007A Form Runner Restyle
 | Field | Detail |
 | --- | --- |
-| Goal | Apply UI v2 to Form Runner, Prompt Templates, Media Presets, History Hub, and remaining component states not covered earlier. |
-| Affected files | `FormRunView.tsx`, `TemplatesManager.tsx`, `InsertPromptDialog.tsx`, `PresetsGallery.tsx`, `ApplyPresetDialog.tsx`, `HistoryView.tsx`, `global.css`. |
-| Forbidden files | History storage/search/ingest contracts, form runner IPC/contracts, media preset schema/adapters, prompt template storage, package/config/build/scripts files. |
-| Verification | Build/test commands from workpack; view-by-view smoke; forbidden-path status check. |
-| Manual smoke | Form run sync/stream/abort/copy; prompt template CRUD/import/export; media preset CRUD/apply/import/export; history search/open/ingest/continue. |
-| Risks | Bundling too many views can still be large; PLAN may split WP-UI-007 into 7A/7B/7C if PNG complexity or diff size is high. |
+| Status | Done by `IN-UI-007A-form-runner-restyle`; form execution behavior, redaction, sync/stream/abort/copy, and navigation remain unchanged. |
+| Goal | Apply UI v2 to Form Runner as the direct follow-up to Form Profiles. |
+| Affected files | `FormRunView.tsx`, `global.css`. |
+| Forbidden files | Form runner IPC/contracts, shared form render utilities, form profile schema, stores, package/config/build/scripts files, unrelated views. |
+| Verification | Build/test commands from workpack; Form Runner smoke; forbidden-path status check. |
+| Manual smoke | Form run profile selection; generated fields; validation; request preview redaction; sync run; stream run; abort; copy preview/response; Back to Form Profiles. |
+| Risks | Manual Electron smoke is still required; canonical export name is absent and numeric `6.png` was used. |
+
+## WP-UI-007B Prompt Templates / Media Presets Restyle
+| Field | Detail |
+| --- | --- |
+| Goal | Apply UI v2 to Prompt Templates and Media Presets without changing prompt template storage, preset schema, import/export, or apply behavior. |
+| Affected files | `TemplatesManager.tsx`, prompt dialog components if scoped by PLAN, `PresetsGallery.tsx`, `ApplyPresetDialog.tsx`, `global.css`. |
+| Forbidden files | Prompt template storage contracts, media preset schema/adapters, main/preload/shared IPC, package/config/build/scripts files. |
+| Verification | Build/test commands from workpack; prompt template CRUD/import/export smoke; media preset CRUD/apply/import/export smoke; forbidden-path status check. |
+| Manual smoke | Prompt template create/edit/delete/insert/import/export; media preset create/edit/delete/apply/import/export; shell and previous UI v2 views still open. |
+| Risks | Prompt and media preset flows are storage-heavy; mitigate by keeping changes visual-only and scoped to renderer view/components. |
+
+## WP-UI-007C History Hub Restyle
+| Field | Detail |
+| --- | --- |
+| Goal | Apply UI v2 to History Hub without changing history storage/search/ingest/export or continue flows. |
+| Affected files | `HistoryView.tsx`, scoped history components if present, `global.css`. |
+| Forbidden files | History storage/search/ingest contracts, exporters, IPC/main/preload/shared, package/config/build/scripts files. |
+| Verification | Build/test commands from workpack; history search/open/ingest/export/continue smoke; forbidden-path status check. |
+| Manual smoke | History list/search/filter; open item; source metadata; continue in Chat; export/copy if available; previous UI v2 views still open. |
+| Risks | History Hub touches data-sensitive summaries; mitigate by visual-only renderer changes and no history schema changes. |
 
 ## Dependency order
 1. `WP-UI-001` must complete before runtime UI work.
 2. `WP-UI-002` must run before shell or view restyles.
 3. `WP-UI-003` should run before view restyles because shell dimensions and top inset affect every screen.
 4. `WP-UI-004` and `WP-UI-005` can follow the shell work in either order.
-5. `WP-UI-006` should precede `WP-UI-007` if form/control primitives need hardening.
+5. `WP-UI-006` should precede `WP-UI-007A` because Form Runner follows Form Profiles.
+6. `WP-UI-007B` and `WP-UI-007C` should remain separate to avoid a giant APPLY across remaining views.
 
 ## Next recommended runtime workpack
-`WP-UI-007 Remaining Views Restyle` is the next runtime workpack after the `WP-UI-006` Connections/Form Profiles Restyle.
+`WP-UI-007B Prompt Templates / Media Presets Restyle` is the next runtime workpack after `WP-UI-007A Form Runner Restyle`.
