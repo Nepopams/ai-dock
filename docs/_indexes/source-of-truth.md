@@ -28,6 +28,11 @@
 
 Конфликт обязан быть отмечен в отчёте REVIEW.
 
+## Design handoff references
+- `docs/design/ui-v2/**` - AI Dock UI v2 design handoff pack for Pencil source/reference handling, PNG export inventory, design tokens, implementation notes, screen map, and UI workpack roadmap.
+- `docs/design/ui-v2/design-tokens.md` - UI v2 token inventory for future runtime mapping into existing renderer styles.
+- `docs/design/ui-v2/screen-map.md` - mapping between Pencil frames, PNG exports, current React views/files, and target UI workpacks.
+
 ## Workpack layer references
 11. `docs/planning/workpacks/_template/workpack.md` — шаблон для новых workpack.
 12. `docs/planning/workpacks/ST-C0-001-ipc-registration-audit/workpack.md` — pilot-workpack для аудита IPC registration.
