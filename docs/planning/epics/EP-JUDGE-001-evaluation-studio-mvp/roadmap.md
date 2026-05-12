@@ -9,6 +9,7 @@
 | Slice 4A Export Foundation | `WP-JUDGE-007A EvaluationRun Export Foundation` | Done | Add export-only normalized EvaluationRun envelope, dynamic Markdown criteria, validator findings, and safe metadata. | Delivered by `IN-2026-033`; no storage/history, new IPC, provider/settings, package, or dependency changes. Manual smoke pending. |
 | Slice 4B History Store | `WP-JUDGE-007B EvaluationRun History Store` | Done | Add separate file-backed save/list/read/delete storage foundation for EvaluationRun records. | Delivered by `IN-2026-034`; no chat history mixing, renderer UI, Judge runtime, provider/settings, package, dependency, database, or migration changes. Manual smoke pending. |
 | Slice 4C History UI | `WP-JUDGE-007C EvaluationRun History UI Integration` | Done | Add explicit save/list/open/delete UI for saved EvaluationRuns in Evaluation Studio. | Delivered by `IN-2026-035`; no auto-save, search/filter, n8n, IPC/storage/preload/shared/main, package, dependency, or large CompareView redesign changes. Manual smoke pending. |
+| Slice 4D Dynamic Criteria Display | `WP-IN-2026-036 Judge Dynamic Criteria Display` | Done | Render all score criteria present in `CompareView` Judge results, including future/custom/saved EvaluationRun criteria. | Delivered by `IN-2026-036`; renderer-only compatibility change, no Judge runtime, IPC/storage/export, shared contract, package, or dependency changes. Manual smoke pending. |
 | Slice 5 Tests/Smoke | `WP-JUDGE-008 Tests and Smoke Suite` | Next | Consolidate automated Judge coverage and manual smoke checklist across compatibility and Studio flows. | Should close pending manual smoke gaps where feasible. |
 | Slice 6 Research/Multi-agent/n8n | `WP-JUDGE-009` / `WP-JUDGE-010` | Later | Add research comparison/multi-agent modes and preflight future n8n EvaluationRun integration. | n8n remains preflight only until EvaluationRun shape is stable. |
 
@@ -16,4 +17,4 @@
 No Judge sprint folder is required for this roadmap today. Sprints are optional and should be created only when a release/delivery slice needs separate planning. For the current Judge MVP, roadmap slices inside this epic are the source of truth.
 
 ## Next action
-Run the `WP-JUDGE-006`, `WP-JUDGE-007A`, `WP-JUDGE-007B`, and `WP-JUDGE-007C` manual smoke checklists when an Electron session is available. Continue with `WP-JUDGE-008 Tests and Smoke Suite`; keep research mode and n8n integration in their later slices.
+Run the `WP-JUDGE-006`, `WP-JUDGE-007A`, `WP-JUDGE-007B`, `WP-JUDGE-007C`, and `WP-IN-2026-036` manual smoke checklists when an Electron session is available. Continue with `WP-JUDGE-008 Tests and Smoke Suite`; keep research mode and n8n integration in their later slices.

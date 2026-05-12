@@ -3,6 +3,7 @@ import { useDockStore, CompareDraftAnswer } from "../store/useDockStore";
 import type { JudgeExportPayload, JudgeResult } from "../../../shared/types/judge";
 import { mapJudgeExportPayloadToEvaluationRun } from "../../../shared/types/evaluationRun.ts";
 import { inferCompletionsProfileLabels } from "../../../shared/utils/completionsProfileLabels";
+import { discoverScoreCriteria } from "./evaluation/scoreCriteria";
 
 type JudgeProfileOption = {
   name: string;
@@ -61,14 +62,18 @@ const parseRequiredKeys = (value: string): string[] =>
 const findScore = (
   result: JudgeResult | null,
   answerIndex: number,
-  criterion: "coherence" | "factuality" | "helpfulness"
+  criterion: string
 ) => {
   if (!result) {
     return null;
   }
   const key = answerKey(answerIndex);
   const bucket = ensureArray(result.scores[key]);
-  return bucket.find((item) => item.criterion === criterion) || null;
+  return (
+    bucket.find(
+      (item) => typeof item?.criterion === "string" && item.criterion.trim() === criterion
+    ) || null
+  );
 };
 
 function CompareView({ onEvaluationSaved }: CompareViewProps = {}) {
@@ -386,6 +391,7 @@ function CompareView({ onEvaluationSaved }: CompareViewProps = {}) {
   const exportDisabled = !judgeResult || !evaluatedAnswers.length;
   const saveDisabled = exportDisabled || savingEvaluation;
   const validatorResults = ensureArray(judgeResult?.validatorResults);
+  const scoreCriteria = useMemo(() => discoverScoreCriteria(judgeResult), [judgeResult]);
 
   return (
     <div className="compare-view">
@@ -592,30 +598,32 @@ function CompareView({ onEvaluationSaved }: CompareViewProps = {}) {
                 </tr>
               </thead>
               <tbody>
-                {["coherence", "factuality", "helpfulness"].map((criterion) => (
-                  <tr key={criterion}>
-                    <td className="compare-criterion">{criterion}</td>
-                    {evaluatedAnswers.map((_answer, index) => {
-                      const score = findScore(
-                        judgeResult,
-                        index,
-                        criterion as "coherence" | "factuality" | "helpfulness"
-                      );
-                      return (
-                        <td key={`${criterion}-${index}`}>
-                          <div className="compare-score">
-                            <span className="compare-score-value">
-                              {score ? score.score.toFixed(1).replace(/\.0$/, "") : "—"}
-                            </span>
-                            {score?.rationale && (
-                              <span className="compare-score-note">{score.rationale}</span>
-                            )}
-                          </div>
-                        </td>
-                      );
-                    })}
+                {scoreCriteria.length > 0 ? (
+                  scoreCriteria.map((criterion) => (
+                    <tr key={criterion}>
+                      <td className="compare-criterion">{criterion}</td>
+                      {evaluatedAnswers.map((_answer, index) => {
+                        const score = findScore(judgeResult, index, criterion);
+                        return (
+                          <td key={`${criterion}-${index}`}>
+                            <div className="compare-score">
+                              <span className="compare-score-value">
+                                {score ? score.score.toFixed(1).replace(/\.0$/, "") : "—"}
+                              </span>
+                              {score?.rationale && (
+                                <span className="compare-score-note">{score.rationale}</span>
+                              )}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={1 + evaluatedAnswers.length}>No score criteria returned.</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
