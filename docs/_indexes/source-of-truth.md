@@ -44,6 +44,11 @@
 29. `docs/architecture/judge-mode-evaluation-studio.md` - Product/architecture report for Judge Mode as Evaluation Studio.
 30. `docs/architecture/decisions/ADR-005-judge-mode-evaluation-architecture.md` - Proposed target architecture for Judge Mode / Evaluation Studio.
 
+## Capability epic references
+31. `docs/planning/epics/**` - source-of-truth for capability-level delivery maps that span multiple related workpacks.
+32. `docs/planning/epics/EP-JUDGE-001-evaluation-studio-mvp/**` - epic source-of-truth for Judge Mode / Evaluation Studio MVP.
+33. `docs/planning/sprints/**` - optional release/delivery slice planning layer, not required for every workpack.
+
 ## Initiative layer references
 13. `.codex/workflows/initiative-to-delivery.md` — полный workflow инициативы до delivery report.
 14. `.codex/prompts/initiative-runner-template.md` — главный prompt запуска Initiative Runner.
