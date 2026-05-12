@@ -290,21 +290,24 @@ const FormProfilesManager = () => {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <header className="flex flex-wrap items-center gap-3 border-b border-slate-800 bg-slate-950 px-6 py-4">
-        <h1 className="text-lg font-semibold text-slate-100">Form Profiles</h1>
-        <div className="flex-1" />
+    <div className="form-profiles-manager">
+      <header className="form-profiles-header">
+        <div className="form-profiles-title">
+          <h1>Form Profiles</h1>
+          <p>API form-builder profiles, request templates, schema fields, and validation previews</p>
+        </div>
+        <div className="form-profiles-toolbar">
         <input
           type="search"
           value={formProfilesFilter}
           onChange={(event) => actions.setFormProfilesFilter(event.target.value)}
           placeholder="Search by label or id"
-          className="w-56 rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"
+          className="form-profiles-search"
         />
         <button
           type="button"
           onClick={handleNew}
-          className="rounded bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+          className="form-profiles-action form-profiles-action--primary"
         >
           New
         </button>
@@ -312,7 +315,7 @@ const FormProfilesManager = () => {
           type="button"
           onClick={handleDuplicate}
           disabled={!formProfilesSelectedId}
-          className="rounded border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
+          className="form-profiles-action"
         >
           Duplicate
         </button>
@@ -320,29 +323,30 @@ const FormProfilesManager = () => {
           type="button"
           onClick={() => setConfirmDelete(true)}
           disabled={!formProfilesSelectedId}
-          className="rounded border border-rose-600 px-3 py-2 text-sm text-rose-300 hover:border-rose-500 hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-50"
+          className="form-profiles-action form-profiles-action--danger"
         >
           Delete
         </button>
         <button
           type="button"
           onClick={() => actions.fetchFormProfiles()}
-          className="rounded border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:border-slate-400"
+          className="form-profiles-action"
         >
           Refresh
         </button>
+        </div>
       </header>
       {formProfilesError && (
-        <div className="border-b border-amber-600 bg-amber-900/30 px-6 py-2 text-sm text-amber-300">
+        <div className="form-profiles-error">
           {formProfilesError}
         </div>
       )}
-      <div className="flex flex-1 overflow-hidden">
-        <aside className="w-72 border-r border-slate-800 bg-slate-950">
+      <div className="form-profiles-body">
+        <aside className="form-profiles-list">
           {formProfilesLoading ? (
-            <p className="px-4 py-3 text-sm text-slate-400">Loading profiles…</p>
+            <p className="form-profiles-list-message">Loading profiles...</p>
           ) : filteredProfiles.length ? (
-            <ul className="max-h-full overflow-y-auto">
+            <ul>
               {filteredProfiles.map((profile) => {
                 const isActive = profile.id === formProfilesSelectedId;
                 return (
@@ -350,28 +354,24 @@ const FormProfilesManager = () => {
                     <button
                       type="button"
                       onClick={() => handleSelect(profile.id)}
-                      className={`w-full border-b border-slate-800 px-4 py-3 text-left text-sm transition ${
-                        isActive
-                          ? "bg-slate-800 text-slate-100"
-                          : "text-slate-300 hover:bg-slate-900"
-                      }`}
+                      className={`form-profiles-list-item${isActive ? " active" : ""}`}
                     >
-                      <div className="font-medium">{profile.label}</div>
-                      <div className="text-xs text-slate-400">{profile.baseUrl}</div>
-                      <div className="text-xs text-slate-500">{profile.updatedAt}</div>
+                      <div className="form-profiles-list-name">{profile.label}</div>
+                      <div className="form-profiles-list-meta">{profile.baseUrl}</div>
+                      <div className="form-profiles-list-date">{profile.updatedAt}</div>
                     </button>
                   </li>
                 );
               })}
             </ul>
           ) : (
-            <div className="px-4 py-6 text-sm text-slate-400">
+            <div className="form-profiles-list-message">
               No profiles found. Create a new one to get started.
             </div>
           )}
         </aside>
-        <main className="flex flex-1 flex-col">
-          <div className="flex-1">
+        <main className="form-profiles-editor-pane">
+          <div className="form-profiles-editor-wrap">
             <FormEditor
               profile={editingProfile}
               dirty={dirty}
