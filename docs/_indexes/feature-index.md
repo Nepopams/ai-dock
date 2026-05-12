@@ -14,7 +14,7 @@
 
 ## Планируемые/расширяемые модули
 - Chat Exporter
-- Judge Mode / Evaluation Studio
+- [Judge Mode / Evaluation Studio](../planning/epics/EP-JUDGE-001-evaluation-studio-mvp/epic.md)
 - Cross-history
 - RAG Agent
 - n8n Connector
