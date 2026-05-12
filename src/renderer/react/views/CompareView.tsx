@@ -55,6 +55,7 @@ function CompareView() {
   const [question, setQuestion] = useState<string>("");
   const [answers, setAnswers] = useState<LocalAnswer[]>([]);
   const [rubric, setRubric] = useState<string>("");
+  const [customPrompt, setCustomPrompt] = useState<string>("");
   const [profiles, setProfiles] = useState<JudgeProfileOption[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<string>("");
   const [profilesLoading, setProfilesLoading] = useState<boolean>(false);
@@ -74,6 +75,7 @@ function CompareView() {
       }))
     );
     setRubric(compareDraft.rubric || "");
+    setCustomPrompt(compareDraft.customPrompt || "");
     if (compareDraft.judgeProfileId) {
       setSelectedProfile(compareDraft.judgeProfileId);
     }
@@ -114,6 +116,7 @@ function CompareView() {
     updateCompareDraft({
       question,
       rubric,
+      customPrompt,
       judgeProfileId: selectedProfile || undefined,
       answers: answers.map((answer) => ({
         id: answer.id,
@@ -122,7 +125,7 @@ function CompareView() {
         selected: answer.selected
       }))
     });
-  }, [question, rubric, selectedProfile, answers, compareDraft, updateCompareDraft]);
+  }, [question, rubric, customPrompt, selectedProfile, answers, compareDraft, updateCompareDraft]);
 
   useEffect(() => {
     return () => {
@@ -164,7 +167,8 @@ function CompareView() {
         agentId: answer.agentId,
         text: answer.text
       })),
-      rubric: rubric.trim() ? rubric : undefined
+      rubric: rubric.trim() ? rubric : undefined,
+      customPrompt: customPrompt.trim() ? customPrompt : undefined
     };
     const result = await runJudge(input);
     if (result) {
@@ -307,6 +311,17 @@ function CompareView() {
               onChange={(event) => setRubric(event.target.value)}
               rows={6}
               placeholder="Leave empty to use default rubric"
+            />
+          </label>
+          <label className="compare-field">
+            <span className="compare-label">
+              Custom judge instructions <span className="compare-label-hint">(optional)</span>
+            </span>
+            <textarea
+              value={customPrompt}
+              onChange={(event) => setCustomPrompt(event.target.value)}
+              rows={5}
+              placeholder="Add task-specific judge instructions"
             />
           </label>
           <div className="compare-actions">

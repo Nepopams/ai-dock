@@ -33,6 +33,12 @@ const createJudgeSanitizers = ({ validateString, ensureRequestId }) => {
     if (typeof input.rubric === "string" && input.rubric.trim()) {
       payload.rubric = input.rubric.trim();
     }
+    if (input.customPrompt !== undefined && typeof input.customPrompt !== "string") {
+      throw new Error("customPrompt must be a string");
+    }
+    if (typeof input.customPrompt === "string" && input.customPrompt.trim()) {
+      payload.customPrompt = input.customPrompt.trim();
+    }
     return payload;
   };
 
@@ -81,6 +87,12 @@ const createJudgeSanitizers = ({ validateString, ensureRequestId }) => {
     }
     if (Number.isFinite(metadata.durationMs) && metadata.durationMs >= 0) {
       sanitized.durationMs = Number(metadata.durationMs);
+    }
+    if (metadata.rubricSource === "default" || metadata.rubricSource === "custom") {
+      sanitized.rubricSource = metadata.rubricSource;
+    }
+    if (typeof metadata.customPromptApplied === "boolean") {
+      sanitized.customPromptApplied = metadata.customPromptApplied;
     }
     const usage = sanitizeJsonLikeValue(metadata.usage);
     if (usage && typeof usage === "object") {

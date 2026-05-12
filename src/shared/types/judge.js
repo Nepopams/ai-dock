@@ -10,6 +10,11 @@ const isOptionalString = (value) => value === undefined || isString(value);
 const isOptionalNumber = (value) =>
   value === undefined || (typeof value === "number" && !Number.isNaN(value));
 
+const isOptionalBoolean = (value) => value === undefined || typeof value === "boolean";
+
+const isOptionalRubricSource = (value) =>
+  value === undefined || value === "default" || value === "custom";
+
 const isJudgeScore = (value) => {
   if (!isObject(value)) {
     return false;
@@ -36,6 +41,8 @@ const isJudgeResultMetadata = (value) => {
     !isOptionalString(value.judgeProfileId) ||
     !isOptionalString(value.driver) ||
     !isOptionalString(value.model) ||
+    !isOptionalRubricSource(value.rubricSource) ||
+    !isOptionalBoolean(value.customPromptApplied) ||
     !isOptionalNumber(value.durationMs) ||
     !isOptionalString(value.finishReason) ||
     !isOptionalString(value.responseFormat) ||
@@ -67,6 +74,9 @@ const isJudgeInput = (value) => {
     return false;
   }
   if (value.rubric !== undefined && !isString(value.rubric)) {
+    return false;
+  }
+  if (value.customPrompt !== undefined && !isString(value.customPrompt)) {
     return false;
   }
   return true;

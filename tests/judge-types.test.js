@@ -33,6 +33,13 @@ const validScores = {
 
 test("isJudgeInput accepts the current answer comparison input shape", () => {
   assert.equal(isJudgeInput(validInput), true);
+  assert.equal(
+    isJudgeInput({
+      ...validInput,
+      customPrompt: "Prefer evidence-backed answers."
+    }),
+    true
+  );
 });
 
 test("isJudgeInput rejects invalid answer lists", () => {
@@ -50,6 +57,16 @@ test("isJudgeInput rejects invalid answer lists", () => {
         { agentId: "agent-a", text: "Answer A" },
         { agentId: "agent-b", text: 42 }
       ]
+    }),
+    false
+  );
+});
+
+test("isJudgeInput rejects non-string custom prompt", () => {
+  assert.equal(
+    isJudgeInput({
+      ...validInput,
+      customPrompt: { instructions: "Prefer evidence-backed answers." }
     }),
     false
   );
@@ -74,6 +91,8 @@ test("isJudgeResult accepts optional compatibility metadata", () => {
       judgeProfileId: "default",
       driver: "openai-compatible",
       model: "gpt-test",
+      rubricSource: "custom",
+      customPromptApplied: true,
       durationMs: 12,
       finishReason: "stop",
       usage: { total_tokens: 10 },
@@ -93,6 +112,16 @@ test("isJudgeResult rejects invalid metadata and score buckets", () => {
       verdict: "Answer 1 wins",
       summary: "Answer 1 is clearer.",
       metadata: { durationMs: "slow" }
+    }),
+    false
+  );
+  assert.equal(
+    isJudgeResult({
+      requestId: "judge-1",
+      scores: validScores,
+      verdict: "Answer 1 wins",
+      summary: "Answer 1 is clearer.",
+      metadata: { rubricSource: "secret" }
     }),
     false
   );
