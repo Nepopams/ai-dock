@@ -1,6 +1,6 @@
 # AI Dock UI v2 Workpack Roadmap
 
-This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, and `WP-UI-002` establishes the runtime token/primitives foundation. Remaining runtime workpacks require separate PLAN, Human Gate, APPLY, and REVIEW.
+This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, and `WP-UI-003` applies the shared shell restyle. Remaining runtime workpacks require separate PLAN, Human Gate, APPLY, and REVIEW.
 
 ## WP-UI-001 Design Handoff Inventory
 | Field | Detail |
@@ -26,6 +26,7 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 ## WP-UI-003 Shell Restyle
 | Field | Detail |
 | --- | --- |
+| Status | Done by `IN-UI-003-shell-restyle`; local view content restyles remain deferred. |
 | Goal | Apply UI v2 shell visuals to Sidebar, TabStrip, PromptRouter, PromptDrawer, Toast, and app chrome. |
 | Affected files | `App.tsx`, `Sidebar.tsx`, `TabStrip.tsx`, `PromptRouter.tsx`, `PromptDrawer.tsx`, `Toast.tsx`, `global.css`. |
 | Forbidden files | `src/main/**`, `src/preload/**`, `src/shared/**`, package/config/build/scripts files, view-specific business logic. |
@@ -81,4 +82,4 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 5. `WP-UI-006` should precede `WP-UI-007` if form/control primitives need hardening.
 
 ## Next recommended runtime workpack
-`WP-UI-003 Shell Restyle` is the next runtime workpack after the `WP-UI-002` token/primitives foundation.
+`WP-UI-004 Chat View Restyle` is the next runtime workpack after the `WP-UI-003` shell restyle.

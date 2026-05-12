@@ -30,11 +30,11 @@ function App() {
   useTopInsetSync(routerRef, tabstripRef);
 
   return (
-    <div id="app">
+    <div id="app" className="dock-shell dock-shell--v2">
       <Sidebar />
       <PromptRouter ref={routerRef} />
       <TabStrip ref={tabstripRef} />
-      <main id="content">
+      <main id="content" className="dock-content">
         {activeLocalView === "chat" && <ChatView />}
         {activeLocalView === "completions" && <ConnectionsSettings />}
         {activeLocalView === "formProfiles" && <FormProfilesManager />}

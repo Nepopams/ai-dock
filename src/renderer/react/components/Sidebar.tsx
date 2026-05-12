@@ -175,8 +175,10 @@ function Sidebar() {
           {localViews.map((item) => (
             <button
               key={item.id}
-              className={`sidebar-btn${item.isActive ? " active" : ""}`}
+              type="button"
+              className={`sidebar-btn sidebar-btn--local${item.isActive ? " active" : ""}`}
               title={item.label}
+              aria-pressed={item.isActive}
               onClick={item.onClick}
             >
               <img src={item.icon} alt={`${item.label} icon`} />
@@ -194,8 +196,10 @@ function Sidebar() {
                 return (
                   <button
                     key={client.id}
-                    className={`sidebar-btn${isActive ? " active" : ""}`}
+                    type="button"
+                    className={`sidebar-btn sidebar-btn--service${isActive ? " active" : ""}`}
                     title={client.title}
+                    aria-pressed={isActive}
                     onClick={() => {
                       void selectService(client.id);
                     }}
@@ -214,8 +218,10 @@ function Sidebar() {
         {bottomButtons.map((button) => (
           <button
             key={button.id}
-            className="sidebar-btn"
+            type="button"
+            className={`sidebar-btn sidebar-btn--utility${button.isActive ? " active" : ""}`}
             title={button.label}
+            aria-pressed={button.isActive}
             onClick={button.onClick}
           >
             <img src={button.icon} alt={`${button.label} icon`} />

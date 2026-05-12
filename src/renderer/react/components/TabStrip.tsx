@@ -15,7 +15,7 @@ const TabStrip = forwardRef<HTMLElement>((_props, ref) => {
         {tabs.map((tab) => (
           <div
             key={tab.id}
-            className={`tab${tab.id === activeTabId ? " active" : ""}`}
+            className={`tab tab--web${tab.id === activeTabId ? " active" : ""}`}
             onClick={() => {
               void switchTab(tab.id);
             }}
@@ -23,6 +23,7 @@ const TabStrip = forwardRef<HTMLElement>((_props, ref) => {
             <span>{tab.title}</span>
             <button
               type="button"
+              className="tab-close"
               aria-label={`Close ${tab.title}`}
               onClick={(event) => {
                 event.stopPropagation();
@@ -36,8 +37,9 @@ const TabStrip = forwardRef<HTMLElement>((_props, ref) => {
       </div>
       <div className="tabstrip-actions">
         <button
+          type="button"
           id="btnSaveChat"
-          className="pill-btn"
+          className="pill-btn tabstrip-save"
           onClick={() => {
             void saveChat();
           }}
