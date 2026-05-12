@@ -64,6 +64,51 @@ test("sanitizeJudgeInput omits empty custom prompt and rejects non-string custom
   );
 });
 
+test("sanitizeJudgeInput normalizes JSON validation config", () => {
+  const { sanitizeJudgeInput } = createSanitizers();
+  const input = sanitizeJudgeInput({
+    judgeProfileId: "default",
+    question: "Question",
+    answers: [{ text: "Answer A" }, { text: "Answer B" }],
+    validation: {
+      mode: " json_contract_check ",
+      enabled: true,
+      allowMarkdownFence: true,
+      requiredKeys: [" status ", "", "items", "status"],
+      enumValues: {
+        " status ": [" ok ", "error", ""]
+      }
+    }
+  });
+
+  assert.deepEqual(input.validation, {
+    mode: "json_contract_check",
+    enabled: true,
+    allowMarkdownFence: true,
+    requiredKeys: ["status", "items"],
+    enumValues: {
+      status: ["ok", "error"]
+    }
+  });
+});
+
+test("sanitizeJudgeInput rejects invalid JSON validation keys", () => {
+  const { sanitizeJudgeInput } = createSanitizers();
+  assert.throws(
+    () =>
+      sanitizeJudgeInput({
+        judgeProfileId: "default",
+        question: "Question",
+        answers: [{ text: "Answer A" }, { text: "Answer B" }],
+        validation: {
+          mode: "json_contract_check",
+          requiredKeys: ["status", 7]
+        }
+      }),
+    /validation.requiredKeys\[1\] must be a string/
+  );
+});
+
 test("sanitizeJudgeInput rejects fewer than two answers", () => {
   const { sanitizeJudgeInput } = createSanitizers();
   assert.throws(
@@ -111,9 +156,25 @@ test("sanitizeJudgeExportPayload handles object score buckets without agent ids"
         usage: { total_tokens: 25 },
         responseFormat: "json_object",
         parseState: "strict_json",
+        validationApplied: true,
+        validationMode: "json_contract_check",
         baseUrl: "https://example.invalid",
         customPrompt: "Do not export this text"
-      }
+      },
+      validatorResults: [
+        {
+          type: "required_keys",
+          status: "fail",
+          answerKey: "answer_1",
+          agentId: "a",
+          key: "status",
+          path: "$.status",
+          expected: ["status"],
+          actual: "secret-value",
+          message: "Required top-level key \"status\" is missing.",
+          rawText: "do not export"
+        }
+      ]
     },
     generatedAt: "2026-05-11T00:00:00.000Z"
   });
@@ -124,8 +185,13 @@ test("sanitizeJudgeExportPayload handles object score buckets without agent ids"
   assert.equal(payload.result.metadata.schemaVersion, "judge.result.v1");
   assert.equal(payload.result.metadata.rubricSource, "custom");
   assert.equal(payload.result.metadata.customPromptApplied, true);
+  assert.equal(payload.result.metadata.validationApplied, true);
+  assert.equal(payload.result.metadata.validationMode, "json_contract_check");
   assert.equal(payload.result.metadata.baseUrl, undefined);
   assert.equal(payload.result.metadata.customPrompt, undefined);
+  assert.equal(payload.result.validatorResults[0].type, "required_keys");
+  assert.equal(payload.result.validatorResults[0].key, "status");
+  assert.equal(payload.result.validatorResults[0].rawText, undefined);
 });
 
 test("sanitizeJudgeExportPayload rejects invalid score criteria", () => {

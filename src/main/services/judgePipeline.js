@@ -44,13 +44,246 @@ const answerKey = (index) => `answer_${index + 1}`;
 const trimOptionalString = (value) =>
   typeof value === "string" && value.trim() ? value.trim() : "";
 
+const isJsonContractValidationEnabled = (input) =>
+  input?.validation?.mode === "json_contract_check" && input.validation.enabled !== false;
+
 const hasCustomRubric = (input) => Boolean(trimOptionalString(input?.rubric));
 
 const hasCustomPrompt = (input) => Boolean(trimOptionalString(input?.customPrompt));
 
-const buildUserPrompt = (input, rubric) => {
+const parseJsonForValidation = (text, allowMarkdownFence = false) => {
+  const trimmed = typeof text === "string" ? text.trim() : "";
+  if (!trimmed) {
+    return { ok: false, error: "Answer text is empty." };
+  }
+  try {
+    return { ok: true, data: JSON.parse(trimmed), source: "strict_json" };
+  } catch (error) {
+    // Fenced JSON extraction is explicit and opt-in for deterministic validation.
+  }
+  if (allowMarkdownFence) {
+    const fenced =
+      trimmed.match(/```json\s*([\s\S]+?)```/i) || trimmed.match(/```\s*([\s\S]+?)```/i);
+    if (fenced?.[1]) {
+      try {
+        return { ok: true, data: JSON.parse(fenced[1].trim()), source: "fenced_json" };
+      } catch (error) {
+        return { ok: false, error: "Markdown fenced JSON block is not valid JSON." };
+      }
+    }
+  }
+  return { ok: false, error: "Answer text is not valid JSON." };
+};
+
+const isPlainObject = (value) =>
+  Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
+const formatActualValue = (value) => {
+  if (value === null) {
+    return "null";
+  }
+  if (Array.isArray(value)) {
+    return "array";
+  }
+  if (typeof value === "string") {
+    return "[string]";
+  }
+  return typeof value;
+};
+
+const uniqueStrings = (values) =>
+  Array.from(
+    new Set(
+      (Array.isArray(values) ? values : [])
+        .map((value) => (typeof value === "string" ? value.trim() : ""))
+        .filter(Boolean)
+    )
+  );
+
+const normalizeEnumValues = (value) => {
+  if (!isPlainObject(value)) {
+    return {};
+  }
+  const result = {};
+  for (const [rawKey, rawValues] of Object.entries(value)) {
+    const key = typeof rawKey === "string" ? rawKey.trim() : "";
+    const values = uniqueStrings(rawValues);
+    if (key && values.length) {
+      result[key] = values;
+    }
+  }
+  return result;
+};
+
+const buildValidatorResult = ({
+  type,
+  status,
+  answerIndex,
+  answer,
+  message,
+  key,
+  expected,
+  actual
+}) => ({
+  type,
+  status,
+  answerKey: answerKey(answerIndex),
+  agentId: typeof answer?.agentId === "string" && answer.agentId.trim() ? answer.agentId.trim() : undefined,
+  message,
+  key,
+  path: key ? `$.${key}` : undefined,
+  expected,
+  actual
+});
+
+const runJsonContractValidation = (input) => {
+  if (!isJsonContractValidationEnabled(input)) {
+    return [];
+  }
+  const validation = input.validation || {};
+  const requiredKeys = uniqueStrings(validation.requiredKeys);
+  const enumValues = normalizeEnumValues(validation.enumValues);
+  const enumEntries = Object.entries(enumValues);
+  const allowMarkdownFence = Boolean(validation.allowMarkdownFence);
+  const results = [];
+
+  input.answers.forEach((answer, answerIndex) => {
+    const parsed = parseJsonForValidation(answer.text, allowMarkdownFence);
+    if (!parsed.ok) {
+      results.push(
+        buildValidatorResult({
+          type: "json_parse",
+          status: "fail",
+          answerIndex,
+          answer,
+          message: parsed.error || "Answer text is not valid JSON."
+        })
+      );
+      return;
+    }
+
+    results.push(
+      buildValidatorResult({
+        type: "json_parse",
+        status: "pass",
+        answerIndex,
+        answer,
+        message:
+          parsed.source === "fenced_json"
+            ? "Answer parses as JSON from a Markdown fence."
+            : "Answer parses as JSON."
+      })
+    );
+
+    if (!isPlainObject(parsed.data)) {
+      for (const key of requiredKeys) {
+        results.push(
+          buildValidatorResult({
+            type: "required_keys",
+            status: "fail",
+            answerIndex,
+            answer,
+            key,
+            message: `Required top-level key "${key}" cannot be checked because the parsed JSON is not an object.`
+          })
+        );
+      }
+      for (const [key, allowedValues] of enumEntries) {
+        results.push(
+          buildValidatorResult({
+            type: "enum_values",
+            status: "warning",
+            answerIndex,
+            answer,
+            key,
+            expected: allowedValues,
+            message: `Enum key "${key}" cannot be checked because the parsed JSON is not an object.`
+          })
+        );
+      }
+      return;
+    }
+
+    for (const key of requiredKeys) {
+      const exists = Object.prototype.hasOwnProperty.call(parsed.data, key);
+      results.push(
+        buildValidatorResult({
+          type: "required_keys",
+          status: exists ? "pass" : "fail",
+          answerIndex,
+          answer,
+          key,
+          message: exists
+            ? `Required top-level key "${key}" is present.`
+            : `Required top-level key "${key}" is missing.`
+        })
+      );
+    }
+
+    for (const [key, allowedValues] of enumEntries) {
+      if (!Object.prototype.hasOwnProperty.call(parsed.data, key)) {
+        results.push(
+          buildValidatorResult({
+            type: "enum_values",
+            status: "warning",
+            answerIndex,
+            answer,
+            key,
+            expected: allowedValues,
+            message: `Enum key "${key}" is missing, so its value was not checked.`
+          })
+        );
+        continue;
+      }
+      const actualValue = parsed.data[key];
+      const isAllowed = typeof actualValue === "string" && allowedValues.includes(actualValue);
+      results.push(
+        buildValidatorResult({
+          type: "enum_values",
+          status: isAllowed ? "pass" : "fail",
+          answerIndex,
+          answer,
+          key,
+          expected: allowedValues,
+          actual: formatActualValue(actualValue),
+          message: isAllowed
+            ? `Enum key "${key}" matches an allowed value.`
+            : `Enum key "${key}" is not one of the allowed values.`
+        })
+      );
+    }
+  });
+
+  return results;
+};
+
+const formatValidatorResultsForPrompt = (validatorResults) => {
+  if (!Array.isArray(validatorResults) || !validatorResults.length) {
+    return "";
+  }
+  const visibleResults = validatorResults.slice(0, 100);
+  const lines = visibleResults.map((result) => {
+    const key = result.key ? ` ${result.key}` : "";
+    const expected =
+      Array.isArray(result.expected) && result.expected.length
+        ? ` expected=[${result.expected.join(", ")}]`
+        : "";
+    return `- ${result.answerKey} ${result.type}/${result.status}${key}: ${result.message}${expected}`;
+  });
+  if (validatorResults.length > visibleResults.length) {
+    lines.push(`- ${validatorResults.length - visibleResults.length} additional findings omitted.`);
+  }
+  return [
+    "Deterministic validation findings:",
+    "These machine checks are evidence for the judge. Consider failed checks when judging JSON contract adherence, but do not change the required output JSON shape.",
+    ...lines
+  ].join("\n");
+};
+
+const buildUserPrompt = (input, rubric, validatorResults = []) => {
   const question = (input.question || "").trim();
   const customPrompt = trimOptionalString(input.customPrompt);
+  const validationBlock = formatValidatorResultsForPrompt(validatorResults);
   const formattedAnswers = input.answers
     .map(
       (answer, index) =>
@@ -71,6 +304,9 @@ const buildUserPrompt = (input, rubric) => {
       "<<<CUSTOM_JUDGE_INSTRUCTIONS_END>>>",
       ""
     );
+  }
+  if (validationBlock) {
+    parts.push(validationBlock, "");
   }
   parts.push(
     "Question:",
@@ -191,6 +427,8 @@ const buildResultMetadata = ({
   model: profile?.defaultModel,
   rubricSource: hasCustomRubric(input) ? "custom" : "default",
   customPromptApplied: hasCustomPrompt(input),
+  validationApplied: isJsonContractValidationEnabled(input),
+  validationMode: isJsonContractValidationEnabled(input) ? "json_contract_check" : undefined,
   durationMs,
   finishReason:
     typeof completion?.finishReason === "string" ? completion.finishReason : undefined,
@@ -215,13 +453,13 @@ const normalizeScores = (input, payloadScores) => {
   return result;
 };
 
-const buildFallbackResult = (input, raw, reason, metadata = {}) => {
+const buildFallbackResult = (input, raw, reason, metadata = {}, validatorResults = []) => {
   const scores = {};
   for (let index = 0; index < input.answers.length; index += 1) {
     const key = answerKey(index);
     scores[key] = [];
   }
-  return {
+  const result = {
     requestId: input.requestId,
     scores,
     summary: reason || "Failed to parse judge response",
@@ -235,6 +473,10 @@ const buildFallbackResult = (input, raw, reason, metadata = {}) => {
       partialReason: reason || "Failed to parse judge response"
     }
   };
+  if (Array.isArray(validatorResults) && validatorResults.length) {
+    result.validatorResults = validatorResults;
+  }
+  return result;
 };
 
 const runJudge = async (input) => {
@@ -245,12 +487,17 @@ const runJudge = async (input) => {
   }
 
   const startedAt = Date.now();
+  const validatorResults = runJsonContractValidation(input);
   const { profile, runtimeProfile } = await resolveProfile(input.judgeProfileId);
   const messages = [
     { role: "system", content: SYSTEM_PROMPT },
     {
       role: "user",
-      content: buildUserPrompt(input, hasCustomRubric(input) ? input.rubric : DEFAULT_RUBRIC)
+      content: buildUserPrompt(
+        input,
+        hasCustomRubric(input) ? input.rubric : DEFAULT_RUBRIC,
+        validatorResults
+      )
     }
   ];
 
@@ -292,7 +539,8 @@ const runJudge = async (input) => {
         durationMs,
         parseState: "failed",
         partialReason: "Judge response is not valid JSON"
-      })
+      }),
+      validatorResults
     );
   }
 
@@ -307,7 +555,7 @@ const runJudge = async (input) => {
       ? result.verdict.trim()
       : "No verdict provided";
 
-  return {
+  const normalizedResult = {
     requestId: input.requestId || randomUUID(),
     scores,
     summary,
@@ -323,14 +571,23 @@ const runJudge = async (input) => {
       partialReason: parsed.partial ? "Judge JSON was extracted from a larger response" : undefined
     })
   };
+  if (validatorResults.length) {
+    normalizedResult.validatorResults = validatorResults;
+  }
+  return normalizedResult;
 };
 
 module.exports = {
   runJudge,
   _private: {
     buildResultMetadata,
+    buildFallbackResult,
     buildUserPrompt,
+    formatValidatorResultsForPrompt,
     hasCustomPrompt,
-    hasCustomRubric
+    hasCustomRubric,
+    isJsonContractValidationEnabled,
+    parseJsonForValidation,
+    runJsonContractValidation
   }
 };

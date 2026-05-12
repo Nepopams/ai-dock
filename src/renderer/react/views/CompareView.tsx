@@ -26,6 +26,16 @@ const buildProfileOptions = (payload: any): JudgeProfileOption[] => {
 
 const ensureArray = <T,>(value: T[] | undefined | null): T[] => (Array.isArray(value) ? value : []);
 
+const parseRequiredKeys = (value: string): string[] =>
+  Array.from(
+    new Set(
+      value
+        .split(/[,\n]/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )
+  );
+
 const findScore = (
   result: JudgeResult | null,
   answerIndex: number,
@@ -56,6 +66,9 @@ function CompareView() {
   const [answers, setAnswers] = useState<LocalAnswer[]>([]);
   const [rubric, setRubric] = useState<string>("");
   const [customPrompt, setCustomPrompt] = useState<string>("");
+  const [jsonValidationEnabled, setJsonValidationEnabled] = useState<boolean>(false);
+  const [jsonRequiredKeys, setJsonRequiredKeys] = useState<string>("");
+  const [jsonAllowMarkdownFence, setJsonAllowMarkdownFence] = useState<boolean>(false);
   const [profiles, setProfiles] = useState<JudgeProfileOption[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<string>("");
   const [profilesLoading, setProfilesLoading] = useState<boolean>(false);
@@ -76,6 +89,9 @@ function CompareView() {
     );
     setRubric(compareDraft.rubric || "");
     setCustomPrompt(compareDraft.customPrompt || "");
+    setJsonValidationEnabled(Boolean(compareDraft.validation?.enabled));
+    setJsonRequiredKeys(compareDraft.validation?.requiredKeysText || "");
+    setJsonAllowMarkdownFence(Boolean(compareDraft.validation?.allowMarkdownFence));
     if (compareDraft.judgeProfileId) {
       setSelectedProfile(compareDraft.judgeProfileId);
     }
@@ -117,6 +133,11 @@ function CompareView() {
       question,
       rubric,
       customPrompt,
+      validation: {
+        enabled: jsonValidationEnabled,
+        allowMarkdownFence: jsonAllowMarkdownFence,
+        requiredKeysText: jsonRequiredKeys
+      },
       judgeProfileId: selectedProfile || undefined,
       answers: answers.map((answer) => ({
         id: answer.id,
@@ -125,7 +146,18 @@ function CompareView() {
         selected: answer.selected
       }))
     });
-  }, [question, rubric, customPrompt, selectedProfile, answers, compareDraft, updateCompareDraft]);
+  }, [
+    question,
+    rubric,
+    customPrompt,
+    jsonValidationEnabled,
+    jsonAllowMarkdownFence,
+    jsonRequiredKeys,
+    selectedProfile,
+    answers,
+    compareDraft,
+    updateCompareDraft
+  ]);
 
   useEffect(() => {
     return () => {
@@ -159,6 +191,14 @@ function CompareView() {
       showToast("Choose judge profile");
       return;
     }
+    const validation = jsonValidationEnabled
+      ? {
+          mode: "json_contract_check" as const,
+          enabled: true,
+          allowMarkdownFence: jsonAllowMarkdownFence,
+          requiredKeys: parseRequiredKeys(jsonRequiredKeys)
+        }
+      : undefined;
     const input = {
       requestId: compareDraft.requestId,
       judgeProfileId: selectedProfile,
@@ -168,7 +208,8 @@ function CompareView() {
         text: answer.text
       })),
       rubric: rubric.trim() ? rubric : undefined,
-      customPrompt: customPrompt.trim() ? customPrompt : undefined
+      customPrompt: customPrompt.trim() ? customPrompt : undefined,
+      validation
     };
     const result = await runJudge(input);
     if (result) {
@@ -263,6 +304,7 @@ function CompareView() {
   }, [answers, compareDraft, lastRunAnswerIds, selectedAnswers]);
 
   const exportDisabled = !judgeResult || !evaluatedAnswers.length;
+  const validatorResults = ensureArray(judgeResult?.validatorResults);
 
   return (
     <div className="compare-view">
@@ -324,6 +366,32 @@ function CompareView() {
               placeholder="Add task-specific judge instructions"
             />
           </label>
+          <div className="compare-field">
+            <label className="compare-answer-toggle">
+              <input
+                type="checkbox"
+                checked={jsonValidationEnabled}
+                onChange={(event) => setJsonValidationEnabled(event.target.checked)}
+              />
+              <span>Run JSON contract check</span>
+            </label>
+            <textarea
+              value={jsonRequiredKeys}
+              onChange={(event) => setJsonRequiredKeys(event.target.value)}
+              rows={3}
+              disabled={!jsonValidationEnabled}
+              placeholder="status, items"
+            />
+            <label className="compare-answer-toggle">
+              <input
+                type="checkbox"
+                checked={jsonAllowMarkdownFence}
+                onChange={(event) => setJsonAllowMarkdownFence(event.target.checked)}
+                disabled={!jsonValidationEnabled}
+              />
+              <span>Allow fenced JSON</span>
+            </label>
+          </div>
           <div className="compare-actions">
             <button
               type="button"
@@ -405,6 +473,19 @@ function CompareView() {
             </div>
             <p>{judgeResult.summary || "No summary provided."}</p>
           </header>
+          {validatorResults.length > 0 && (
+            <section className="compare-validator-results">
+              <h3>JSON Contract Findings</h3>
+              <ul>
+                {validatorResults.map((finding, index) => (
+                  <li key={`${finding.answerKey}-${finding.type}-${finding.key || index}`}>
+                    <strong>{finding.answerKey}</strong> {finding.type} {finding.status}:{" "}
+                    {finding.message}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           <div className="compare-table-wrapper">
             <table>
               <thead>

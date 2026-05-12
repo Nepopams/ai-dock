@@ -8,6 +8,32 @@ export interface JudgeScore {
 
 export type JudgeResultParseState = "strict_json" | "extracted_json" | "failed";
 
+export type JudgeValidationMode = "json_contract_check";
+
+export type JudgeValidatorType = "json_parse" | "required_keys" | "enum_values";
+
+export type JudgeValidationStatus = "pass" | "fail" | "warning";
+
+export interface JudgeValidationConfig {
+  mode: JudgeValidationMode;
+  enabled?: boolean;
+  allowMarkdownFence?: boolean;
+  requiredKeys?: string[];
+  enumValues?: Record<string, string[]>;
+}
+
+export interface JudgeValidatorResult {
+  type: JudgeValidatorType;
+  status: JudgeValidationStatus;
+  answerKey: string;
+  agentId?: string;
+  message: string;
+  key?: string;
+  path?: string;
+  expected?: string[];
+  actual?: string;
+}
+
 export interface JudgeResultMetadata {
   schemaVersion?: string;
   contractVersion?: string;
@@ -16,6 +42,8 @@ export interface JudgeResultMetadata {
   model?: string;
   rubricSource?: "default" | "custom";
   customPromptApplied?: boolean;
+  validationApplied?: boolean;
+  validationMode?: JudgeValidationMode | string;
   durationMs?: number;
   finishReason?: string;
   usage?: unknown;
@@ -36,6 +64,7 @@ export interface JudgeInput {
   answers: JudgeInputAnswer[];
   rubric?: string;
   customPrompt?: string;
+  validation?: JudgeValidationConfig;
 }
 
 export interface JudgeResult {
@@ -47,6 +76,7 @@ export interface JudgeResult {
   rawResponse?: unknown;
   partial?: boolean;
   metadata?: JudgeResultMetadata;
+  validatorResults?: JudgeValidatorResult[];
 }
 
 export interface JudgeExportPayload {
@@ -76,6 +106,25 @@ const isOptionalBoolean = (value: unknown): value is boolean | undefined =>
 const isOptionalRubricSource = (value: unknown): value is "default" | "custom" | undefined =>
   value === undefined || value === "default" || value === "custom";
 
+const isJudgeValidationMode = (value: unknown): value is JudgeValidationMode =>
+  value === "json_contract_check";
+
+const isJudgeValidatorType = (value: unknown): value is JudgeValidatorType =>
+  value === "json_parse" || value === "required_keys" || value === "enum_values";
+
+const isJudgeValidationStatus = (value: unknown): value is JudgeValidationStatus =>
+  value === "pass" || value === "fail" || value === "warning";
+
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every(isString);
+
+const isEnumValuesConfig = (value: unknown): value is Record<string, string[]> => {
+  if (!isObject(value) || Array.isArray(value)) {
+    return false;
+  }
+  return Object.values(value).every(isStringArray);
+};
+
 export const isJudgeScore = (value: unknown): value is JudgeScore => {
   if (!isObject(value)) {
     return false;
@@ -104,12 +153,57 @@ export const isJudgeResultMetadata = (value: unknown): value is JudgeResultMetad
     !isOptionalString(value.model) ||
     !isOptionalRubricSource(value.rubricSource) ||
     !isOptionalBoolean(value.customPromptApplied) ||
+    !isOptionalBoolean(value.validationApplied) ||
+    !isOptionalString(value.validationMode) ||
     !isOptionalNumber(value.durationMs) ||
     !isOptionalString(value.finishReason) ||
     !isOptionalString(value.responseFormat) ||
     !isOptionalString(value.parseState) ||
     !isOptionalString(value.partialReason)
   ) {
+    return false;
+  }
+  return true;
+};
+
+export const isJudgeValidationConfig = (value: unknown): value is JudgeValidationConfig => {
+  if (!isObject(value)) {
+    return false;
+  }
+  if (!isJudgeValidationMode(value.mode)) {
+    return false;
+  }
+  if (!isOptionalBoolean(value.enabled) || !isOptionalBoolean(value.allowMarkdownFence)) {
+    return false;
+  }
+  if (value.requiredKeys !== undefined && !isStringArray(value.requiredKeys)) {
+    return false;
+  }
+  if (value.enumValues !== undefined && !isEnumValuesConfig(value.enumValues)) {
+    return false;
+  }
+  return true;
+};
+
+export const isJudgeValidatorResult = (value: unknown): value is JudgeValidatorResult => {
+  if (!isObject(value)) {
+    return false;
+  }
+  if (!isJudgeValidatorType(value.type) || !isJudgeValidationStatus(value.status)) {
+    return false;
+  }
+  if (!isString(value.answerKey) || !isString(value.message)) {
+    return false;
+  }
+  if (
+    !isOptionalString(value.agentId) ||
+    !isOptionalString(value.key) ||
+    !isOptionalString(value.path) ||
+    !isOptionalString(value.actual)
+  ) {
+    return false;
+  }
+  if (value.expected !== undefined && !isStringArray(value.expected)) {
     return false;
   }
   return true;
@@ -140,6 +234,9 @@ export const isJudgeInput = (value: unknown): value is JudgeInput => {
   if (value.customPrompt !== undefined && !isString(value.customPrompt)) {
     return false;
   }
+  if (value.validation !== undefined && !isJudgeValidationConfig(value.validation)) {
+    return false;
+  }
   return true;
 };
 
@@ -163,6 +260,13 @@ export const isJudgeResult = (value: unknown): value is JudgeResult => {
     return false;
   }
   if (value.metadata !== undefined && !isJudgeResultMetadata(value.metadata)) {
+    return false;
+  }
+  if (
+    value.validatorResults !== undefined &&
+    (!Array.isArray(value.validatorResults) ||
+      !value.validatorResults.every(isJudgeValidatorResult))
+  ) {
     return false;
   }
   return true;
