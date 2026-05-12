@@ -1,4 +1,104 @@
 const createJudgeSanitizers = ({ validateString, ensureRequestId }) => {
+  const MAX_VALIDATION_KEYS = 50;
+  const MAX_VALIDATION_KEY_LENGTH = 200;
+  const MAX_ENUM_VALUES_PER_KEY = 50;
+  const MAX_ENUM_VALUE_LENGTH = 200;
+
+  const normalizeValidationKey = (value, path) => {
+    if (typeof value !== "string") {
+      throw new Error(`${path} must be a string`);
+    }
+    return value.trim().slice(0, MAX_VALIDATION_KEY_LENGTH);
+  };
+
+  const sanitizeStringList = (value, path, limit, maxLength) => {
+    if (value === undefined) {
+      return undefined;
+    }
+    if (!Array.isArray(value)) {
+      throw new Error(`${path} must be an array`);
+    }
+    const result = [];
+    for (let index = 0; index < value.length && result.length < limit; index += 1) {
+      const item = value[index];
+      if (typeof item !== "string") {
+        throw new Error(`${path}[${index}] must be a string`);
+      }
+      const normalized = item.trim().slice(0, maxLength);
+      if (normalized && !result.includes(normalized)) {
+        result.push(normalized);
+      }
+    }
+    return result.length ? result : undefined;
+  };
+
+  const sanitizeEnumValues = (value) => {
+    if (value === undefined) {
+      return undefined;
+    }
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      throw new Error("validation.enumValues must be an object");
+    }
+    const result = {};
+    for (const [rawKey, rawValues] of Object.entries(value).slice(0, MAX_VALIDATION_KEYS)) {
+      const key = normalizeValidationKey(rawKey, "validation.enumValues key");
+      if (!key) {
+        continue;
+      }
+      const values = sanitizeStringList(
+        rawValues,
+        `validation.enumValues.${key}`,
+        MAX_ENUM_VALUES_PER_KEY,
+        MAX_ENUM_VALUE_LENGTH
+      );
+      if (values) {
+        result[key] = values;
+      }
+    }
+    return Object.keys(result).length ? result : undefined;
+  };
+
+  const sanitizeValidationConfig = (validation) => {
+    if (validation === undefined) {
+      return undefined;
+    }
+    if (!validation || typeof validation !== "object" || Array.isArray(validation)) {
+      throw new Error("validation must be an object");
+    }
+    const mode = validateString(validation.mode, "validation.mode");
+    if (mode !== "json_contract_check") {
+      throw new Error("validation.mode must be json_contract_check");
+    }
+    if (validation.enabled !== undefined && typeof validation.enabled !== "boolean") {
+      throw new Error("validation.enabled must be a boolean");
+    }
+    if (
+      validation.allowMarkdownFence !== undefined &&
+      typeof validation.allowMarkdownFence !== "boolean"
+    ) {
+      throw new Error("validation.allowMarkdownFence must be a boolean");
+    }
+    const sanitized = {
+      mode,
+      enabled: validation.enabled !== false,
+      allowMarkdownFence: Boolean(validation.allowMarkdownFence)
+    };
+    const requiredKeys = sanitizeStringList(
+      validation.requiredKeys,
+      "validation.requiredKeys",
+      MAX_VALIDATION_KEYS,
+      MAX_VALIDATION_KEY_LENGTH
+    );
+    if (requiredKeys) {
+      sanitized.requiredKeys = requiredKeys;
+    }
+    const enumValues = sanitizeEnumValues(validation.enumValues);
+    if (enumValues) {
+      sanitized.enumValues = enumValues;
+    }
+    return sanitized;
+  };
+
   const sanitizeJudgeAnswer = (answer, index) => {
     if (!answer || typeof answer !== "object") {
       throw new Error(`answer at index ${index} must be an object`);
@@ -39,6 +139,10 @@ const createJudgeSanitizers = ({ validateString, ensureRequestId }) => {
     if (typeof input.customPrompt === "string" && input.customPrompt.trim()) {
       payload.customPrompt = input.customPrompt.trim();
     }
+    const validation = sanitizeValidationConfig(input.validation);
+    if (validation) {
+      payload.validation = validation;
+    }
     return payload;
   };
 
@@ -75,6 +179,7 @@ const createJudgeSanitizers = ({ validateString, ensureRequestId }) => {
       "judgeProfileId",
       "driver",
       "model",
+      "validationMode",
       "finishReason",
       "responseFormat",
       "parseState",
@@ -94,11 +199,50 @@ const createJudgeSanitizers = ({ validateString, ensureRequestId }) => {
     if (typeof metadata.customPromptApplied === "boolean") {
       sanitized.customPromptApplied = metadata.customPromptApplied;
     }
+    if (typeof metadata.validationApplied === "boolean") {
+      sanitized.validationApplied = metadata.validationApplied;
+    }
     const usage = sanitizeJsonLikeValue(metadata.usage);
     if (usage && typeof usage === "object") {
       sanitized.usage = usage;
     }
     return Object.keys(sanitized).length ? sanitized : undefined;
+  };
+
+  const sanitizeJudgeValidatorResultForExport = (result, index) => {
+    if (!result || typeof result !== "object") {
+      throw new Error(`Invalid validator result at result.validatorResults[${index}]`);
+    }
+    const type = validateString(result.type, `result.validatorResults[${index}].type`);
+    if (type !== "json_parse" && type !== "required_keys" && type !== "enum_values") {
+      throw new Error(`Invalid validator type at result.validatorResults[${index}].type`);
+    }
+    const status = validateString(result.status, `result.validatorResults[${index}].status`);
+    if (status !== "pass" && status !== "fail" && status !== "warning") {
+      throw new Error(`Invalid validator status at result.validatorResults[${index}].status`);
+    }
+    const sanitized = {
+      type,
+      status,
+      answerKey: validateString(result.answerKey, `result.validatorResults[${index}].answerKey`),
+      message: validateString(result.message, `result.validatorResults[${index}].message`)
+    };
+    for (const key of ["agentId", "key", "path", "actual"]) {
+      const value = sanitizeOptionalString(result[key]);
+      if (value) {
+        sanitized[key] = value.slice(0, 500);
+      }
+    }
+    const expected = sanitizeStringList(
+      result.expected,
+      `result.validatorResults[${index}].expected`,
+      MAX_ENUM_VALUES_PER_KEY,
+      MAX_ENUM_VALUE_LENGTH
+    );
+    if (expected) {
+      sanitized.expected = expected;
+    }
+    return sanitized;
   };
 
   const sanitizeJudgeScoreForExport = (score, path, fallbackAgentId) => {
@@ -176,6 +320,11 @@ const createJudgeSanitizers = ({ validateString, ensureRequestId }) => {
     const metadata = sanitizeJudgeMetadata(result.metadata);
     if (metadata) {
       sanitized.metadata = metadata;
+    }
+    if (Array.isArray(result.validatorResults)) {
+      sanitized.validatorResults = result.validatorResults.map((item, index) =>
+        sanitizeJudgeValidatorResultForExport(item, index)
+      );
     }
 
     return sanitized;

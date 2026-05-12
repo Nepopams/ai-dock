@@ -138,6 +138,12 @@ export interface CompareDraftAnswer {
   selected?: boolean;
 }
 
+export interface CompareDraftValidation {
+  enabled?: boolean;
+  allowMarkdownFence?: boolean;
+  requiredKeysText?: string;
+}
+
 export interface CompareDraft {
   requestId: string;
   question: string;
@@ -145,6 +151,7 @@ export interface CompareDraft {
   judgeProfileId?: string;
   rubric?: string;
   customPrompt?: string;
+  validation?: CompareDraftValidation;
 }
 
 interface ToastState {

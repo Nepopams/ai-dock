@@ -5,6 +5,8 @@ const {
   isJudgeExportPayload,
   isJudgeInput,
   isJudgeResult,
+  isJudgeValidationConfig,
+  isJudgeValidatorResult,
   isJudgeScore
 } = require("../src/shared/types/judge.js");
 
@@ -72,6 +74,57 @@ test("isJudgeInput rejects non-string custom prompt", () => {
   );
 });
 
+test("isJudgeInput accepts JSON contract validation config", () => {
+  const validation = {
+    mode: "json_contract_check",
+    enabled: true,
+    allowMarkdownFence: true,
+    requiredKeys: ["status", "items"],
+    enumValues: {
+      status: ["ok", "error"]
+    }
+  };
+
+  assert.equal(isJudgeValidationConfig(validation), true);
+  assert.equal(
+    isJudgeInput({
+      ...validInput,
+      validation
+    }),
+    true
+  );
+});
+
+test("isJudgeInput rejects invalid validation config", () => {
+  assert.equal(
+    isJudgeInput({
+      ...validInput,
+      validation: { mode: "json_validation" }
+    }),
+    false
+  );
+  assert.equal(
+    isJudgeInput({
+      ...validInput,
+      validation: {
+        mode: "json_contract_check",
+        requiredKeys: ["status", 42]
+      }
+    }),
+    false
+  );
+  assert.equal(
+    isJudgeInput({
+      ...validInput,
+      validation: {
+        mode: "json_contract_check",
+        enumValues: { status: ["ok", false] }
+      }
+    }),
+    false
+  );
+});
+
 test("isJudgeScore rejects unknown criteria and invalid scores", () => {
   assert.equal(isJudgeScore({ criterion: "coherence", score: 4 }), true);
   assert.equal(isJudgeScore({ criterion: "novelty", score: 4 }), false);
@@ -93,15 +146,26 @@ test("isJudgeResult accepts optional compatibility metadata", () => {
       model: "gpt-test",
       rubricSource: "custom",
       customPromptApplied: true,
+      validationApplied: true,
+      validationMode: "json_contract_check",
       durationMs: 12,
       finishReason: "stop",
       usage: { total_tokens: 10 },
       responseFormat: "json_object",
       parseState: "strict_json"
-    }
+    },
+    validatorResults: [
+      {
+        type: "json_parse",
+        status: "pass",
+        answerKey: "answer_1",
+        message: "Answer parses as JSON."
+      }
+    ]
   };
 
   assert.equal(isJudgeResult(result), true);
+  assert.equal(isJudgeValidatorResult(result.validatorResults[0]), true);
 });
 
 test("isJudgeResult rejects invalid metadata and score buckets", () => {
@@ -131,6 +195,16 @@ test("isJudgeResult rejects invalid metadata and score buckets", () => {
       scores: { answer_1: [{ criterion: "novelty", score: 5 }] },
       verdict: "Answer 1 wins",
       summary: "Answer 1 is clearer."
+    }),
+    false
+  );
+  assert.equal(
+    isJudgeResult({
+      requestId: "judge-1",
+      scores: validScores,
+      verdict: "Answer 1 wins",
+      summary: "Answer 1 is clearer.",
+      validatorResults: [{ type: "json_schema", status: "pass", answerKey: "answer_1", message: "ok" }]
     }),
     false
   );
