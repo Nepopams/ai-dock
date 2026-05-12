@@ -269,6 +269,13 @@ const FormRunView = () => {
   const [stickToBottom, setStickToBottom] = useState(true);
   const streamContainerRef = useRef<HTMLDivElement | null>(null);
 
+  const profile = useMemo<FormProfile | null>(() => {
+    if (!formRunProfileId) {
+      return null;
+    }
+    return formProfiles.find((item) => item.id === formRunProfileId) ?? null;
+  }, [formProfiles, formRunProfileId]);
+
   const activeStreamEntry = useMemo(
     () => (activeStreamId ? formStreamById[activeStreamId] : undefined),
     [activeStreamId, formStreamById]
@@ -278,13 +285,6 @@ const FormRunView = () => {
   const streamStatusLabel = activeStreamEntry?.status ?? (isStreamRunning ? "running" : "idle");
   const streamCharCount = activeStreamEntry?.text?.length ?? 0;
   const streamLastEvent = activeStreamEntry?.lastEventAt ? new Date(activeStreamEntry.lastEventAt).toLocaleTimeString() : null;
-
-  const profile = useMemo<FormProfile | null>(() => {
-    if (!formRunProfileId) {
-      return null;
-    }
-    return formProfiles.find((item) => item.id === formRunProfileId) ?? null;
-  }, [formProfiles, formRunProfileId]);
 
   useEffect(() => {
     if (!formProfiles.length) {
@@ -530,69 +530,68 @@ const FormRunView = () => {
     }
     const error = fieldErrors[key];
     const commonLabel = (
-      <label className="flex items-center justify-between text-sm font-medium text-slate-200">
+      <label className="form-runner-field-label">
         <span>
           {field.label}
-          {field.required ? <span className="ml-1 text-rose-300">*</span> : null}
+          {field.required ? <span className="form-runner-required">*</span> : null}
         </span>
-        {field.help && <span className="text-xs font-normal text-slate-400">{field.help}</span>}
+        {field.help && <span className="form-runner-field-help">{field.help}</span>}
       </label>
     );
 
-    const baseInputClass =
-      "mt-1 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none";
+    const baseInputClass = "form-runner-input";
 
     switch (field.type) {
       case "text":
         return (
-          <div key={field.id} className="space-y-1">
+          <div key={field.id} className="form-runner-field">
             {commonLabel}
             <input
               type="text"
               value={typeof values[key] === "string" ? (values[key] as string) : ""}
               onChange={(event) => handleValueChange(field, event)}
-              className={`${baseInputClass} ${error ? "border-rose-500" : ""}`}
+              className={`${baseInputClass} ${error ? "form-runner-input--error" : ""}`}
             />
-            {error && <p className="text-xs text-rose-300">{error}</p>}
+            {error && <p className="form-runner-field-error">{error}</p>}
           </div>
         );
       case "textarea":
         return (
-          <div key={field.id} className="space-y-1">
+          <div key={field.id} className="form-runner-field">
             {commonLabel}
             <textarea
               value={typeof values[key] === "string" ? (values[key] as string) : ""}
               onChange={(event) => handleValueChange(field, event)}
-              className={`${baseInputClass} min-h-[120px] resize-y ${error ? "border-rose-500" : ""}`}
+              className={`${baseInputClass} form-runner-textarea ${error ? "form-runner-input--error" : ""}`}
             />
-            {error && <p className="text-xs text-rose-300">{error}</p>}
+            {error && <p className="form-runner-field-error">{error}</p>}
           </div>
         );
       case "number":
         return (
-          <div key={field.id} className="space-y-1">
+          <div key={field.id} className="form-runner-field">
             {commonLabel}
             <input
               type="number"
               value={typeof values[key] === "string" ? (values[key] as string) : ""}
               onChange={(event) => handleValueChange(field, event)}
-              className={`${baseInputClass} ${error ? "border-rose-500" : ""}`}
+              className={`${baseInputClass} ${error ? "form-runner-input--error" : ""}`}
               min={(field as FieldNumber).min}
               max={(field as FieldNumber).max}
               step={(field as FieldNumber).step ?? 1}
             />
-            {error && <p className="text-xs text-rose-300">{error}</p>}
+            {error && <p className="form-runner-field-error">{error}</p>}
           </div>
         );
       case "select": {
         const fieldSelect = field as FieldSelect;
         return (
-          <div key={field.id} className="space-y-1">
+          <div key={field.id} className="form-runner-field">
             {commonLabel}
             <select
               value={typeof values[key] === "string" ? (values[key] as string) : ""}
               onChange={(event) => handleValueChange(field, event)}
-              className={`${baseInputClass} ${error ? "border-rose-500" : ""}`}
+              className={`${baseInputClass} ${error ? "form-runner-input--error" : ""}`}
             >
               {fieldSelect.options.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -600,41 +599,41 @@ const FormRunView = () => {
                 </option>
               ))}
             </select>
-            {error && <p className="text-xs text-rose-300">{error}</p>}
+            {error && <p className="form-runner-field-error">{error}</p>}
           </div>
         );
       }
       case "checkbox":
         return (
-          <div key={field.id} className="flex items-center justify-between rounded border border-slate-700 bg-slate-900 px-3 py-2">
-            <label className="flex items-center gap-2 text-sm text-slate-200">
+          <div key={field.id} className="form-runner-field form-runner-field--checkbox">
+            <label className="form-runner-checkbox-label">
               <input
                 type="checkbox"
                 checked={Boolean(values[key])}
                 onChange={(event) => handleValueChange(field, event)}
-                className="h-4 w-4 rounded border border-slate-600 bg-slate-950 text-indigo-500 focus:ring-indigo-500"
+                className="form-runner-checkbox"
               />
               <span>
                 {field.label}
-                {field.required ? <span className="ml-1 text-rose-300">*</span> : null}
+                {field.required ? <span className="form-runner-required">*</span> : null}
               </span>
             </label>
-            {field.help && <span className="text-xs text-slate-400">{field.help}</span>}
-            {error && <p className="mt-1 text-xs text-rose-300">{error}</p>}
+            {field.help && <span className="form-runner-field-help">{field.help}</span>}
+            {error && <p className="form-runner-field-error">{error}</p>}
           </div>
         );
       case "file": {
         const fileField = field as FieldFile;
         return (
-          <div key={field.id} className="space-y-1">
+          <div key={field.id} className="form-runner-field">
             {commonLabel}
-            <div className="rounded border border-dashed border-slate-700 bg-slate-900 px-3 py-4 text-sm text-slate-400">
+            <div className="form-runner-file-placeholder">
               File inputs will be supported in FC-06.
               {fileField.accept && (
-                <div className="mt-1 text-xs text-slate-500">Accept: {fileField.accept}</div>
+                <div className="form-runner-field-help">Accept: {fileField.accept}</div>
               )}
             </div>
-            {error && <p className="text-xs text-rose-300">{error}</p>}
+            {error && <p className="form-runner-field-error">{error}</p>}
           </div>
         );
       }
@@ -644,32 +643,32 @@ const FormRunView = () => {
   };
 
   return (
-    <div className="flex h-full flex-col bg-slate-950 text-slate-100">
-      <header className="flex items-center gap-4 border-b border-slate-800 px-6 py-4">
+    <div className="form-runner-view">
+      <header className="form-runner-header">
         <button
           type="button"
           onClick={handleBack}
-          className="rounded border border-slate-700 px-3 py-1.5 text-sm text-slate-200 hover:border-slate-500"
+          className="form-runner-button form-runner-button--ghost"
         >
-          ← Back
+          Back
         </button>
-        <div>
-          <h1 className="text-base font-semibold text-slate-100">Form Runner (Sync)</h1>
-          <p className="text-sm text-slate-400">
-            Execute a form profile as a synchronous HTTP request. Streaming will arrive in FC-05.
+        <div className="form-runner-title">
+          <h1>Form Runner</h1>
+          <p>
+            Run a selected Form Profile against a configured endpoint and inspect the request/response.
           </p>
         </div>
-        <div className="flex flex-1 items-center justify-end gap-2">
-          <label className="text-sm text-slate-300">
+        <div className="form-runner-profile-select">
+          <label>
             Profile
             <select
               value={formRunProfileId ?? ""}
               onChange={(event) => setFormRunProfile(event.target.value || null)}
               disabled={formProfilesLoading}
-              className="ml-2 rounded border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"
+              className="form-runner-select"
             >
               <option value="" disabled>
-                {formProfilesLoading ? "Loading…" : "Select profile"}
+                {formProfilesLoading ? "Loading..." : "Select profile"}
               </option>
               {formProfiles.map((item) => (
                 <option key={item.id} value={item.id}>
@@ -680,73 +679,71 @@ const FormRunView = () => {
           </label>
         </div>
       </header>
-      <div className="flex flex-1 overflow-hidden">
-        <section className="flex w-[32rem] flex-col border-r border-slate-900">
-          <div className="flex items-center justify-between border-b border-slate-900 px-6 py-3">
-            <h2 className="text-sm font-semibold uppercase text-slate-300">
-              Parameters
-            </h2>
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <label className="flex items-center gap-1">
-                Connect timeout (ms)
+      <div className="form-runner-body">
+        <section className="form-runner-parameters">
+          <div className="form-runner-panel-header">
+            <h2>Generated form</h2>
+            <div className="form-runner-timeouts">
+              <label className="form-runner-timeout-control">
+                <span>Connect</span>
                 <input
                   type="number"
                   value={connectTimeout}
                   onChange={(event) => setConnectTimeout(event.target.value)}
                   min={0}
-                  className="w-24 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none"
+                  className="form-runner-timeout-input"
                 />
               </label>
-              <label className="flex items-center gap-1">
-                Idle timeout (ms)
+              <label className="form-runner-timeout-control">
+                <span>Idle</span>
                 <input
                   type="number"
                   value={idleTimeout}
                   onChange={(event) => setIdleTimeout(event.target.value)}
                   min={0}
-                  className="w-24 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none"
+                  className="form-runner-timeout-input"
                 />
               </label>
-              <label className="flex items-center gap-1">
-                Total timeout (ms)
+              <label className="form-runner-timeout-control">
+                <span>Total</span>
                 <input
                   type="number"
                   value={totalTimeout}
                   onChange={(event) => setTotalTimeout(event.target.value)}
                   min={0}
-                  className="w-24 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none"
+                  className="form-runner-timeout-input"
                 />
               </label>
             </div>
           </div>
-          <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
+          <div className="form-runner-panel-scroll">
             {validationMessage && (
-              <div className="rounded border border-amber-600 bg-amber-900/40 px-3 py-2 text-sm text-amber-200">
+              <div className="form-runner-alert form-runner-alert--warning">
                 {validationMessage}
               </div>
             )}
             {formRunError && (
-              <div className="rounded border border-rose-600 bg-rose-900/30 px-3 py-2 text-sm text-rose-200">
+              <div className="form-runner-alert form-runner-alert--error">
                 {formRunError}
               </div>
             )}
             {!profile && !formProfilesLoading && (
-              <div className="rounded border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-slate-300">
+              <div className="form-runner-empty">
                 Select a profile to start running a form.
               </div>
             )}
             {profile && (
-              <div className="space-y-4">
+              <div className="form-runner-field-list">
                 {profile.schema.fields.map((field) => renderField(field))}
               </div>
             )}
           </div>
-          <div className="flex items-center justify-between border-t border-slate-900 px-6 py-3">
-            <div className="flex items-center gap-2">
+          <div className="form-runner-actions">
+            <div className="form-runner-actions-group">
               <button
                 type="button"
                 onClick={handleClear}
-                className="rounded border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-slate-500"
+                className="form-runner-button"
               >
                 Clear
               </button>
@@ -755,11 +752,7 @@ const FormRunView = () => {
                   type="button"
                   onClick={runStreamRequest}
                   disabled={isStreamRunning}
-                  className={`rounded border px-4 py-2 text-sm font-medium ${
-                    isStreamRunning
-                      ? "cursor-not-allowed border-slate-700 text-slate-500"
-                      : "border-indigo-600 text-indigo-200 hover:border-indigo-400 hover:text-indigo-100"
-                  }`}
+                  className="form-runner-button form-runner-button--secondary"
                 >
                   Run (Stream)
                 </button>
@@ -769,11 +762,7 @@ const FormRunView = () => {
                   type="button"
                   onClick={abortActiveStream}
                   disabled={!isStreamRunning}
-                  className={`rounded border px-4 py-2 text-sm font-medium ${
-                    !isStreamRunning
-                      ? "cursor-not-allowed border-slate-700 text-slate-500"
-                      : "border-rose-600 text-rose-200 hover:border-rose-500 hover:text-rose-100"
-                  }`}
+                  className="form-runner-button form-runner-button--danger"
                 >
                   Abort
                 </button>
@@ -783,63 +772,57 @@ const FormRunView = () => {
               type="button"
               onClick={runRequest}
               disabled={!profile || formRunRunning}
-              className={`rounded px-4 py-2 text-sm font-medium ${
-                !profile || formRunRunning
-                  ? "cursor-not-allowed bg-slate-700 text-slate-400"
-                  : "bg-emerald-600 text-white hover:bg-emerald-500"
-              }`}
+              className="form-runner-button form-runner-button--primary"
             >
-              {formRunRunning ? "Running…" : "Run"}
+              {formRunRunning ? "Running..." : "Run"}
             </button>
           </div>
         </section>
-        <section className="flex flex-1 flex-col overflow-hidden">
-          <div className="border-b border-slate-900 px-6 py-3">
-            <h2 className="text-sm font-semibold uppercase text-slate-300">
-              Request Preview
-            </h2>
+        <section className="form-runner-preview">
+          <div className="form-runner-panel-header">
+            <h2>Request preview</h2>
             {previewState.error && (
-              <p className="mt-1 text-xs text-rose-300">{previewState.error}</p>
+              <p className="form-runner-field-error">{previewState.error}</p>
             )}
           </div>
-          <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto px-6 py-4 lg:grid-cols-2">
-            <div className="space-y-3 rounded border border-slate-800 bg-slate-900/60 p-4">
-              <h3 className="text-xs font-semibold uppercase text-slate-400">
+          <div className="form-runner-preview-grid">
+            <div className="form-runner-card">
+              <h3>
                 Current Inputs
               </h3>
               {previewState.preview ? (
-                <div className="space-y-2 text-sm text-slate-200">
+                <div className="form-runner-card-content">
                   <div>
-                    <span className="font-semibold text-slate-300">Method:</span>{" "}
-                    <span className="uppercase text-slate-100">
+                    <span className="form-runner-label">Method:</span>{" "}
+                    <span className="form-runner-method">
                       {previewState.preview.method}
                     </span>
                   </div>
                   <div>
-                    <span className="font-semibold text-slate-300">URL:</span>
-                    <div className="mt-1 break-all rounded bg-slate-950/60 p-2 text-xs text-slate-100">
-                      {previewState.preview.url || "—"}
+                    <span className="form-runner-label">URL:</span>
+                    <div className="form-runner-code form-runner-code--url">
+                      {previewState.preview.url || "-"}
                     </div>
                   </div>
                   <div>
-                    <span className="font-semibold text-slate-300">Headers:</span>
+                    <span className="form-runner-label">Headers:</span>
                     {Object.keys(previewState.preview.headers).length ? (
-                      <ul className="mt-1 space-y-1 text-xs text-slate-300">
+                      <ul className="form-runner-list">
                         {Object.entries(previewState.preview.headers).map(([name, value]) => (
                           <li key={name}>
-                            <span className="font-semibold text-slate-200">{name}:</span>{" "}
+                            <span className="form-runner-label">{name}:</span>{" "}
                             <span>{value}</span>
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p className="mt-1 text-xs text-slate-500">No headers</p>
+                      <p className="form-runner-muted">No headers</p>
                     )}
                   </div>
                   <div>
-                    <span className="font-semibold text-slate-300">Body preview:</span>
-                    <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-slate-950/60 p-2 text-xs text-slate-300">
-                      {previewState.preview.bodyPreview || "—"}
+                    <span className="form-runner-label">Body preview:</span>
+                    <pre className="form-runner-code form-runner-code--block">
+                      {previewState.preview.bodyPreview || "-"}
                     </pre>
                   </div>
                   <button
@@ -859,117 +842,117 @@ const FormRunView = () => {
                         "Preview"
                       )
                     }
-                    className="rounded border border-slate-700 px-3 py-1 text-xs text-slate-200 hover:border-slate-500"
+                    className="form-runner-button form-runner-button--small"
                   >
                     Copy preview JSON
                   </button>
                 </div>
               ) : (
-                <p className="text-sm text-slate-400">Preview will appear once inputs are set.</p>
+                <p className="form-runner-muted">Preview will appear once inputs are set.</p>
               )}
             </div>
-            <div className="space-y-3 rounded border border-slate-800 bg-slate-900/60 p-4">
-              <h3 className="text-xs font-semibold uppercase text-slate-400">
+            <div className="form-runner-card form-runner-stream">
+              <h3>
                 Stream Output
               </h3>
               {streamMode === "none" ? (
-                <p className="text-sm text-slate-400">Streaming is disabled for this profile.</p>
+                <p className="form-runner-muted">Streaming is disabled for this profile.</p>
               ) : activeStreamEntry ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>Status: <span className="text-slate-200">{streamStatusLabel}</span></span>
-                    <span>Chars: <span className="text-slate-200">{streamCharCount}</span></span>
+                <div className="form-runner-card-content">
+                  <div className="form-runner-meta-row">
+                    <span>Status: <span>{streamStatusLabel}</span></span>
+                    <span>Chars: <span>{streamCharCount}</span></span>
                   </div>
                   {streamError && (
-                    <div className="rounded border border-rose-700 bg-rose-900/40 px-3 py-2 text-xs text-rose-200">
+                    <div className="form-runner-alert form-runner-alert--error">
                       {streamError}
                     </div>
                   )}
                   <div
                     ref={streamContainerRef}
                     onScroll={handleStreamScroll}
-                    className="max-h-64 overflow-y-auto rounded border border-slate-800 bg-slate-950/70 p-3 font-mono text-sm text-slate-100"
+                    className="form-runner-stream-viewport"
                   >
                     {activeStreamEntry.text ? (
-                      <pre className="whitespace-pre-wrap leading-relaxed">{activeStreamEntry.text}</pre>
+                      <pre>{activeStreamEntry.text}</pre>
                     ) : (
-                      <p className="text-xs text-slate-500">Waiting for chunks...</p>
+                      <p className="form-runner-muted">Waiting for chunks...</p>
                     )}
                   </div>
-                  <div className="flex items-center justify-between text-xs text-slate-400">
+                  <div className="form-runner-meta-row">
                     <span>Last event: {streamLastEvent ?? "-"}</span>
                     {!stickToBottom && (
                       <button
                         type="button"
                         onClick={scrollStreamToLatest}
-                        className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-slate-500"
+                        className="form-runner-button form-runner-button--small"
                       >
                         Scroll to latest
                       </button>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="form-runner-actions-group">
                     <button
                       type="button"
                       onClick={() => copyToClipboard(activeStreamEntry.text, "Stream text")}
                       disabled={!activeStreamEntry.text}
-                      className={`rounded border px-3 py-1 text-xs ${activeStreamEntry.text ? "border-slate-700 text-slate-200 hover:border-slate-500" : "cursor-not-allowed border-slate-700 text-slate-500"}`}
+                      className="form-runner-button form-runner-button--small"
                     >
                       Copy streamed text
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2 text-sm text-slate-400">
+                <div className="form-runner-card-content">
                   {streamError && (
-                    <div className="rounded border border-rose-700 bg-rose-900/40 px-3 py-2 text-xs text-rose-200">
+                    <div className="form-runner-alert form-runner-alert--error">
                       {streamError}
                     </div>
                   )}
-                  <p>Run the stream to see live tokens.</p>
+                  <p className="form-runner-muted">Run the stream to see live tokens.</p>
                 </div>
               )}
             </div>
-            <div className="space-y-3 rounded border border-slate-800 bg-slate-900/60 p-4">
-              <h3 className="text-xs font-semibold uppercase text-slate-400">
+            <div className="form-runner-card form-runner-response">
+              <h3>
                 Last Response
               </h3>
               {formRunLast ? (
                 formRunLast.ok ? (
-                  <div className="space-y-2 text-sm text-slate-200">
-                    <div className="flex items-center gap-2">
+                  <div className="form-runner-card-content">
+                    <div className="form-runner-meta-row form-runner-meta-row--start">
                       <span
-                        className={`rounded px-2 py-0.5 text-xs font-medium ${
+                        className={`form-runner-status ${
                           formRunLast.status >= 200 && formRunLast.status < 300
-                            ? "bg-emerald-600/40 text-emerald-200"
-                            : "bg-amber-600/30 text-amber-100"
+                            ? "form-runner-status--ready"
+                            : "form-runner-status--warning"
                         }`}
                       >
                         {formRunLast.status} {formRunLast.statusText}
                       </span>
-                      <span className="text-xs text-slate-400">
+                      <span>
                         Latency: {formRunLast.latencyMs} ms
                       </span>
                     </div>
                     <div>
-                      <span className="font-semibold text-slate-300">Response headers:</span>
+                      <span className="form-runner-label">Response headers:</span>
                       {Object.keys(formRunLast.headers).length ? (
-                        <ul className="mt-1 max-h-32 space-y-1 overflow-auto text-xs text-slate-300">
+                        <ul className="form-runner-list form-runner-list--scroll">
                           {Object.entries(formRunLast.headers).map(([name, value]) => (
                             <li key={name}>
-                              <span className="font-semibold text-slate-200">{name}:</span>{" "}
+                              <span className="form-runner-label">{name}:</span>{" "}
                               <span>{value}</span>
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-xs text-slate-500">No headers</p>
+                        <p className="form-runner-muted">No headers</p>
                       )}
                     </div>
                     <div>
-                      <span className="font-semibold text-slate-300">Body:</span>
+                      <span className="form-runner-label">Body:</span>
                       {formRunLast.responseType === "json" && (
-                        <pre className="mt-1 max-h-48 overflow-auto rounded bg-slate-950/60 p-2 text-xs text-slate-200">
+                        <pre className="form-runner-code form-runner-code--block">
                           {JSON.stringify(formRunLast.bodyJson, null, 2)}
                         </pre>
                       )}
@@ -977,14 +960,14 @@ const FormRunView = () => {
                         <textarea
                           readOnly
                           value={formRunLast.bodyText ?? ""}
-                          className="mt-1 h-48 w-full resize-none rounded border border-slate-700 bg-slate-950/60 p-2 text-xs text-slate-200"
+                          className="form-runner-response-text"
                         />
                       )}
                       {formRunLast.responseType === "empty" && (
-                        <p className="mt-1 text-xs text-slate-400">No body returned.</p>
+                        <p className="form-runner-muted">No body returned.</p>
                       )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="form-runner-actions-group">
                       {formRunLast.responseType !== "empty" && (
                         <button
                           type="button"
@@ -996,7 +979,7 @@ const FormRunView = () => {
                                 )
                               : copyToClipboard(formRunLast.bodyText ?? "", "Response body")
                           }
-                          className="rounded border border-slate-700 px-3 py-1 text-xs text-slate-200 hover:border-slate-500"
+                          className="form-runner-button form-runner-button--small"
                         >
                           Copy body
                         </button>
@@ -1010,7 +993,7 @@ const FormRunView = () => {
                               "Request preview"
                             )
                           }
-                          className="rounded border border-slate-700 px-3 py-1 text-xs text-slate-200 hover:border-slate-500"
+                          className="form-runner-button form-runner-button--small"
                         >
                           Copy request
                         </button>
@@ -1018,12 +1001,12 @@ const FormRunView = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-2 text-sm text-rose-200">
-                    <div className="rounded border border-rose-700 bg-rose-950/70 px-3 py-2">
-                      <div className="text-xs uppercase">Request failed</div>
-                      <div className="text-sm font-semibold">{formRunLast.message}</div>
+                  <div className="form-runner-card-content form-runner-card-content--error">
+                    <div className="form-runner-alert form-runner-alert--error">
+                      <div className="form-runner-alert-kicker">Request failed</div>
+                      <div>{formRunLast.message}</div>
                       {formRunLast.details && (
-                        <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-rose-900/30 p-2 text-xs text-rose-100">
+                        <pre className="form-runner-code form-runner-code--block">
                           {formRunLast.details}
                         </pre>
                       )}
@@ -1037,7 +1020,7 @@ const FormRunView = () => {
                             "Failed request"
                           )
                         }
-                        className="rounded border border-rose-700 px-3 py-1 text-xs text-rose-100 hover:border-rose-500"
+                        className="form-runner-button form-runner-button--danger form-runner-button--small"
                       >
                         Copy request snapshot
                       </button>
@@ -1045,7 +1028,7 @@ const FormRunView = () => {
                   </div>
                 )
               ) : (
-                <p className="text-sm text-slate-400">
+                <p className="form-runner-muted">
                   Run the profile to see response details here.
                 </p>
               )}
