@@ -3917,6 +3917,487 @@ textarea:focus-visible {
     width: 100%;
   }
 }
+
+/* UI v2 Evaluation Studio restyle. Scoped to Judge/Evaluation surfaces for WP-UI-005. */
+.evaluation-studio-view {
+  background: var(--aid-bg-app);
+  color: var(--aid-text-primary);
+  gap: var(--aid-space-4);
+  padding: var(--aid-space-4);
+}
+
+.evaluation-studio-header,
+.evaluation-history-panel,
+.evaluation-studio-workspace,
+.evaluation-manual-start,
+.evaluation-studio-workspace .compare-view {
+  background: var(--aid-bg-shell);
+  border: 1px solid var(--aid-border-subtle);
+  border-radius: var(--aid-radius-panel);
+  box-shadow: var(--aid-shadow-panel);
+}
+
+.evaluation-studio-header {
+  align-items: center;
+  padding: var(--aid-space-4);
+}
+
+.evaluation-studio-kicker {
+  color: var(--aid-accent-primary-hover);
+  font-size: 11px;
+  letter-spacing: 0;
+  margin-bottom: var(--aid-space-1);
+}
+
+.evaluation-studio-heading h1 {
+  color: var(--aid-text-primary);
+  font-size: 24px;
+  line-height: 1.15;
+}
+
+.evaluation-studio-heading p {
+  color: var(--aid-text-secondary);
+  max-width: 760px;
+}
+
+.evaluation-studio-summary {
+  background: var(--aid-bg-surface);
+  border-color: rgba(79, 140, 255, 0.26);
+  border-radius: var(--aid-radius-card);
+  min-width: 160px;
+}
+
+.evaluation-studio-summary strong {
+  color: var(--aid-text-primary);
+}
+
+.evaluation-studio-summary span {
+  color: var(--aid-text-muted);
+}
+
+.evaluation-studio-modes {
+  gap: var(--aid-space-3);
+}
+
+.evaluation-mode-card {
+  background: var(--aid-bg-surface);
+  border-color: var(--aid-border-subtle);
+  border-radius: var(--aid-radius-card);
+  gap: var(--aid-space-2);
+  padding: var(--aid-space-3);
+}
+
+.evaluation-mode-card--available {
+  border-color: rgba(79, 140, 255, 0.28);
+}
+
+.evaluation-mode-card--planned {
+  background: var(--aid-bg-surface-subtle);
+  opacity: 0.78;
+}
+
+.evaluation-mode-status,
+.evaluation-working-state,
+.evaluation-history-chip {
+  background: var(--aid-bg-surface-raised);
+  border: 1px solid var(--aid-border-subtle);
+  border-radius: var(--aid-radius-pill);
+  color: var(--aid-text-secondary);
+  letter-spacing: 0;
+}
+
+.evaluation-mode-card--available .evaluation-mode-status {
+  background: var(--aid-status-ready-bg);
+  border-color: rgba(52, 211, 153, 0.28);
+  color: var(--aid-status-ready);
+}
+
+.evaluation-mode-card--planned .evaluation-mode-status {
+  background: var(--aid-bg-surface-raised);
+  color: var(--aid-text-muted);
+}
+
+.evaluation-mode-card h2,
+.evaluation-history-header h2,
+.evaluation-working-header h2,
+.evaluation-manual-copy h3 {
+  color: var(--aid-text-primary);
+}
+
+.evaluation-mode-card p,
+.evaluation-history-header p,
+.evaluation-manual-copy p,
+.evaluation-history-item p {
+  color: var(--aid-text-secondary);
+}
+
+.evaluation-history-panel,
+.evaluation-studio-workspace {
+  gap: var(--aid-space-4);
+  padding: var(--aid-space-4);
+}
+
+.evaluation-history-header {
+  align-items: center;
+}
+
+.evaluation-history-header .pill-btn,
+.evaluation-history-actions .pill-btn,
+.compare-header-actions .pill-btn,
+.compare-actions .pill-btn,
+.compare-error .pill-btn {
+  border: 1px solid var(--aid-border-subtle);
+  border-radius: var(--aid-radius-control);
+  min-height: 32px;
+}
+
+.evaluation-history-header .pill-btn.ghost,
+.evaluation-history-actions .pill-btn.ghost,
+.compare-header-actions .pill-btn.ghost,
+.compare-actions .pill-btn.ghost,
+.compare-error .pill-btn.ghost {
+  background: var(--aid-bg-surface-raised);
+  color: var(--aid-text-secondary);
+}
+
+.evaluation-history-header .pill-btn.ghost:hover,
+.evaluation-history-actions .pill-btn.ghost:hover,
+.compare-header-actions .pill-btn.ghost:hover,
+.compare-actions .pill-btn.ghost:hover,
+.compare-error .pill-btn.ghost:hover {
+  background: var(--aid-accent-primary-subtle);
+  border-color: rgba(79, 140, 255, 0.38);
+  color: var(--aid-text-primary);
+}
+
+.evaluation-history-actions .pill-btn.danger {
+  background: var(--aid-status-error-bg);
+  border-color: rgba(251, 113, 133, 0.34);
+  color: var(--aid-status-error);
+}
+
+.evaluation-history-actions .pill-btn.danger:hover:not(:disabled) {
+  border-color: rgba(251, 113, 133, 0.54);
+  color: var(--aid-status-error);
+}
+
+.evaluation-history-list {
+  gap: var(--aid-space-3);
+}
+
+.evaluation-history-item {
+  background: var(--aid-bg-surface);
+  border-color: var(--aid-border-subtle);
+  border-radius: var(--aid-radius-card);
+  padding: var(--aid-space-3);
+}
+
+.evaluation-history-item h3 {
+  color: var(--aid-text-primary);
+}
+
+.evaluation-history-meta {
+  color: var(--aid-text-muted);
+}
+
+.evaluation-history-chip {
+  background: var(--aid-accent-primary-subtle);
+  border-color: rgba(79, 140, 255, 0.22);
+  color: var(--aid-accent-primary-hover);
+  font-weight: 650;
+}
+
+.evaluation-history-empty {
+  background: var(--aid-bg-surface);
+  border-color: var(--aid-border-subtle);
+  border-radius: var(--aid-radius-card);
+  color: var(--aid-text-muted);
+}
+
+.evaluation-history-error,
+.evaluation-manual-error,
+.compare-error {
+  background: var(--aid-status-error-bg);
+  border-color: rgba(251, 113, 133, 0.34);
+  border-radius: var(--aid-radius-card);
+  color: var(--aid-status-error);
+}
+
+.evaluation-working-header {
+  align-items: center;
+  border-top: 0;
+  border-bottom: 1px solid var(--aid-border-subtle);
+  padding: 0 0 var(--aid-space-3);
+}
+
+.evaluation-working-state {
+  background: var(--aid-status-ready-bg);
+  border-color: rgba(52, 211, 153, 0.28);
+  color: var(--aid-status-ready);
+}
+
+.evaluation-manual-start {
+  box-shadow: none;
+  padding: var(--aid-space-4);
+}
+
+.evaluation-field span,
+.compare-label {
+  color: var(--aid-text-secondary);
+  letter-spacing: 0;
+}
+
+.evaluation-field input,
+.evaluation-field textarea,
+.compare-column--inputs textarea,
+.compare-column--inputs select {
+  background: var(--aid-bg-surface-subtle);
+  border-color: var(--aid-border-subtle);
+  border-radius: var(--aid-radius-control);
+  color: var(--aid-text-primary);
+}
+
+.evaluation-field input::placeholder,
+.evaluation-field textarea::placeholder,
+.compare-column--inputs textarea::placeholder {
+  color: var(--aid-text-muted);
+}
+
+.evaluation-field input:focus-visible,
+.evaluation-field textarea:focus-visible,
+.compare-column--inputs textarea:focus-visible,
+.compare-column--inputs select:focus-visible {
+  border-color: var(--aid-accent-primary);
+  box-shadow: var(--aid-focus-ring);
+  outline: none;
+}
+
+.evaluation-start-button,
+.compare-actions .pill-btn:not(.ghost) {
+  background: var(--aid-accent-primary);
+  border: 1px solid var(--aid-accent-primary);
+  border-radius: var(--aid-radius-control);
+  color: var(--aid-text-primary);
+  min-height: 36px;
+}
+
+.evaluation-start-button:hover,
+.compare-actions .pill-btn:not(.ghost):hover:not(:disabled) {
+  background: var(--aid-accent-primary-hover);
+  border-color: var(--aid-accent-primary-hover);
+}
+
+.evaluation-start-button:focus-visible {
+  box-shadow: var(--aid-focus-ring);
+  outline: none;
+}
+
+.evaluation-studio-workspace .compare-view {
+  box-shadow: none;
+  gap: var(--aid-space-4);
+  padding: var(--aid-space-4);
+}
+
+.compare-view {
+  background: var(--aid-bg-app);
+  color: var(--aid-text-primary);
+}
+
+.compare-header {
+  align-items: center;
+  border-bottom: 1px solid var(--aid-border-subtle);
+  padding-bottom: var(--aid-space-3);
+}
+
+.compare-header h1 {
+  color: var(--aid-text-primary);
+  font-size: 20px;
+}
+
+.compare-header p,
+.compare-label-hint {
+  color: var(--aid-text-muted);
+}
+
+.compare-panel {
+  gap: var(--aid-space-4);
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+}
+
+.compare-column {
+  background: var(--aid-bg-surface);
+  border: 1px solid var(--aid-border-subtle);
+  border-radius: var(--aid-radius-panel);
+  gap: var(--aid-space-3);
+  min-width: 0;
+  padding: var(--aid-space-4);
+}
+
+.compare-field {
+  color: var(--aid-text-secondary);
+}
+
+.compare-answer-toggle {
+  color: var(--aid-text-primary);
+}
+
+.compare-answer-toggle input {
+  accent-color: var(--aid-accent-primary);
+}
+
+.compare-actions {
+  gap: var(--aid-space-2);
+}
+
+.compare-progress {
+  background: var(--aid-status-info-bg);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  border-radius: var(--aid-radius-card);
+  color: var(--aid-status-info);
+  padding: var(--aid-space-2) var(--aid-space-3);
+}
+
+.compare-column--answers h2 {
+  color: var(--aid-text-primary);
+}
+
+.compare-answers-list {
+  gap: var(--aid-space-3);
+}
+
+.compare-answer-card {
+  background: var(--aid-bg-surface-raised);
+  border-color: var(--aid-border-subtle);
+  border-radius: var(--aid-radius-card);
+  padding: var(--aid-space-3);
+}
+
+.compare-answer-badge {
+  background: var(--aid-accent-primary-subtle);
+  border: 1px solid rgba(79, 140, 255, 0.3);
+  border-radius: var(--aid-radius-pill);
+  color: var(--aid-accent-primary-hover);
+  letter-spacing: 0;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compare-answer-card pre {
+  background: var(--aid-bg-surface-subtle);
+  border: 1px solid var(--aid-border-subtle);
+  border-radius: var(--aid-radius-control);
+  color: var(--aid-text-secondary);
+}
+
+.compare-results {
+  background: var(--aid-bg-surface);
+  border-color: var(--aid-border-subtle);
+  border-radius: var(--aid-radius-panel);
+  box-shadow: var(--aid-shadow-panel);
+  padding: var(--aid-space-4);
+}
+
+.compare-results h2,
+.compare-validator-results h3 {
+  color: var(--aid-text-primary);
+}
+
+.compare-results header p,
+.compare-result-summary {
+  color: var(--aid-text-secondary);
+}
+
+.compare-validator-results {
+  background: var(--aid-bg-surface-subtle);
+  border: 1px solid var(--aid-border-subtle);
+  border-radius: var(--aid-radius-card);
+  padding: var(--aid-space-3);
+}
+
+.compare-validator-results ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--aid-space-2);
+  list-style: none;
+  margin: var(--aid-space-2) 0 0;
+  padding: 0;
+}
+
+.compare-validator-results li {
+  background: var(--aid-bg-surface);
+  border: 1px solid var(--aid-border-subtle);
+  border-radius: var(--aid-radius-control);
+  color: var(--aid-text-secondary);
+  padding: var(--aid-space-2) var(--aid-space-3);
+}
+
+.compare-table-wrapper {
+  background: var(--aid-bg-surface-subtle);
+  border-color: var(--aid-border-subtle);
+  border-radius: var(--aid-radius-card);
+}
+
+.compare-table-wrapper th,
+.compare-table-wrapper td {
+  border-bottom-color: var(--aid-border-subtle);
+}
+
+.compare-table-wrapper th {
+  background: var(--aid-bg-surface-raised);
+  color: var(--aid-text-muted);
+  letter-spacing: 0;
+}
+
+.compare-table-wrapper tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.compare-answer-ref {
+  color: var(--aid-text-muted);
+}
+
+.compare-criterion,
+.compare-score-value {
+  color: var(--aid-text-primary);
+}
+
+.compare-score-note {
+  color: var(--aid-text-secondary);
+}
+
+@media (min-width: 1320px) {
+  .evaluation-studio-workspace .compare-view:has(.compare-results) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+    grid-template-areas:
+      "header header"
+      "panel results";
+    align-items: start;
+  }
+
+  .evaluation-studio-workspace .compare-view:has(.compare-results) .compare-header {
+    grid-area: header;
+  }
+
+  .evaluation-studio-workspace .compare-view:has(.compare-results) .compare-panel {
+    grid-area: panel;
+  }
+
+  .evaluation-studio-workspace .compare-view:has(.compare-results) .compare-results {
+    grid-area: results;
+    position: sticky;
+    top: var(--aid-space-4);
+  }
+}
+
+@media (max-width: 1180px) {
+  .compare-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
 .history-view {
   display: grid;
   grid-template-columns: 320px 1fr;

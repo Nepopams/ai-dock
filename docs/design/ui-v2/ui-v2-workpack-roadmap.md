@@ -1,6 +1,6 @@
 # AI Dock UI v2 Workpack Roadmap
 
-This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, and `WP-UI-004` applies the Local Chat restyle. Remaining runtime workpacks require separate PLAN, Human Gate, APPLY, and REVIEW.
+This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, `WP-UI-004` applied the Local Chat restyle, and `WP-UI-005` applies the Evaluation Studio restyle. Remaining runtime workpacks require separate PLAN, Human Gate, APPLY, and REVIEW.
 
 ## WP-UI-001 Design Handoff Inventory
 | Field | Detail |
@@ -48,6 +48,7 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 ## WP-UI-005 Evaluation Studio Restyle
 | Field | Detail |
 | --- | --- |
+| Status | Done by `IN-UI-005-evaluation-studio-restyle`; Judge runtime, EvaluationRun storage, and export behavior remain unchanged. |
 | Goal | Apply UI v2 to Evaluation Studio, CompareView, saved runs, result tables, validation findings, and judge controls. |
 | Affected files | `EvaluationStudioView.tsx`, `CompareView.tsx`, `src/renderer/react/views/evaluation/**`, `global.css`; store files only if PLAN proves no visual alternative. |
 | Forbidden files | Judge IPC/shared/main/preload contracts, EvaluationRun storage format, package/config/build/scripts files. |
@@ -83,4 +84,4 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 5. `WP-UI-006` should precede `WP-UI-007` if form/control primitives need hardening.
 
 ## Next recommended runtime workpack
-`WP-UI-005 Evaluation Studio Restyle` is the next runtime workpack after the `WP-UI-004` Chat View Restyle.
+`WP-UI-006 Connections/Form Profiles Restyle` is the next runtime workpack after the `WP-UI-005` Evaluation Studio Restyle.
