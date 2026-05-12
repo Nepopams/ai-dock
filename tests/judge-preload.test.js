@@ -135,7 +135,8 @@ test("sanitizeJudgeExportPayload handles object score buckets without agent ids"
       scores: {
         answer_1: [
           { criterion: "coherence", score: 4, rationale: "Clear" },
-          { criterion: "factuality", score: 3 }
+          { criterion: "factuality", score: 3 },
+          { criterion: "custom-depth", score: 5, rationale: "Detailed" }
         ],
         answer_2: [{ criterion: "helpfulness", score: 5 }]
       },
@@ -182,6 +183,7 @@ test("sanitizeJudgeExportPayload handles object score buckets without agent ids"
   assert.equal(payload.result.scores.answer_1[0].criterion, "coherence");
   assert.equal(payload.result.scores.answer_1[0].rationale, "Clear");
   assert.equal(payload.result.scores.answer_1[0].agentId, undefined);
+  assert.equal(payload.result.scores.answer_1[2].criterion, "custom-depth");
   assert.equal(payload.result.metadata.schemaVersion, "judge.result.v1");
   assert.equal(payload.result.metadata.rubricSource, "custom");
   assert.equal(payload.result.metadata.customPromptApplied, true);
@@ -194,7 +196,7 @@ test("sanitizeJudgeExportPayload handles object score buckets without agent ids"
   assert.equal(payload.result.validatorResults[0].rawText, undefined);
 });
 
-test("sanitizeJudgeExportPayload rejects invalid score criteria", () => {
+test("sanitizeJudgeExportPayload rejects empty score criteria", () => {
   const { sanitizeJudgeExportPayload } = createSanitizers();
   assert.throws(
     () =>
@@ -207,13 +209,13 @@ test("sanitizeJudgeExportPayload rejects invalid score criteria", () => {
         result: {
           requestId: "judge-1",
           scores: {
-            answer_1: [{ criterion: "novelty", score: 4 }]
+            answer_1: [{ criterion: "   ", score: 4 }]
           },
           verdict: "Answer 1 wins",
           summary: "Summary"
         },
         generatedAt: "2026-05-11T00:00:00.000Z"
       }),
-    /Invalid criterion/
+    /result\.scores\.answer_1\[0\]\.criterion must be a non-empty string/
   );
 });
