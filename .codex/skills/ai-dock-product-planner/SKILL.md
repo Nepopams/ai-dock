@@ -1,3 +1,8 @@
+---
+name: ai-dock-product-planner
+description: "Use for AI Dock roadmap, product planning, epics, sprint mapping, and bounded workpack decomposition."
+---
+
 # AI Dock Product Planner Skill
 
 ## Purpose

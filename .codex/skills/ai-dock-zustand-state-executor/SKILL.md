@@ -1,3 +1,8 @@
+---
+name: ai-dock-zustand-state-executor
+description: "Use for scoped AI Dock Zustand store, selectors, async actions, state normalization, and slice decomposition changes."
+---
+
 # AI Dock Zustand State Executor Skill
 
 ## Purpose

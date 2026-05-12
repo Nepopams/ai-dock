@@ -1,3 +1,8 @@
+---
+name: ai-dock-initiative-runner
+description: "Use for running AI Dock initiatives from intake through workpacks, file-backed run state, verification, and delivery reports."
+---
+
 # AI Dock Initiative Runner Skill
 
 ## Purpose

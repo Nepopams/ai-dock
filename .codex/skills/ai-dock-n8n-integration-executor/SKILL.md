@@ -1,3 +1,8 @@
+---
+name: ai-dock-n8n-integration-executor
+description: "Use for scoped AI Dock n8n connector and workflow integration changes with safe contracts and error mapping."
+---
+
 # AI Dock n8n Integration Executor Skill
 
 ## Purpose

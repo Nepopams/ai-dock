@@ -1,3 +1,8 @@
+---
+name: ai-dock-orchestrator
+description: "Use for classifying AI Dock requests, selecting execution mode, routing executors, and producing orchestration briefs."
+---
+
 # AI Dock Orchestrator Skill
 
 ## Purpose

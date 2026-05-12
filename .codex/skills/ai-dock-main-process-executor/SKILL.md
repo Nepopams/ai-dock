@@ -1,3 +1,8 @@
+---
+name: ai-dock-main-process-executor
+description: "Use for implementing scoped AI Dock Electron main-process changes, IPC handlers, BrowserView lifecycle, and main services."
+---
+
 # AI Dock Main Process Executor Skill
 
 ## Purpose
