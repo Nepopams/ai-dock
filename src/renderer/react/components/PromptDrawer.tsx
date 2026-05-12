@@ -44,6 +44,7 @@ function PromptDrawer() {
         </div>
         <button
           type="button"
+          className="prompt-item-remove"
           onClick={async (event) => {
             event.stopPropagation();
             await removePrompt(prompt.id);
@@ -58,13 +59,15 @@ function PromptDrawer() {
   return (
     <section
       id="promptsDrawer"
-      className={`drawer${drawerOpen ? " visible" : ""}`}
+      className={`drawer prompt-drawer-shell${drawerOpen ? " visible" : ""}`}
       aria-hidden={!drawerOpen}
     >
       <div className="drawer-header">
         <h2>Prompts</h2>
         <button
           id="promptsClose"
+          type="button"
+          className="drawer-close"
           aria-label="Close prompts drawer"
           onClick={() => {
             void toggleDrawer(false);
@@ -99,7 +102,7 @@ function PromptDrawer() {
             />
           </label>
           <div className="form-actions">
-            <button type="submit" className="pill-btn">
+            <button type="submit" className="pill-btn drawer-save">
               Save Prompt
             </button>
           </div>

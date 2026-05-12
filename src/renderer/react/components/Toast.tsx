@@ -14,7 +14,12 @@ function Toast() {
   }, [toast.visible, hideToast]);
 
   return (
-    <div id="toast" className={`toast ${toast.visible ? "visible" : "hidden"}`} role="status">
+    <div
+      id="toast"
+      className={`toast toast--info ${toast.visible ? "visible" : "hidden"}`}
+      role="status"
+      aria-live="polite"
+    >
       {toast.message}
     </div>
   );

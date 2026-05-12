@@ -136,9 +136,14 @@ const PromptRouter = forwardRef<HTMLDivElement>((_props, ref) => {
 
   return (
     <div id="prompt-router-container" ref={ref as ForwardedRef<HTMLDivElement>}>
-      <section id="prompt-router">
+      <section id="prompt-router" className="prompt-router-shell">
         <div id="prompt-toolbar">
-          <button id="toggle-prompt" onClick={() => togglePromptPanel()}>
+          <button
+            id="toggle-prompt"
+            type="button"
+            aria-expanded={!promptPanelHidden}
+            onClick={() => togglePromptPanel()}
+          >
             {promptPanelHidden ? "Show panel" : "Hide panel"}
           </button>
         </div>
@@ -206,28 +211,28 @@ const PromptRouter = forwardRef<HTMLDivElement>((_props, ref) => {
               <div className="prompt-router-buttons">
                 <button
                   type="button"
-                  className="pill-btn ghost"
+                  className="pill-btn ghost prompt-router-action"
                   onClick={() => void handleManualInsert(false)}
                 >
                   Insert
                 </button>
                 <button
                   type="button"
-                  className="pill-btn ghost"
+                  className="pill-btn ghost prompt-router-action"
                   onClick={() => void handleManualInsert(true)}
                 >
                   Insert + Send
                 </button>
                 <button
                   type="button"
-                  className="pill-btn"
+                  className="pill-btn prompt-router-action prompt-router-action--primary"
                   onClick={() => setTemplatesOpen(true)}
                 >
                   Templates
                 </button>
                 <button
                   type="button"
-                  className="pill-btn ghost"
+                  className="pill-btn ghost prompt-router-action"
                   onClick={() => void sendPrompt()}
                 >
                   Broadcast
