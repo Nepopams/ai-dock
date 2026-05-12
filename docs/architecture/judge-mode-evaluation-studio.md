@@ -4,6 +4,9 @@ Status: Proposed planning report
 Initiative: `IN-2026-023-judge-mode-evaluation-studio-architecture`
 Date: 2026-05-11
 
+## Implementation Notes
+- 2026-05-12 / `WP-JUDGE-005`: Added derived backend labels for existing completions profiles in Connections and Judge UI without provider schema migration, dedicated local provider work, or Judge runtime changes.
+
 ## 1. Product Summary
 Judge Mode is the Dock capability for evaluating AI outputs. It should become an Evaluation Studio rather than a small hardening pass over the current CompareView. The Studio lets a user choose outputs from Chat, History, BrowserView/Web adapters, pasted text, and later files/workflows, then evaluate them with API models, local LLM profiles, deterministic validators, presets, and custom rubrics.
 
