@@ -13,7 +13,7 @@ import ChatView from "./views/ChatView";
 import ConnectionsSettings from "./views/ConnectionsSettings";
 import TemplatesManager from "./views/prompts/TemplatesManager";
 import HistoryView from "./views/history/HistoryView";
-import CompareView from "./views/CompareView";
+import EvaluationStudioView from "./views/EvaluationStudioView";
 import PresetsGallery from "./views/presets/PresetsGallery";
 import FormProfilesManager from "./views/forms/FormProfilesManager";
 import FormRunView from "./views/forms/FormRunView";
@@ -42,7 +42,7 @@ function App() {
         {activeLocalView === "prompts" && <TemplatesManager />}
         {activeLocalView === "history" && <HistoryView />}
         {activeLocalView === "presets" && <PresetsGallery />}
-        {activeLocalView === "compare" && <CompareView />}
+        {activeLocalView === "compare" && <EvaluationStudioView />}
         <PromptDrawer />
         <Toast />
       </main>
