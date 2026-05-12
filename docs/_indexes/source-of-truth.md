@@ -49,6 +49,12 @@
 32. `docs/planning/epics/EP-JUDGE-001-evaluation-studio-mvp/**` - epic source-of-truth for Judge Mode / Evaluation Studio MVP.
 33. `docs/planning/sprints/**` - optional release/delivery slice planning layer, not required for every workpack.
 
+## QA references
+34. `docs/qa/judge-mvp-automated-coverage.md` - Judge MVP automated coverage inventory.
+35. `docs/qa/judge-mvp-smoke-suite.md` - Judge MVP manual smoke suite.
+36. `docs/qa/judge-mvp-smoke-evidence-template.md` - Judge MVP smoke evidence capture template.
+37. `docs/qa/judge-mvp-release-confidence.md` - Judge MVP release confidence GO/NO-GO checklist.
+
 ## Initiative layer references
 13. `.codex/workflows/initiative-to-delivery.md` — полный workflow инициативы до delivery report.
 14. `.codex/prompts/initiative-runner-template.md` — главный prompt запуска Initiative Runner.
