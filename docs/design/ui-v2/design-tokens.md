@@ -5,6 +5,9 @@ This is the initial handoff inventory for UI v2 tokens visible in the Pencil ref
 ## Runtime mapping rule
 The first runtime workpack must map these tokens to the existing `src/renderer/react/styles/global.css` variable/class structure before applying view-level restyles. No UI library or dependency may be added for UI v2.
 
+## Runtime mapping status
+`WP-UI-002 Global Design Tokens and UI Primitives` maps the UI v2 token names to `--aid-*` CSS variables in `src/renderer/react/styles/global.css` and adds opt-in primitive classes for later workpacks. Screen-level adoption remains deferred to `WP-UI-003+`; this mapping does not apply a shell, chat, judge, or settings restyle by itself.
+
 ## Color tokens
 | Token | Value | Usage |
 | --- | --- | --- |
