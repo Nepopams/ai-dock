@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDockStore, CompareDraftAnswer } from "../store/useDockStore";
-import type { JudgeResult } from "../../../shared/types/judge";
+import type { JudgeExportPayload, JudgeResult } from "../../../shared/types/judge";
+import { mapJudgeExportPayloadToEvaluationRun } from "../../../shared/types/evaluationRun.ts";
 import { inferCompletionsProfileLabels } from "../../../shared/utils/completionsProfileLabels";
 
 type JudgeProfileOption = {
@@ -10,7 +11,23 @@ type JudgeProfileOption = {
 
 type LocalAnswer = CompareDraftAnswer & { selected: boolean };
 
+type EvaluationRunSaveResponse = {
+  ok: boolean;
+  error?: string;
+};
+
+type EvaluationRunsBridge = {
+  save: (runOrRecord: unknown) => Promise<EvaluationRunSaveResponse>;
+};
+
+type CompareViewProps = {
+  onEvaluationSaved?: () => void | Promise<void>;
+};
+
 const answerKey = (index: number) => `answer_${index + 1}`;
+
+const getEvaluationRunsBridge = (): EvaluationRunsBridge | undefined =>
+  (window as unknown as { evaluationRuns?: EvaluationRunsBridge }).evaluationRuns;
 
 const buildProfileOptions = (payload: any): JudgeProfileOption[] => {
   if (!payload || !Array.isArray(payload.profiles)) {
@@ -54,7 +71,7 @@ const findScore = (
   return bucket.find((item) => item.criterion === criterion) || null;
 };
 
-function CompareView() {
+function CompareView({ onEvaluationSaved }: CompareViewProps = {}) {
   const compareDraft = useDockStore((state) => state.compareDraft);
   const judgeRunning = useDockStore((state) => state.judgeRunning);
   const judgeResult = useDockStore((state) => state.judgeResult);
@@ -78,6 +95,8 @@ function CompareView() {
   const [selectedProfile, setSelectedProfile] = useState<string>("");
   const [profilesLoading, setProfilesLoading] = useState<boolean>(false);
   const [lastRunAnswerIds, setLastRunAnswerIds] = useState<string[]>([]);
+  const [localDraftRequestId, setLocalDraftRequestId] = useState<string>("");
+  const [savingEvaluation, setSavingEvaluation] = useState<boolean>(false);
 
   useEffect(() => {
     if (!compareDraft) {
@@ -100,6 +119,8 @@ function CompareView() {
     if (compareDraft.judgeProfileId) {
       setSelectedProfile(compareDraft.judgeProfileId);
     }
+    setLastRunAnswerIds(compareDraft.answers.map((answer) => answer.id));
+    setLocalDraftRequestId(compareDraft.requestId);
   }, [compareDraft?.requestId]);
 
   useEffect(() => {
@@ -131,7 +152,7 @@ function CompareView() {
   }, []);
 
   useEffect(() => {
-    if (!compareDraft || !updateCompareDraft) {
+    if (!compareDraft || !updateCompareDraft || localDraftRequestId !== compareDraft.requestId) {
       return;
     }
     updateCompareDraft({
@@ -161,6 +182,7 @@ function CompareView() {
     selectedProfile,
     answers,
     compareDraft,
+    localDraftRequestId,
     updateCompareDraft
   ]);
 
@@ -252,6 +274,25 @@ function CompareView() {
     showToast("Clipboard unavailable");
   };
 
+  const buildExportPayload = (): JudgeExportPayload | null => {
+    if (!judgeResult) {
+      return null;
+    }
+    if (!evaluatedAnswers.length) {
+      return null;
+    }
+
+    return {
+      question,
+      answers: evaluatedAnswers.map((answer) => ({
+        agentId: answer.agentId,
+        text: answer.text
+      })),
+      result: judgeResult,
+      generatedAt: new Date().toISOString()
+    };
+  };
+
   const handleExport = async (format: "md" | "json") => {
     if (!judgeResult) {
       showToast("Run judge before exporting");
@@ -265,15 +306,11 @@ function CompareView() {
       showToast("Export API unavailable");
       return;
     }
-    const payload = {
-      question,
-      answers: evaluatedAnswers.map((answer) => ({
-        agentId: answer.agentId,
-        text: answer.text
-      })),
-      result: judgeResult,
-      generatedAt: new Date().toISOString()
-    };
+    const payload = buildExportPayload();
+    if (!payload) {
+      showToast("No answers to export");
+      return;
+    }
     try {
       const response =
         format === "md"
@@ -287,6 +324,44 @@ function CompareView() {
     } catch (error) {
       const message = error instanceof Error && error.message ? error.message : "Export failed";
       showToast(message);
+    }
+  };
+
+  const handleSaveEvaluation = async () => {
+    if (!judgeResult) {
+      showToast("Run judge before saving");
+      return;
+    }
+    if (!evaluatedAnswers.length) {
+      showToast("No answers to save");
+      return;
+    }
+    const api = getEvaluationRunsBridge();
+    if (!api?.save) {
+      showToast("Evaluation history API unavailable");
+      return;
+    }
+    const payload = buildExportPayload();
+    if (!payload) {
+      showToast("No answers to save");
+      return;
+    }
+    setSavingEvaluation(true);
+    try {
+      const evaluationRun = mapJudgeExportPayloadToEvaluationRun(payload);
+      const response = await api.save(evaluationRun);
+      if (response?.ok) {
+        showToast("Evaluation saved");
+        await onEvaluationSaved?.();
+      } else {
+        showToast(response?.error || "Save failed");
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message ? error.message : "Save failed";
+      showToast(message);
+    } finally {
+      setSavingEvaluation(false);
     }
   };
 
@@ -309,6 +384,7 @@ function CompareView() {
   }, [answers, compareDraft, lastRunAnswerIds, selectedAnswers]);
 
   const exportDisabled = !judgeResult || !evaluatedAnswers.length;
+  const saveDisabled = exportDisabled || savingEvaluation;
   const validatorResults = ensureArray(judgeResult?.validatorResults);
 
   return (
@@ -424,6 +500,14 @@ function CompareView() {
               onClick={() => handleExport("json")}
             >
               Export JSON
+            </button>
+            <button
+              type="button"
+              className="pill-btn ghost"
+              disabled={saveDisabled}
+              onClick={handleSaveEvaluation}
+            >
+              {savingEvaluation ? "Saving..." : "Save Evaluation"}
             </button>
           </div>
           {judgeProgress && (

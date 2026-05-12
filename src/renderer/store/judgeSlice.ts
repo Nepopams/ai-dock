@@ -14,6 +14,7 @@ export interface JudgeSlice {
 export interface JudgeActions {
   runJudge: (input: Parameters<NonNullable<Window["judge"]>["run"]>[0]) => Promise<JudgeResult | null>;
   clearJudge: () => void;
+  hydrateJudgeResult: (result: JudgeResult) => void;
   setJudgeError: (message: string | null, details?: string | null, code?: string | null) => void;
   handleJudgeProgress: (event: JudgeProgressEvent) => void;
 }
@@ -89,6 +90,17 @@ export const createJudgeSlice = <
     });
   };
 
+  const hydrateJudgeResult: JudgeActions["hydrateJudgeResult"] = (result) => {
+    setState({
+      judgeRunning: false,
+      judgeResult: result,
+      judgeError: null,
+      judgeErrorCode: null,
+      judgeErrorDetails: null,
+      judgeProgress: null
+    });
+  };
+
   const setJudgeError: JudgeActions["setJudgeError"] = (message, details, code) => {
     setState({
       judgeError: message,
@@ -118,6 +130,7 @@ export const createJudgeSlice = <
     actions: {
       runJudge,
       clearJudge,
+      hydrateJudgeResult,
       setJudgeError,
       handleJudgeProgress
     } as JudgeActions
