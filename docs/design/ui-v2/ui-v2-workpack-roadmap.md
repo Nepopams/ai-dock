@@ -1,6 +1,6 @@
 # AI Dock UI v2 Workpack Roadmap
 
-This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, and `WP-UI-003` applies the shared shell restyle. Remaining runtime workpacks require separate PLAN, Human Gate, APPLY, and REVIEW.
+This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, and `WP-UI-004` applies the Local Chat restyle. Remaining runtime workpacks require separate PLAN, Human Gate, APPLY, and REVIEW.
 
 ## WP-UI-001 Design Handoff Inventory
 | Field | Detail |
@@ -37,6 +37,7 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 ## WP-UI-004 Chat View Restyle
 | Field | Detail |
 | --- | --- |
+| Status | Done by `IN-UI-004-chat-view-restyle`; Chat runtime behavior remains unchanged and manual Electron smoke remains required. |
 | Goal | Apply UI v2 to Local Chat while preserving streaming, abort, retry, export, presets, and compare handoff. |
 | Affected files | `ChatView.tsx`, `MessageList.tsx`, `ConversationList.tsx`, `CompareButton.tsx`, `global.css`. |
 | Forbidden files | Chat provider/main/preload/shared contracts, package/config/build/scripts files, unrelated views. |
@@ -82,4 +83,4 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 5. `WP-UI-006` should precede `WP-UI-007` if form/control primitives need hardening.
 
 ## Next recommended runtime workpack
-`WP-UI-004 Chat View Restyle` is the next runtime workpack after the `WP-UI-003` shell restyle.
+`WP-UI-005 Evaluation Studio Restyle` is the next runtime workpack after the `WP-UI-004` Chat View Restyle.
