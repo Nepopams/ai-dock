@@ -1,0 +1,610 @@
+{
+  "schemaVersion": "evaluation-presets.v1",
+  "presets": [
+    {
+      "id": "general-answer-quality",
+      "title": "General Answer Quality",
+      "purpose": "Score one or more assistant answers for everyday quality, usefulness, and clarity.",
+      "evaluationType": "answer_comparison",
+      "defaultCriteria": [
+        {
+          "id": "clarity",
+          "label": "Clarity",
+          "description": "The answer is easy to understand and well organized.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1,
+          "required": true
+        },
+        {
+          "id": "correctness",
+          "label": "Correctness",
+          "description": "The answer appears accurate for the task and avoids misleading claims.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.2,
+          "required": true
+        },
+        {
+          "id": "completeness",
+          "label": "Completeness",
+          "description": "The answer covers the important parts of the prompt.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1,
+          "required": true
+        },
+        {
+          "id": "usefulness",
+          "label": "Usefulness",
+          "description": "The answer gives practical, actionable value to the user.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.1,
+          "required": true
+        }
+      ],
+      "defaultValidators": [
+        {
+          "type": "length_bounds",
+          "description": "Check for empty or extremely short/long answers before LLM judging.",
+          "severity": "warning",
+          "config": { "minChars": 20, "maxChars": 20000 }
+        }
+      ],
+      "inputExpectations": {
+        "minSubjects": 1,
+        "requiredContext": ["prompt_or_question"],
+        "acceptedContentTypes": ["text/plain", "text/markdown"],
+        "notes": "Works for single-answer quality or multi-answer comparison later; current runtime integration is not implemented."
+      },
+      "outputShape": {
+        "kind": "score_table_with_verdict",
+        "fields": ["scores", "rankings", "findings", "summary", "verdict"],
+        "notes": "Expected to produce per-subject scores and a short verdict."
+      },
+      "promptTemplateKey": "judge.preset.general-answer-quality.v1",
+      "version": "1.0.0",
+      "tags": ["answer", "quality", "comparison", "mvp"],
+      "status": "draft"
+    },
+    {
+      "id": "research-quality",
+      "title": "Research Quality",
+      "purpose": "Evaluate depth, grounding, coverage, synthesis, and uncertainty handling in research outputs.",
+      "evaluationType": "research_comparison",
+      "defaultCriteria": [
+        {
+          "id": "coverage",
+          "label": "Coverage",
+          "description": "The research covers the important aspects of the task.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.2,
+          "required": true
+        },
+        {
+          "id": "source_quality",
+          "label": "Source Quality",
+          "description": "Sources are relevant, credible, and appropriate to the claim.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.2,
+          "required": true
+        },
+        {
+          "id": "factuality",
+          "label": "Factuality",
+          "description": "Claims are consistent with the cited or supplied evidence.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.3,
+          "required": true
+        },
+        {
+          "id": "synthesis",
+          "label": "Synthesis",
+          "description": "The output integrates findings instead of listing disconnected facts.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1,
+          "required": true
+        },
+        {
+          "id": "uncertainty",
+          "label": "Uncertainty",
+          "description": "The output notes ambiguity, limits, and confidence appropriately.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 0.8,
+          "required": true
+        }
+      ],
+      "defaultValidators": [
+        {
+          "type": "citation_presence",
+          "description": "Check whether the research output includes source or citation markers.",
+          "severity": "warning",
+          "config": { "allowUrls": true, "allowBracketCitations": true }
+        }
+      ],
+      "inputExpectations": {
+        "minSubjects": 1,
+        "requiredContext": ["research_task"],
+        "acceptedContentTypes": ["text/plain", "text/markdown"],
+        "notes": "Designed for research reports and comparative research outputs."
+      },
+      "outputShape": {
+        "kind": "research_findings",
+        "fields": ["scores", "coverage_gaps", "grounding_findings", "summary", "verdict"],
+        "notes": "Expected to call out missing coverage and weakly supported claims."
+      },
+      "promptTemplateKey": "judge.preset.research-quality.v1",
+      "version": "1.0.0",
+      "tags": ["research", "grounding", "citations", "mvp"],
+      "status": "draft"
+    },
+    {
+      "id": "json-contract-check",
+      "title": "JSON Contract Check",
+      "purpose": "Validate structured JSON output against an expected contract and prompt intent.",
+      "evaluationType": "json_contract_check",
+      "defaultCriteria": [
+        {
+          "id": "valid_json",
+          "label": "Valid JSON",
+          "description": "The output can be parsed as JSON without repair.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.4,
+          "required": true
+        },
+        {
+          "id": "contract_adherence",
+          "label": "Contract Adherence",
+          "description": "The JSON includes expected keys, types, and allowed values.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.4,
+          "required": true
+        },
+        {
+          "id": "semantic_fit",
+          "label": "Semantic Fit",
+          "description": "The JSON values satisfy the user's intent, not only the surface shape.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1,
+          "required": true
+        }
+      ],
+      "defaultValidators": [
+        {
+          "type": "json_parse",
+          "description": "Parse output as JSON before any LLM critique.",
+          "severity": "error",
+          "config": { "allowMarkdownFence": true }
+        },
+        {
+          "type": "required_keys",
+          "description": "Check required top-level keys when supplied by the user or future UI.",
+          "severity": "error",
+          "config": { "source": "user_contract" }
+        },
+        {
+          "type": "enum_values",
+          "description": "Check enumerated values when supplied by the user or future UI.",
+          "severity": "warning",
+          "config": { "source": "user_contract" }
+        }
+      ],
+      "inputExpectations": {
+        "minSubjects": 1,
+        "maxSubjects": 1,
+        "requiredContext": ["json_output", "expected_contract"],
+        "acceptedContentTypes": ["application/json", "text/plain", "text/markdown"],
+        "notes": "Runtime JSON validators are not implemented in this workpack."
+      },
+      "outputShape": {
+        "kind": "validator_plus_judge_findings",
+        "fields": ["validatorResults", "scores", "findings", "summary", "verdict"],
+        "notes": "Expected to separate deterministic parse/contract results from LLM critique."
+      },
+      "promptTemplateKey": "judge.preset.json-contract-check.v1",
+      "version": "1.0.0",
+      "tags": ["json", "structured-output", "validator", "mvp"],
+      "status": "draft"
+    },
+    {
+      "id": "prompt-adherence",
+      "title": "Prompt Adherence",
+      "purpose": "Check whether an output followed the user's original prompt, format, and constraints.",
+      "evaluationType": "prompt_adherence",
+      "defaultCriteria": [
+        {
+          "id": "constraint_coverage",
+          "label": "Constraint Coverage",
+          "description": "The output satisfies explicit instructions and constraints from the prompt.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.4,
+          "required": true
+        },
+        {
+          "id": "format_adherence",
+          "label": "Format Adherence",
+          "description": "The output follows requested structure, style, and format.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.1,
+          "required": true
+        },
+        {
+          "id": "omission_control",
+          "label": "Omission Control",
+          "description": "The output does not omit important requested elements.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1,
+          "required": true
+        }
+      ],
+      "defaultValidators": [
+        {
+          "type": "prompt_constraint_presence",
+          "description": "Check declarative prompt constraints when future UI supplies them.",
+          "severity": "warning",
+          "config": { "source": "prompt_constraints" }
+        }
+      ],
+      "inputExpectations": {
+        "minSubjects": 1,
+        "requiredContext": ["original_prompt", "output"],
+        "acceptedContentTypes": ["text/plain", "text/markdown", "application/json"],
+        "notes": "Best when the original prompt and constraints are available."
+      },
+      "outputShape": {
+        "kind": "adherence_findings",
+        "fields": ["scores", "missed_constraints", "format_findings", "summary", "verdict"],
+        "notes": "Expected to identify followed and missed instructions."
+      },
+      "promptTemplateKey": "judge.preset.prompt-adherence.v1",
+      "version": "1.0.0",
+      "tags": ["prompt", "adherence", "constraints", "mvp"],
+      "status": "draft"
+    },
+    {
+      "id": "factuality-grounding",
+      "title": "Factuality / Grounding",
+      "purpose": "Evaluate whether claims are supported by supplied sources, citations, or context.",
+      "evaluationType": "factuality_grounding",
+      "defaultCriteria": [
+        {
+          "id": "supported_claims",
+          "label": "Supported Claims",
+          "description": "Important claims are backed by supplied evidence or cited sources.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.4,
+          "required": true
+        },
+        {
+          "id": "unsupported_claims",
+          "label": "Unsupported Claims",
+          "description": "The output avoids unsupported or overconfident statements.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.2,
+          "required": true
+        },
+        {
+          "id": "contradictions",
+          "label": "Contradictions",
+          "description": "The output does not contradict the supplied context.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.2,
+          "required": true
+        }
+      ],
+      "defaultValidators": [
+        {
+          "type": "citation_presence",
+          "description": "Check whether citations or evidence markers are present when expected.",
+          "severity": "warning",
+          "config": { "allowUrls": true, "allowFootnotes": true }
+        }
+      ],
+      "inputExpectations": {
+        "minSubjects": 1,
+        "requiredContext": ["answer", "source_context_or_citations"],
+        "acceptedContentTypes": ["text/plain", "text/markdown"],
+        "notes": "Useful when the evaluation has source text, citations, or browsing evidence."
+      },
+      "outputShape": {
+        "kind": "grounding_findings",
+        "fields": ["scores", "claim_findings", "evidence_notes", "summary", "verdict"],
+        "notes": "Expected to flag unsupported claims and contradictions."
+      },
+      "promptTemplateKey": "judge.preset.factuality-grounding.v1",
+      "version": "1.0.0",
+      "tags": ["factuality", "grounding", "claims", "mvp"],
+      "status": "draft"
+    },
+    {
+      "id": "code-review",
+      "title": "Code Review",
+      "purpose": "Review technical answers or code snippets for correctness, maintainability, risk, and tests.",
+      "evaluationType": "code_review",
+      "defaultCriteria": [
+        {
+          "id": "technical_correctness",
+          "label": "Technical Correctness",
+          "description": "The answer or code is technically sound for the stated problem.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.4,
+          "required": true
+        },
+        {
+          "id": "edge_cases",
+          "label": "Edge Cases",
+          "description": "The answer accounts for important edge cases and failure paths.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.1,
+          "required": true
+        },
+        {
+          "id": "maintainability",
+          "label": "Maintainability",
+          "description": "The solution is understandable and reasonably maintainable.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1,
+          "required": true
+        },
+        {
+          "id": "testability",
+          "label": "Testability",
+          "description": "The answer includes or enables appropriate verification.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 0.9,
+          "required": true
+        }
+      ],
+      "defaultValidators": [
+        {
+          "type": "length_bounds",
+          "description": "Check that the reviewed output is not empty or too large for a normal judge pass.",
+          "severity": "warning",
+          "config": { "minChars": 20, "maxChars": 40000 }
+        }
+      ],
+      "inputExpectations": {
+        "minSubjects": 1,
+        "requiredContext": ["technical_prompt", "answer_or_code"],
+        "acceptedContentTypes": ["text/plain", "text/markdown", "text/x-code"],
+        "notes": "Designed for technical explanations, code snippets, and implementation plans."
+      },
+      "outputShape": {
+        "kind": "technical_review",
+        "fields": ["scores", "issues", "severity", "suggestions", "summary", "verdict"],
+        "notes": "Expected to prioritize bugs, missing edge cases, and verification gaps."
+      },
+      "promptTemplateKey": "judge.preset.code-review.v1",
+      "version": "1.0.0",
+      "tags": ["code", "technical", "review", "mvp"],
+      "status": "draft"
+    },
+    {
+      "id": "security-review",
+      "title": "Security Review",
+      "purpose": "Identify risky advice, secret exposure, injection risk, and unsafe privilege or boundary assumptions.",
+      "evaluationType": "security_review",
+      "defaultCriteria": [
+        {
+          "id": "secret_safety",
+          "label": "Secret Safety",
+          "description": "The output avoids exposing or encouraging exposure of tokens, passwords, or secrets.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.4,
+          "required": true
+        },
+        {
+          "id": "injection_resistance",
+          "label": "Injection Resistance",
+          "description": "The output accounts for prompt, command, HTML, SQL, or similar injection risk where relevant.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.2,
+          "required": true
+        },
+        {
+          "id": "boundary_safety",
+          "label": "Boundary Safety",
+          "description": "The answer respects permission, sandbox, IPC, filesystem, and network boundaries.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.2,
+          "required": true
+        },
+        {
+          "id": "risk_disclosure",
+          "label": "Risk Disclosure",
+          "description": "The output explains material security tradeoffs and failure paths.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 0.8,
+          "required": true
+        }
+      ],
+      "defaultValidators": [
+        {
+          "type": "forbidden_secret_pattern",
+          "description": "Check for token, API key, password, and secret-like strings.",
+          "severity": "error",
+          "config": { "patterns": ["token", "api_key", "password", "secret", "bearer"] }
+        }
+      ],
+      "inputExpectations": {
+        "minSubjects": 1,
+        "requiredContext": ["output", "security_context_optional"],
+        "acceptedContentTypes": ["text/plain", "text/markdown", "text/x-code", "application/json"],
+        "notes": "Designed to complement, not replace, dedicated security review."
+      },
+      "outputShape": {
+        "kind": "security_findings",
+        "fields": ["scores", "risk_findings", "severity", "mitigations", "summary", "verdict"],
+        "notes": "Expected to report risks with severity and mitigation suggestions."
+      },
+      "promptTemplateKey": "judge.preset.security-review.v1",
+      "version": "1.0.0",
+      "tags": ["security", "secrets", "risk", "mvp"],
+      "status": "draft"
+    },
+    {
+      "id": "ux-product-review",
+      "title": "UX / Product Review",
+      "purpose": "Critique product, UX, or design output for user fit, clarity, workflow, and tradeoffs.",
+      "evaluationType": "ux_product_review",
+      "defaultCriteria": [
+        {
+          "id": "user_fit",
+          "label": "User Fit",
+          "description": "The output fits the target user, domain, and job-to-be-done.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.2,
+          "required": true
+        },
+        {
+          "id": "workflow_clarity",
+          "label": "Workflow Clarity",
+          "description": "The proposed experience is easy to scan, navigate, and repeat.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.2,
+          "required": true
+        },
+        {
+          "id": "accessibility",
+          "label": "Accessibility",
+          "description": "The output considers accessible text, controls, states, and interaction patterns.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 0.9,
+          "required": true
+        },
+        {
+          "id": "tradeoffs",
+          "label": "Tradeoffs",
+          "description": "The output surfaces relevant product tradeoffs and constraints.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 0.9,
+          "required": true
+        }
+      ],
+      "defaultValidators": [
+        {
+          "type": "length_bounds",
+          "description": "Check that critique inputs are large enough to evaluate and not excessive.",
+          "severity": "info",
+          "config": { "minChars": 50, "maxChars": 30000 }
+        }
+      ],
+      "inputExpectations": {
+        "minSubjects": 1,
+        "requiredContext": ["brief_or_target_user", "product_or_design_output"],
+        "acceptedContentTypes": ["text/plain", "text/markdown"],
+        "notes": "Works for design specs, UX critiques, product plans, and generated UI descriptions."
+      },
+      "outputShape": {
+        "kind": "product_critique",
+        "fields": ["scores", "strengths", "issues", "recommendations", "summary", "verdict"],
+        "notes": "Expected to give actionable critique rather than marketing-style praise."
+      },
+      "promptTemplateKey": "judge.preset.ux-product-review.v1",
+      "version": "1.0.0",
+      "tags": ["ux", "product", "design", "mvp"],
+      "status": "draft"
+    },
+    {
+      "id": "summarization-quality",
+      "title": "Summarization Quality",
+      "purpose": "Evaluate whether a summary is faithful, concise, readable, and covers the source.",
+      "evaluationType": "summarization_quality",
+      "defaultCriteria": [
+        {
+          "id": "faithfulness",
+          "label": "Faithfulness",
+          "description": "The summary does not introduce unsupported claims.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.4,
+          "required": true
+        },
+        {
+          "id": "coverage",
+          "label": "Coverage",
+          "description": "The summary preserves the most important source points.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1.2,
+          "required": true
+        },
+        {
+          "id": "compression",
+          "label": "Compression",
+          "description": "The summary is appropriately shorter without losing essential meaning.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1,
+          "required": true
+        },
+        {
+          "id": "readability",
+          "label": "Readability",
+          "description": "The summary is easy to read and organized for the intended use.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 0.8,
+          "required": true
+        }
+      ],
+      "defaultValidators": [
+        {
+          "type": "source_summary_ratio",
+          "description": "Check source-to-summary length ratio when both are available.",
+          "severity": "warning",
+          "config": { "minRatio": 0.05, "maxRatio": 0.5 }
+        }
+      ],
+      "inputExpectations": {
+        "minSubjects": 1,
+        "maxSubjects": 1,
+        "requiredContext": ["source_text", "summary"],
+        "acceptedContentTypes": ["text/plain", "text/markdown"],
+        "notes": "Best when source text and generated summary are both provided."
+      },
+      "outputShape": {
+        "kind": "summary_review",
+        "fields": ["scores", "missing_points", "unsupported_points", "summary", "verdict"],
+        "notes": "Expected to separate omissions from hallucinated or unsupported additions."
+      },
+      "promptTemplateKey": "judge.preset.summarization-quality.v1",
+      "version": "1.0.0",
+      "tags": ["summary", "faithfulness", "compression", "mvp"],
+      "status": "draft"
+    },
+    {
+      "id": "custom-user-rubric",
+      "title": "Custom User Rubric",
+      "purpose": "Let the user supply their own rubric and criteria for one-off or domain-specific evaluation.",
+      "evaluationType": "custom_user_rubric",
+      "defaultCriteria": [
+        {
+          "id": "rubric_fit",
+          "label": "Rubric Fit",
+          "description": "The evaluation follows the user's supplied rubric and prioritization.",
+          "scale": { "min": 1, "max": 5, "step": 1, "label": "1-5" },
+          "weight": 1,
+          "required": true
+        }
+      ],
+      "defaultValidators": [
+        {
+          "type": "length_bounds",
+          "description": "Check that the custom rubric and evaluated content are present.",
+          "severity": "warning",
+          "config": { "minChars": 20, "maxChars": 40000 }
+        }
+      ],
+      "inputExpectations": {
+        "minSubjects": 1,
+        "requiredContext": ["custom_rubric", "subjects"],
+        "acceptedContentTypes": ["text/plain", "text/markdown", "application/json"],
+        "notes": "Allows user-defined criteria; current runtime custom rubric support remains separate from this catalog."
+      },
+      "outputShape": {
+        "kind": "custom_rubric_findings",
+        "fields": ["scores", "findings", "summary", "verdict"],
+        "notes": "Expected to mirror the user's rubric where future prompt assembly supports it."
+      },
+      "promptTemplateKey": "judge.preset.custom-user-rubric.v1",
+      "version": "1.0.0",
+      "tags": ["custom", "rubric", "mvp"],
+      "status": "draft",
+      "allowsUserDefinedCriteria": true
+    }
+  ]
+}
