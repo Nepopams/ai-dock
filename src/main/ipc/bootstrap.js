@@ -4,6 +4,7 @@ const { registerRegistryIpc } = require("./registry.ipc");
 const { registerJudgeIpc } = require("./judge.ipc");
 const { registerExportIpc } = require("./export.ipc");
 const { registerHistoryIpc } = require("./history.ipc");
+const { registerEvaluationRunIpc } = require("./evaluationRun.ipc");
 const { registerTemplatesIpc } = require("./templates.ipc");
 const { registerMediaPresetsIpc } = require("./mediaPresets.ipc");
 const { registerFormProfilesIpc } = require("./formProfiles.ipc");
@@ -25,6 +26,7 @@ const registerMainIpc = ({ getMainWindow, getTabManager }) => {
   registerJudgeIpc();
   registerExportIpc();
   registerHistoryIpc();
+  registerEvaluationRunIpc();
   registerTemplatesIpc();
   registerMediaPresetsIpc();
   registerFormProfilesIpc();

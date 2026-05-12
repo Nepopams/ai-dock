@@ -11,6 +11,7 @@
 - `registry.ipc.ts/js`
 - `judge.ipc.ts/js`
 - `export.ipc.ts/js`
+- `evaluationRun.ipc.ts/js` (`evaluationRun:save`, `evaluationRun:list`, `evaluationRun:read`, `evaluationRun:delete`)
 - `history.ipc.ts/js`
 - `templates.ipc.ts/js`
 - `mediaPresets.ipc.ts/js`
@@ -24,7 +25,7 @@
 Основные preload-модули в `src/preload/modules/**`:
 - `coreApi`, `aiDock`, `chat`, `historyHub`, `mediaPresets`, `templates`
 - `completions`, `judge`, `exporter`, `adapterBridge`, `registry`
-- `formProfiles`, `formRunner`
+- `formProfiles`, `formRunner`, `evaluationRuns`
 
 `needs verification`: точный public surface каждого namespace (рекомендуется зафиксировать в отдельном appendix).
 
