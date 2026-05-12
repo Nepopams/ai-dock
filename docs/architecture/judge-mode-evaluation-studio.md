@@ -10,6 +10,7 @@ Date: 2026-05-11
 - 2026-05-12 / `WP-JUDGE-007A`: Added an export-only `EvaluationRun` foundation for Judge Markdown/JSON exports, including dynamic score criteria, validator findings, and safe metadata. EvaluationRun history/storage remains deferred to `WP-JUDGE-007B`.
 - 2026-05-12 / `WP-JUDGE-007B`: Added a separate file-backed EvaluationRun history store under app userData with bounded save/list/read/delete IPC and preload API. Chat history, Judge runtime, provider/settings, export IPC, and renderer UI remain unchanged.
 - 2026-05-12 / `WP-JUDGE-007C`: Connected the existing EvaluationRun history preload API to Evaluation Studio UI with explicit save/list/open/delete controls. No auto-save, storage, IPC, preload, shared contract, main process, provider/settings, package, or dependency changes were added.
+- 2026-05-12 / `WP-IN-2026-036`: Updated `CompareView` score display to discover and render dynamic criteria from `judgeResult.scores`, preserving legacy default ordering and avoiding Judge runtime, IPC, storage, export, shared contract, package, or dependency changes.
 
 ## 1. Product Summary
 Judge Mode is the Dock capability for evaluating AI outputs. It should become an Evaluation Studio rather than a small hardening pass over the current CompareView. The Studio lets a user choose outputs from Chat, History, BrowserView/Web adapters, pasted text, and later files/workflows, then evaluate them with API models, local LLM profiles, deterministic validators, presets, and custom rubrics.
