@@ -1,4 +1,5 @@
 const EVALUATION_RUN_EXPORT_SCHEMA_VERSION = "evaluation-run.export.v1";
+const EVALUATION_RUN_RECORD_SCHEMA_VERSION = "evaluation-run.record.v1";
 
 const isObject = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -15,6 +16,25 @@ const isOptionalBoolean = (value) => value === undefined || typeof value === "bo
 const isOptionalFiniteNumber = (value) => value === undefined || isFiniteNumber(value);
 
 const answerKey = (index) => `answer_${index + 1}`;
+
+const clampString = (value, maxLength) => {
+  const text = typeof value === "string" ? value.trim() : "";
+  if (text.length <= maxLength) {
+    return text;
+  }
+  return text.slice(0, maxLength).trim();
+};
+
+const sanitizeEvaluationRunRecordId = (value) => {
+  if (typeof value !== "string") {
+    return "";
+  }
+  return value
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+};
 
 const cloneJsonValue = (value) => {
   if (value === undefined) {
@@ -204,6 +224,8 @@ const normalizeTimestamp = (value) => {
   return timestamp.toISOString();
 };
 
+const roundScore = (value) => Math.round(value * 100) / 100;
+
 const cloneScores = (scores) => {
   const cloned = {};
   for (const [key, bucket] of Object.entries(scores || {})) {
@@ -264,6 +286,184 @@ const pickSafeMetadata = (metadata) => {
     safe.durationMs = Number(source.durationMs);
   }
   return safe;
+};
+
+const buildQuestionPreview = (question) => clampString(String(question || ""), 240);
+
+const buildTitle = (run, title) => {
+  const explicit = clampString(title, 120);
+  if (explicit) {
+    return explicit;
+  }
+  const questionPreview = buildQuestionPreview(run.question);
+  if (questionPreview) {
+    return clampString(questionPreview, 120);
+  }
+  return clampString(run.runId, 120) || "Evaluation run";
+};
+
+const summarizeValidatorResults = (validatorResults) => {
+  const summary = {
+    total: 0,
+    pass: 0,
+    fail: 0,
+    warn: 0,
+    error: 0
+  };
+  const results = Array.isArray(validatorResults) ? validatorResults : [];
+  for (const result of results) {
+    if (!isValidatorResult(result)) {
+      continue;
+    }
+    summary.total += 1;
+    const status = result.status.toLowerCase();
+    if (status === "pass") {
+      summary.pass += 1;
+    } else if (status === "fail") {
+      summary.fail += 1;
+    } else if (status === "warn" || status === "warning") {
+      summary.warn += 1;
+    } else if (status === "error") {
+      summary.error += 1;
+    }
+  }
+  return summary;
+};
+
+const summarizeScores = (scores) => {
+  const criteria = [];
+  let total = 0;
+  let count = 0;
+  for (const bucket of Object.values(scores || {})) {
+    if (!Array.isArray(bucket)) {
+      continue;
+    }
+    for (const score of bucket) {
+      if (!isEvaluationScore(score)) {
+        continue;
+      }
+      if (!criteria.includes(score.criterion)) {
+        criteria.push(score.criterion);
+      }
+      total += Number(score.score);
+      count += 1;
+    }
+  }
+  const summary = { criteria };
+  if (count > 0) {
+    summary.averageScore = roundScore(total / count);
+  }
+  return summary;
+};
+
+const buildMetadataSummary = (metadata) => pickSafeMetadata(metadata);
+
+const createEvaluationRunRecord = (run, options = {}) => {
+  if (!isEvaluationRunExport(run)) {
+    const error = new Error("Invalid EvaluationRun export");
+    error.code = "invalid_payload";
+    throw error;
+  }
+  const sanitizedId = sanitizeEvaluationRunRecordId(options.id || run.runId);
+  if (!sanitizedId) {
+    const error = new Error("EvaluationRun id is invalid");
+    error.code = "invalid_payload";
+    throw error;
+  }
+  const createdAt = normalizeTimestamp(options.createdAt || run.createdAt);
+  const updatedAt = normalizeTimestamp(options.updatedAt || new Date().toISOString());
+  return {
+    id: sanitizedId,
+    schemaVersion: EVALUATION_RUN_RECORD_SCHEMA_VERSION,
+    createdAt,
+    updatedAt,
+    title: buildTitle(run, options.title),
+    evaluationType: run.evaluationType,
+    questionPreview: buildQuestionPreview(run.question),
+    subjectCount: run.subjects.length,
+    validatorSummary: summarizeValidatorResults(run.validatorResults),
+    metadataSummary: buildMetadataSummary(run.metadata),
+    run
+  };
+};
+
+const createEvaluationRunSummary = (record) => {
+  if (!isEvaluationRunRecord(record)) {
+    const error = new Error("Invalid EvaluationRun record");
+    error.code = "invalid_payload";
+    throw error;
+  }
+  return {
+    id: record.id,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    title: record.title,
+    evaluationType: record.evaluationType,
+    questionPreview: record.questionPreview,
+    subjectCount: record.subjectCount,
+    scoreSummary: summarizeScores(record.run.result.scores),
+    validatorSummary: record.validatorSummary,
+    metadataSummary: record.metadataSummary
+  };
+};
+
+const isValidatorSummary = (value) => {
+  if (!isObject(value)) {
+    return false;
+  }
+  return ["total", "pass", "fail", "warn", "error"].every(
+    (key) => Number.isInteger(value[key]) && value[key] >= 0
+  );
+};
+
+const isScoreSummary = (value) => {
+  if (!isObject(value)) {
+    return false;
+  }
+  if (!Array.isArray(value.criteria) || !value.criteria.every(isString)) {
+    return false;
+  }
+  return isOptionalFiniteNumber(value.averageScore);
+};
+
+const isEvaluationRunRecord = (value) => {
+  if (!isObject(value)) {
+    return false;
+  }
+  return (
+    isNonEmptyString(value.id) &&
+    (value.schemaVersion === undefined ||
+      value.schemaVersion === EVALUATION_RUN_RECORD_SCHEMA_VERSION) &&
+    isNonEmptyString(value.createdAt) &&
+    isNonEmptyString(value.updatedAt) &&
+    isNonEmptyString(value.title) &&
+    isNonEmptyString(value.evaluationType) &&
+    isString(value.questionPreview) &&
+    Number.isInteger(value.subjectCount) &&
+    value.subjectCount >= 0 &&
+    isValidatorSummary(value.validatorSummary) &&
+    isSafeMetadata(value.metadataSummary) &&
+    isEvaluationRunExport(value.run)
+  );
+};
+
+const isEvaluationRunSummary = (value) => {
+  if (!isObject(value)) {
+    return false;
+  }
+  return (
+    isNonEmptyString(value.id) &&
+    isNonEmptyString(value.createdAt) &&
+    isNonEmptyString(value.updatedAt) &&
+    isNonEmptyString(value.title) &&
+    isNonEmptyString(value.evaluationType) &&
+    isString(value.questionPreview) &&
+    Number.isInteger(value.subjectCount) &&
+    value.subjectCount >= 0 &&
+    isScoreSummary(value.scoreSummary) &&
+    isValidatorSummary(value.validatorSummary) &&
+    isSafeMetadata(value.metadataSummary)
+  );
 };
 
 const buildSubjects = (answers) =>
@@ -328,12 +528,20 @@ const mapJudgeExportPayloadToEvaluationRun = (payload, options = {}) => {
 
 module.exports = {
   EVALUATION_RUN_EXPORT_SCHEMA_VERSION,
+  EVALUATION_RUN_RECORD_SCHEMA_VERSION,
   isEvaluationRunExport,
+  isEvaluationRunRecord,
+  isEvaluationRunSummary,
   isJudgeExportPayloadForEvaluationRun,
   mapJudgeExportPayloadToEvaluationRun,
+  createEvaluationRunRecord,
+  createEvaluationRunSummary,
+  sanitizeEvaluationRunRecordId,
   _private: {
     pickSafeMetadata,
     cloneScores,
-    cloneValidatorResults
+    cloneValidatorResults,
+    summarizeScores,
+    summarizeValidatorResults
   }
 };

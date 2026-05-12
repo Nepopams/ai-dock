@@ -1,4 +1,5 @@
 export const EVALUATION_RUN_EXPORT_SCHEMA_VERSION = "evaluation-run.export.v1";
+export const EVALUATION_RUN_RECORD_SCHEMA_VERSION = "evaluation-run.record.v1";
 
 export type EvaluationRunExportSource = {
   kind: "judge_export";
@@ -75,6 +76,48 @@ export type EvaluationRunExport = {
   exportOptions: EvaluationRunExportOptions;
 };
 
+export type EvaluationRunValidatorSummary = {
+  total: number;
+  pass: number;
+  fail: number;
+  warn: number;
+  error: number;
+};
+
+export type EvaluationRunMetadataSummary = EvaluationRunExportMetadata;
+
+export type EvaluationRunScoreSummary = {
+  criteria: string[];
+  averageScore?: number;
+};
+
+export type EvaluationRunRecord = {
+  id: string;
+  schemaVersion?: typeof EVALUATION_RUN_RECORD_SCHEMA_VERSION;
+  createdAt: string;
+  updatedAt: string;
+  title: string;
+  evaluationType: string;
+  questionPreview: string;
+  subjectCount: number;
+  validatorSummary: EvaluationRunValidatorSummary;
+  metadataSummary: EvaluationRunMetadataSummary;
+  run: EvaluationRunExport;
+};
+
+export type EvaluationRunSummary = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  title: string;
+  evaluationType: string;
+  questionPreview: string;
+  subjectCount: number;
+  scoreSummary: EvaluationRunScoreSummary;
+  validatorSummary: EvaluationRunValidatorSummary;
+  metadataSummary: EvaluationRunMetadataSummary;
+};
+
 type JudgeExportPayloadLike = {
   question: string;
   answers: Array<{
@@ -116,6 +159,25 @@ const isOptionalFiniteNumber = (value: unknown): value is number | undefined =>
   value === undefined || isFiniteNumber(value);
 
 const answerKey = (index: number) => `answer_${index + 1}`;
+
+const clampString = (value: unknown, maxLength: number) => {
+  const text = typeof value === "string" ? value.trim() : "";
+  if (text.length <= maxLength) {
+    return text;
+  }
+  return text.slice(0, maxLength).trim();
+};
+
+export const sanitizeEvaluationRunRecordId = (value: unknown) => {
+  if (typeof value !== "string") {
+    return "";
+  }
+  return value
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+};
 
 const cloneJsonValue = (value: unknown): unknown => {
   if (value === undefined) {
@@ -310,6 +372,8 @@ const normalizeTimestamp = (value: string) => {
   return timestamp.toISOString();
 };
 
+const roundScore = (value: number) => Math.round(value * 100) / 100;
+
 const cloneScores = (scores: Record<string, EvaluationRunExportScore[]>) => {
   const cloned: Record<string, EvaluationRunExportScore[]> = {};
   for (const [key, bucket] of Object.entries(scores || {})) {
@@ -368,6 +432,190 @@ const pickSafeMetadata = (metadata: unknown) => {
     safe.durationMs = source.durationMs;
   }
   return safe;
+};
+
+const buildQuestionPreview = (question: unknown) => clampString(String(question || ""), 240);
+
+const buildTitle = (run: EvaluationRunExport, title?: unknown) => {
+  const explicit = clampString(title, 120);
+  if (explicit) {
+    return explicit;
+  }
+  const questionPreview = buildQuestionPreview(run.question);
+  if (questionPreview) {
+    return clampString(questionPreview, 120);
+  }
+  return clampString(run.runId, 120) || "Evaluation run";
+};
+
+const summarizeValidatorResults = (validatorResults: unknown): EvaluationRunValidatorSummary => {
+  const summary: EvaluationRunValidatorSummary = {
+    total: 0,
+    pass: 0,
+    fail: 0,
+    warn: 0,
+    error: 0
+  };
+  const results = Array.isArray(validatorResults) ? validatorResults : [];
+  for (const result of results) {
+    if (!isValidatorResult(result)) {
+      continue;
+    }
+    summary.total += 1;
+    const status = result.status.toLowerCase();
+    if (status === "pass") {
+      summary.pass += 1;
+    } else if (status === "fail") {
+      summary.fail += 1;
+    } else if (status === "warn" || status === "warning") {
+      summary.warn += 1;
+    } else if (status === "error") {
+      summary.error += 1;
+    }
+  }
+  return summary;
+};
+
+const summarizeScores = (scores: unknown): EvaluationRunScoreSummary => {
+  const criteria: string[] = [];
+  let total = 0;
+  let count = 0;
+  if (!isObject(scores)) {
+    return { criteria };
+  }
+  for (const bucket of Object.values(scores)) {
+    if (!Array.isArray(bucket)) {
+      continue;
+    }
+    for (const score of bucket) {
+      if (!isEvaluationScore(score)) {
+        continue;
+      }
+      if (!criteria.includes(score.criterion)) {
+        criteria.push(score.criterion);
+      }
+      total += Number(score.score);
+      count += 1;
+    }
+  }
+  const summary: EvaluationRunScoreSummary = { criteria };
+  if (count > 0) {
+    summary.averageScore = roundScore(total / count);
+  }
+  return summary;
+};
+
+const buildMetadataSummary = (metadata: unknown) => pickSafeMetadata(metadata);
+
+export const createEvaluationRunRecord = (
+  run: unknown,
+  options: { id?: string; title?: string; createdAt?: string; updatedAt?: string } = {}
+): EvaluationRunRecord => {
+  if (!isEvaluationRunExport(run)) {
+    const error = new Error("Invalid EvaluationRun export") as Error & { code?: string };
+    error.code = "invalid_payload";
+    throw error;
+  }
+  const sanitizedId = sanitizeEvaluationRunRecordId(options.id || run.runId);
+  if (!sanitizedId) {
+    const error = new Error("EvaluationRun id is invalid") as Error & { code?: string };
+    error.code = "invalid_payload";
+    throw error;
+  }
+  const createdAt = normalizeTimestamp(options.createdAt || run.createdAt);
+  const updatedAt = normalizeTimestamp(options.updatedAt || new Date().toISOString());
+  return {
+    id: sanitizedId,
+    schemaVersion: EVALUATION_RUN_RECORD_SCHEMA_VERSION,
+    createdAt,
+    updatedAt,
+    title: buildTitle(run, options.title),
+    evaluationType: run.evaluationType,
+    questionPreview: buildQuestionPreview(run.question),
+    subjectCount: run.subjects.length,
+    validatorSummary: summarizeValidatorResults(run.validatorResults),
+    metadataSummary: buildMetadataSummary(run.metadata),
+    run
+  };
+};
+
+export const createEvaluationRunSummary = (record: unknown): EvaluationRunSummary => {
+  if (!isEvaluationRunRecord(record)) {
+    const error = new Error("Invalid EvaluationRun record") as Error & { code?: string };
+    error.code = "invalid_payload";
+    throw error;
+  }
+  return {
+    id: record.id,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    title: record.title,
+    evaluationType: record.evaluationType,
+    questionPreview: record.questionPreview,
+    subjectCount: record.subjectCount,
+    scoreSummary: summarizeScores(record.run.result.scores),
+    validatorSummary: record.validatorSummary,
+    metadataSummary: record.metadataSummary
+  };
+};
+
+const isValidatorSummary = (value: unknown): value is EvaluationRunValidatorSummary => {
+  if (!isObject(value)) {
+    return false;
+  }
+  return (["total", "pass", "fail", "warn", "error"] as const).every(
+    (key) => Number.isInteger(value[key]) && Number(value[key]) >= 0
+  );
+};
+
+const isScoreSummary = (value: unknown): value is EvaluationRunScoreSummary => {
+  if (!isObject(value)) {
+    return false;
+  }
+  if (!Array.isArray(value.criteria) || !value.criteria.every(isString)) {
+    return false;
+  }
+  return isOptionalFiniteNumber(value.averageScore);
+};
+
+export const isEvaluationRunRecord = (value: unknown): value is EvaluationRunRecord => {
+  if (!isObject(value)) {
+    return false;
+  }
+  return (
+    isNonEmptyString(value.id) &&
+    (value.schemaVersion === undefined ||
+      value.schemaVersion === EVALUATION_RUN_RECORD_SCHEMA_VERSION) &&
+    isNonEmptyString(value.createdAt) &&
+    isNonEmptyString(value.updatedAt) &&
+    isNonEmptyString(value.title) &&
+    isNonEmptyString(value.evaluationType) &&
+    isString(value.questionPreview) &&
+    Number.isInteger(value.subjectCount) &&
+    Number(value.subjectCount) >= 0 &&
+    isValidatorSummary(value.validatorSummary) &&
+    isSafeMetadata(value.metadataSummary) &&
+    isEvaluationRunExport(value.run)
+  );
+};
+
+export const isEvaluationRunSummary = (value: unknown): value is EvaluationRunSummary => {
+  if (!isObject(value)) {
+    return false;
+  }
+  return (
+    isNonEmptyString(value.id) &&
+    isNonEmptyString(value.createdAt) &&
+    isNonEmptyString(value.updatedAt) &&
+    isNonEmptyString(value.title) &&
+    isNonEmptyString(value.evaluationType) &&
+    isString(value.questionPreview) &&
+    Number.isInteger(value.subjectCount) &&
+    Number(value.subjectCount) >= 0 &&
+    isScoreSummary(value.scoreSummary) &&
+    isValidatorSummary(value.validatorSummary) &&
+    isSafeMetadata(value.metadataSummary)
+  );
 };
 
 const buildSubjects = (answers: JudgeExportPayloadLike["answers"]): EvaluationRunExportSubject[] =>

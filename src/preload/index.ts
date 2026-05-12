@@ -4,6 +4,7 @@ import registerCoreApi from "./modules/coreApi";
 import registerAiDock from "./modules/aiDock";
 import registerChat from "./modules/chat";
 import registerHistoryHub from "./modules/historyHub";
+import registerEvaluationRun from "./modules/evaluationRun";
 import registerMediaPresets from "./modules/mediaPresets";
 import registerTemplates from "./modules/templates";
 import registerCompletions from "./modules/completions";
@@ -21,6 +22,12 @@ import {
   IPC_HISTORY_SEARCH,
   IPC_HISTORY_INGEST_LAST
 } from "../shared/ipc/history.ipc";
+import {
+  IPC_EVALUATION_RUN_SAVE,
+  IPC_EVALUATION_RUN_LIST,
+  IPC_EVALUATION_RUN_READ,
+  IPC_EVALUATION_RUN_DELETE
+} from "../shared/ipc/evaluationRun.ipc";
 import {
   IPC_MEDIA_PRESETS_LIST,
   IPC_MEDIA_PRESETS_SAVE,
@@ -94,6 +101,16 @@ registerHistoryHub({
     LIST_MESSAGES: IPC_HISTORY_THREAD_MESSAGES,
     SEARCH: IPC_HISTORY_SEARCH,
     INGEST_LAST: IPC_HISTORY_INGEST_LAST
+  }
+});
+registerEvaluationRun({
+  contextBridge,
+  safeInvoke,
+  IPC: {
+    SAVE: IPC_EVALUATION_RUN_SAVE,
+    LIST: IPC_EVALUATION_RUN_LIST,
+    READ: IPC_EVALUATION_RUN_READ,
+    DELETE: IPC_EVALUATION_RUN_DELETE
   }
 });
 registerMediaPresets({
