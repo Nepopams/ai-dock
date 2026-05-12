@@ -1,3 +1,8 @@
+---
+name: ai-dock-chat-completions-engineer
+description: "Use for engineering AI Dock Chat, completions profiles, provider streaming, abort handling, and token-safe profile flows."
+---
+
 # AI Dock Chat & Completions Engineer Skill
 
 ## Purpose

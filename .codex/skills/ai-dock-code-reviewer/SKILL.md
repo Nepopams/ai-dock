@@ -1,3 +1,8 @@
+---
+name: ai-dock-code-reviewer
+description: "Use for reviewing AI Dock diffs against workpack scope, architecture boundaries, security rules, and verification quality."
+---
+
 # AI Dock Code Reviewer Skill
 
 ## Purpose

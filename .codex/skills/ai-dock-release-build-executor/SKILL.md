@@ -1,3 +1,8 @@
+---
+name: ai-dock-release-build-executor
+description: "Use for scoped AI Dock build, preload bundling, Vite, Electron packaging, and release pipeline changes."
+---
+
 # AI Dock Release & Build Executor Skill
 
 ## Purpose

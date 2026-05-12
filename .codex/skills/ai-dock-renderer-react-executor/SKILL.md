@@ -1,3 +1,8 @@
+---
+name: ai-dock-renderer-react-executor
+description: "Use for implementing scoped AI Dock React renderer UI, view routing, component, style, and local interaction changes."
+---
+
 # AI Dock Renderer React Executor Skill
 
 ## Purpose

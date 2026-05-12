@@ -1,3 +1,8 @@
+---
+name: ai-dock-web-adapter-executor
+description: "Use for implementing scoped AI Dock web adapter and registry changes for resilient external AI client automation."
+---
+
 # AI Dock Web Adapter Executor Skill
 
 ## Purpose

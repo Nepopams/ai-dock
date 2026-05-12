@@ -1,3 +1,8 @@
+---
+name: ai-dock-test-qa-executor
+description: "Use for AI Dock test, QA, smoke, integration planning, regression checks, and verification-focused changes."
+---
+
 # AI Dock Test & QA Executor Skill
 
 ## Purpose

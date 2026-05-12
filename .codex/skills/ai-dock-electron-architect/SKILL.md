@@ -1,3 +1,8 @@
+---
+name: ai-dock-electron-architect
+description: "Use for architecture review of AI Dock Electron main, preload, renderer, BrowserView lifecycle, IPC boundaries, and security invariants."
+---
+
 # AI Dock Electron Architect Skill
 
 ## Purpose

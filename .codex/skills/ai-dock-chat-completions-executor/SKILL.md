@@ -1,3 +1,8 @@
+---
+name: ai-dock-chat-completions-executor
+description: "Use for implementing scoped AI Dock Chat, completions profile, provider, and streaming changes under workpack guardrails."
+---
+
 # AI Dock Chat & Completions Executor Skill
 
 ## Purpose

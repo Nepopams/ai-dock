@@ -1,3 +1,8 @@
+---
+name: ai-dock-security-hardening-executor
+description: "Use for scoped AI Dock security hardening across Electron, IPC, token masking, CSP, external links, and safe storage."
+---
+
 # AI Dock Security Hardening Executor Skill
 
 ## Purpose

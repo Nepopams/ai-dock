@@ -1,3 +1,8 @@
+---
+name: ai-dock-ipc-security-reviewer
+description: "Use for reviewing AI Dock IPC, preload, and main-process boundaries for payload validation, safe errors, and secret handling."
+---
+
 # AI Dock IPC Security Reviewer Skill
 
 ## Purpose

@@ -1,3 +1,8 @@
+---
+name: ai-dock-history-exporter-executor
+description: "Use for scoped AI Dock History Hub, exporter, source metadata, and safe history data workflow changes."
+---
+
 # AI Dock History & Exporter Executor Skill
 
 ## Purpose

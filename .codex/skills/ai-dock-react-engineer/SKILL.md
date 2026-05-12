@@ -1,3 +1,8 @@
+---
+name: ai-dock-react-engineer
+description: "Use for engineering AI Dock React, Vite, Zustand, UI components, views, state slices, and CSS under approved scope."
+---
+
 # AI Dock React Engineer Skill
 
 ## Purpose

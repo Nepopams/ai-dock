@@ -1,3 +1,8 @@
+---
+name: ai-dock-web-adapter-engineer
+description: "Use for engineering AI Dock web adapters, DOM readiness, prompt injection, conversation extraction, and registry mapping."
+---
+
 # AI Dock Web Adapter Engineer Skill
 
 ## Purpose

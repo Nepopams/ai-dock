@@ -1,3 +1,8 @@
+---
+name: ai-dock-preload-ipc-executor
+description: "Use for implementing scoped AI Dock preload bridge and shared IPC contract changes while preserving boundary discipline."
+---
+
 # AI Dock Preload & IPC Executor Skill
 
 ## Purpose
