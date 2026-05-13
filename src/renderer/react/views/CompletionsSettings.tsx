@@ -105,6 +105,22 @@ interface TestResult {
 const createId = () =>
   globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `id_${Math.random().toString(36).slice(2)}`;
 
+const formatHost = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "No base URL";
+  }
+  try {
+    return new URL(trimmed).host || trimmed;
+  } catch {
+    try {
+      return new URL(`https://${trimmed}`).host || trimmed;
+    } catch {
+      return trimmed;
+    }
+  }
+};
+
 const headersToRows = (headers?: Record<string, string>): HeaderRow[] => {
   if (!headers || typeof headers !== "object") {
     return [];
@@ -231,11 +247,16 @@ const normalizeProfiles = (data?: CompletionsStatePayload) => {
 const CompletionsSettings = () => {
   const focusLocalView = useDockStore((state) => state.actions.focusLocalView);
   const showToast = useDockStore((state) => state.actions.showToast);
+  const registryClients = useDockStore((state) => state.registryClients);
+  const registryLoading = useDockStore((state) => state.registryLoading);
+  const registryError = useDockStore((state) => state.registryError);
+  const fetchRegistry = useDockStore((state) => state.actions.fetchRegistry);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profiles, setProfiles] = useState<EditableProfile[]>([]);
   const [activeName, setActiveName] = useState<string>("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [profileSearch, setProfileSearch] = useState("");
   const [dirty, setDirty] = useState(false);
   const [testStatus, setTestStatus] = useState<Record<string, TestResult | undefined>>({});
   const [testingProfile, setTestingProfile] = useState<string | null>(null);
@@ -253,6 +274,10 @@ const CompletionsSettings = () => {
   useEffect(() => {
     void loadProfiles();
   }, []);
+
+  useEffect(() => {
+    void fetchRegistry();
+  }, [fetchRegistry]);
 
   const loadProfiles = async () => {
     if (!window.completions) {
@@ -668,6 +693,48 @@ const handleAddProfile = () => {
 
   const selectedTest = selectedProfile ? testStatus[selectedProfile.name] : undefined;
   const isActiveSelectedProfile = selectedProfile ? activeName === selectedProfile.name : false;
+  const profileSearchTerm = profileSearch.trim().toLowerCase();
+  const visibleProfiles = profileSearchTerm
+    ? profiles.filter((profile) => {
+        const labels = inferCompletionsProfileLabels(profile);
+        return [
+          profile.name,
+          profile.baseUrl,
+          profile.defaultModel,
+          labels.driverLabel,
+          labels.endpointLabel
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(profileSearchTerm);
+      })
+    : profiles;
+  const registryPreviewClients = useMemo(
+    () => [...registryClients].sort((a, b) => a.title.localeCompare(b.title)).slice(0, 4),
+    [registryClients]
+  );
+  const enabledRegistryCount = registryClients.filter((client) => client.enabled).length;
+  const tokenStatusLabel = selectedProfile
+    ? selectedProfile.tokenChanged
+      ? selectedProfile.tokenInput.trim()
+        ? "New token staged"
+        : "Token clear staged"
+      : selectedProfile.hasToken
+      ? "Stored securely"
+      : "Not configured"
+    : "Not configured";
+  const tokenStatusTone =
+    selectedProfile?.hasToken || selectedProfile?.tokenInput.trim() ? "ready" : "idle";
+  const testStatusLabel =
+    testingProfile === selectedProfile?.name
+      ? "Testing"
+      : selectedTest
+      ? selectedTest.success
+        ? "Ready"
+        : "Needs attention"
+      : "Not tested";
+  const testStatusTone =
+    testingProfile === selectedProfile?.name ? "info" : selectedTest?.success ? "ready" : selectedTest ? "error" : "idle";
   const setActiveButtonLabel =
     activating === selectedProfile?.id
       ? "Setting..."
@@ -961,67 +1028,111 @@ const handleAddProfile = () => {
 
   return (
     <div className="chat-shell">
-      <div className="completions-view">
-        <aside className="completions-sidebar">
-          <div className="completions-sidebar-header">
-            <h2>Connections</h2>
-            <button className="pill-btn" onClick={handleAddProfile} type="button">
-              New Profile
+      <div className="completions-view connections-profiles-shell">
+        <header className="connections-profiles-hero">
+          <div>
+            <span className="connections-kicker">Model routing</span>
+            <h2>Completion Profiles</h2>
+            <p>
+              Manage profile endpoints, auth references, request headers, and adapter-ready
+              registry context without changing provider schema.
+            </p>
+          </div>
+          <div className="connections-hero-actions">
+            <span className={`connections-status-chip ${dirty ? "is-warning" : "is-ready"}`}>
+              {dirty ? "Unsaved changes" : "Saved"}
+            </span>
+            <button
+              type="button"
+              className="pill-btn ghost"
+              onClick={() => handleTestConnection(selectedProfile)}
+              disabled={testingProfile === selectedProfile.name}
+            >
+              {testingProfile === selectedProfile.name ? "Testing..." : "Test Connection"}
+            </button>
+            <button type="submit" form="completions-profile-form" className="pill-btn" disabled={saving}>
+              {saving ? "Saving..." : "Save Settings"}
             </button>
           </div>
-          <div className="completions-list">
-            {profiles.map((profile) => {
-              const isActiveProfile = activeName === profile.name;
-              const isSelected = selectedProfile.id === profile.id;
-              const labels = inferCompletionsProfileLabels(profile);
-              return (
+        </header>
+
+        <div className="connections-profile-workspace">
+          <aside className="completions-sidebar connections-profile-list">
+            <div className="completions-sidebar-header">
+              <div>
+                <h2>Model profiles</h2>
+                <p>{profiles.length} configured</p>
+              </div>
+              <button className="pill-btn connections-add-profile" onClick={handleAddProfile} type="button">
+                +
+              </button>
+            </div>
+            <label className="connections-profile-search">
+              <span className="sr-only">Search profiles</span>
+              <input
+                type="search"
+                value={profileSearch}
+                onChange={(event) => setProfileSearch(event.target.value)}
+                placeholder="Search profiles"
+              />
+            </label>
+            <div className="completions-list">
+              {visibleProfiles.map((profile) => {
+                const isActiveProfile = activeName === profile.name;
+                const isSelected = selectedProfile.id === profile.id;
+                const labels = inferCompletionsProfileLabels(profile);
+                return (
+                  <button
+                    key={profile.id}
+                    className={`completions-list-item${isSelected ? " selected" : ""}`}
+                    onClick={() => setSelectedId(profile.id)}
+                    type="button"
+                  >
+                    <div className="completions-list-info">
+                      <span className="completions-list-name">{profile.name}</span>
+                      <span className="completions-list-meta">
+                        Driver: {labels.driverLabel} - {profile.defaultModel || "Model not set"}
+                      </span>
+                      <span className="completions-list-url">{formatHost(profile.baseUrl)}</span>
+                    </div>
+                    {isActiveProfile && <span className="completions-list-badge">Active</span>}
+                  </button>
+                );
+              })}
+              {!visibleProfiles.length && (
+                <div className="completions-headers-empty">No profiles match this search</div>
+              )}
+            </div>
+          </aside>
+
+          <section className="completions-editor connections-profile-editor">
+            <header className="completions-editor-header">
+              <div>
+                <span className="connections-kicker">Profile editor</span>
+                <h3>{selectedProfile.name}</h3>
+                <p>{selectedProfileLabels.summaryLabel}</p>
+              </div>
+              <div className="completions-editor-actions">
                 <button
-                  key={profile.id}
-                  className={`completions-list-item${isSelected ? " selected" : ""}`}
-                  onClick={() => setSelectedId(profile.id)}
                   type="button"
+                  className={`pill-btn${isActiveSelectedProfile ? " active" : ""}`}
+                  onClick={() => {
+                    void handleSetActiveProfile(selectedProfile);
+                  }}
+                  disabled={setActiveDisabled}
                 >
-                  <div className="completions-list-info">
-                    <span className="completions-list-name">{profile.name}</span>
-                    <span className="completions-list-meta">
-                      {labels.summaryLabel}
-                    </span>
-                  </div>
-                  {isActiveProfile && <span className="completions-list-badge">Active</span>}
+                  {setActiveButtonLabel}
                 </button>
-              );
-            })}
-          </div>
-        </aside>
-        <section className="completions-editor">
-          <header className="completions-editor-header">
-            <div>
-              <h3>{selectedProfile.name}</h3>
-              <p>{selectedProfile.driver === "openai-compatible" ? "Standard OpenAI-compatible /v1/chat/completions endpoint." : "Generic HTTP driver with templated payloads for custom providers."}</p>
-              <p>{selectedProfileLabels.summaryLabel}</p>
-              <p>{selectedProfileLabels.privacyHint}</p>
-            </div>
-            <div className="completions-editor-actions">
-              <button
-                type="button"
-                className={`pill-btn${isActiveSelectedProfile ? " active" : ""}`}
-                onClick={() => {
-                  void handleSetActiveProfile(selectedProfile);
-                }}
-                disabled={setActiveDisabled}
-              >
-                {setActiveButtonLabel}
-              </button>
-              <button
-                type="button"
-                className="pill-btn danger"
-                onClick={() => handleRemoveProfile(selectedProfile.id)}
-              >
-                Delete
-              </button>
-            </div>
-          </header>
-          <form className="completions-form" onSubmit={handleSubmit}>
+                <button
+                  type="button"
+                  className="pill-btn danger"
+                  onClick={() => handleRemoveProfile(selectedProfile.id)}
+                >
+                  Delete
+                </button>
+              </div>
+            </header>
+            <form id="completions-profile-form" className="completions-form" onSubmit={handleSubmit}>
             <div className="form-grid">
               <label>
                 Profile Name
@@ -1219,6 +1330,116 @@ const handleAddProfile = () => {
               </div>
             </div>
           </form>
+          </section>
+
+          <aside className="connections-status-rail">
+            <section className="connections-status-card">
+              <div>
+                <h4>Connection test</h4>
+                <p>Validate auth, base URL, headers, timeout, and model reachability before saving.</p>
+              </div>
+              <button
+                type="button"
+                className="pill-btn"
+                onClick={() => handleTestConnection(selectedProfile)}
+                disabled={testingProfile === selectedProfile.name}
+              >
+                {testingProfile === selectedProfile.name ? "Testing..." : "Test Connection"}
+              </button>
+            </section>
+            <section className="connections-status-card">
+              <h4>Profile status</h4>
+              <dl className="connections-status-list">
+                <div>
+                  <dt>Active profile</dt>
+                  <dd>
+                    <span className={`connections-status-dot ${isActiveSelectedProfile ? "is-ready" : "is-idle"}`} />
+                    {isActiveSelectedProfile ? "Active" : "Inactive"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Driver</dt>
+                  <dd>{selectedProfileLabels.driverLabel}</dd>
+                </div>
+                <div>
+                  <dt>Backend</dt>
+                  <dd>{selectedProfileLabels.endpointLabel}</dd>
+                </div>
+                <div>
+                  <dt>Token</dt>
+                  <dd>
+                    <span className={`connections-status-dot is-${tokenStatusTone}`} />
+                    {tokenStatusLabel}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Stream</dt>
+                  <dd>
+                    <span className={`connections-status-dot ${selectedProfile.stream ? "is-ready" : "is-idle"}`} />
+                    {selectedProfile.stream ? "Enabled" : "Disabled"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Last test</dt>
+                  <dd>
+                    <span className={`connections-status-dot is-${testStatusTone}`} />
+                    {testStatusLabel}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+            <section className="connections-status-card">
+              <h4>Privacy note</h4>
+              <p>{selectedProfileLabels.privacyHint}</p>
+            </section>
+          </aside>
+        </div>
+
+        <section className="connections-registry-preview">
+          <header>
+            <div>
+              <h3>Service Registry Preview</h3>
+              <p>
+                {registryLoading
+                  ? "Loading registry services..."
+                  : `${enabledRegistryCount} of ${registryClients.length} services enabled`}
+              </p>
+            </div>
+            <span className={`connections-status-chip ${registryError ? "is-error" : "is-ready"}`}>
+              {registryError ? "Registry error" : "Registry online"}
+            </span>
+          </header>
+          {registryError ? (
+            <div className="connections-registry-error">{registryError}</div>
+          ) : (
+            <div className="connections-registry-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>Driver</th>
+                    <th>Base URL</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {registryPreviewClients.map((client) => (
+                    <tr key={client.id}>
+                      <td>{client.title}</td>
+                      <td>{client.adapterId}</td>
+                      <td>{client.urlPatterns[0] || "No pattern"}</td>
+                      <td>{client.enabled ? "Ready" : "Disabled"}</td>
+                    </tr>
+                  ))}
+                  {!registryPreviewClients.length && (
+                    <tr>
+                      <td colSpan={4}>{registryLoading ? "Loading services..." : "No registry services configured"}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
       </div>
     </div>

@@ -133,6 +133,17 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 | Manual smoke | Capture missing `09-history-hub.current.png`; recapture Prompts/Presets with representative data before final acceptance. |
 | Risks | Triage does not fix UI; it routes bounded runtime fixpacks to actual owner files. |
 
+## IN-UI-011A Connections Recomposition Fixpack
+| Field | Detail |
+| --- | --- |
+| Status | Implemented; fresh Connections screenshot and visual gap re-assessment required before GO. |
+| Goal | Recompose the Connections screen around model profiles, profile editor, status rail, and Service Registry Preview by changing the real owner JSX in `CompletionsSettings.tsx`. |
+| Affected files | `ConnectionsSettings.tsx`, `CompletionsSettings.tsx`, `global.css`, UI v2 fixpack docs, initiative/workpack artifacts. |
+| Forbidden files | `src/main/**`, `src/preload/**`, `src/shared/**`, stores, unrelated views, package/config/build/scripts files. |
+| Verification | Initiative validator, workpack validator, `npm test`, `npm run build`, `git diff --check`, forbidden-path status check. |
+| Manual smoke | Connections profile CRUD/save/set-active/test, token redaction, registry preview/full tab, adapter overrides tab, fresh screenshot capture. |
+| Risks | Visual GO still depends on manual Electron screenshot because shell mismatch remains a separate WP-UI-011B issue. |
+
 ## Dependency order
 1. `WP-UI-001` must complete before runtime UI work.
 2. `WP-UI-002` must run before shell or view restyles.
@@ -142,6 +153,7 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 6. `WP-UI-007B` and `WP-UI-007C` should remain separate to avoid a giant APPLY across remaining views.
 7. `IN-UI-009` can run before final visual acceptance because it is cross-cutting component-state polish, not a screen-level gap fixpack.
 8. `IN-UI-010` must precede any WP-UI-011 runtime fixpack because it identifies evidence-backed owner files and acceptance blockers.
+9. `IN-UI-011A` should be followed by fresh screenshot capture, then `WP-UI-011B Shell / PromptRouter Layout Breakthrough`.
 
 ## Next recommended runtime workpack
-After `IN-UI-010`, the first recommended runtime fixpack is `WP-UI-011A Connections Recomposition Fixpack`, followed immediately by `WP-UI-011B Shell / PromptRouter Layout Breakthrough`. The missing `09-history-hub.current.png` should be captured before History-specific acceptance or fixes.
+After `IN-UI-011A`, capture a fresh `04-connections.current.png` and re-assess the Connections row. The next recommended runtime fixpack remains `WP-UI-011B Shell / PromptRouter Layout Breakthrough`. The missing `09-history-hub.current.png` should be captured before History-specific acceptance or fixes.

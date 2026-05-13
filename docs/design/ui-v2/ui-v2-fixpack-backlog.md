@@ -6,7 +6,7 @@ This backlog is now evidence-backed by `visual-gap-matrix.md` and `ui-v2-visual-
 
 | Priority | Fixpack | Why |
 | --- | --- | --- |
-| P0 | WP-UI-011A Connections Recomposition Fixpack | Clearest owner-file miss: current screen is owned by `CompletionsSettings.tsx`, which IN-UI-006 did not change. |
+| P0 | WP-UI-011A Connections Recomposition Fixpack | Implemented by IN-UI-011A; pending fresh screenshot and visual re-assessment. |
 | P0 | WP-UI-011B Shell / PromptRouter Layout Breakthrough | Shell mismatch affects every screenshot and blocks final visual acceptance. |
 | P0 | WP-UI-011C Chat Layout Recomposition | Prior Chat pass was CSS-only and cannot create the target chat composition. |
 | P1 | WP-UI-011D Judge Studio Layout Recomposition | Prior Judge pass was CSS-only and target requires working-surface recomposition. |
@@ -17,6 +17,7 @@ This backlog is now evidence-backed by `visual-gap-matrix.md` and `ui-v2-visual-
 
 | Field | Detail |
 | --- | --- |
+| Status | Implemented by `IN-UI-011A-connections-recomposition-fixpack`; pending fresh screenshot. |
 | Trigger evidence | `04-connections.current.png` remains the old Completion Profiles editor, unlike `04-connections.png`. |
 | Likely files | `src/renderer/react/views/ConnectionsSettings.tsx`, `src/renderer/react/views/CompletionsSettings.tsx`, `src/renderer/react/views/settings/ClientsAndCategories.tsx`, `src/renderer/react/views/settings/AdapterOverrides.tsx`, `src/renderer/react/styles/global.css`. |
 | Forbidden files | `src/main/**`, `src/preload/**`, `src/shared/**`, stores, package/config/scripts/build outputs. |
