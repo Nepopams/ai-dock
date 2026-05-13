@@ -2,6 +2,23 @@
 
 This folder is the expected home for PNG exports from `ai-dock.pen`. Do not create placeholder PNG files. Add real exports only when Human provides or exports them from Pencil.
 
+## Canonicalization status
+`IN-UI-008 Visual Acceptance and Fixpack Plan` copied the existing numeric Pencil exports to canonical filenames. Numeric files remain in place for traceability and must not be deleted because earlier UI workpack delivery reports reference them as design evidence.
+
+| Numeric source | Canonical file | Status |
+| --- | --- | --- |
+| `0.png` | `00-design-system.png` | Copied from numeric export. |
+| `1.png` | `01-main-dock-shell.png` | Copied from numeric export. |
+| `2.png` | `02-local-chat.png` | Copied from numeric export. |
+| `3.png` | `03-judge-evaluation-studio.png` | Copied from numeric export. |
+| `4.png` | `04-connections.png` | Copied from numeric export. |
+| `5.png` | `05-form-profiles.png` | Copied from numeric export. |
+| `6.png` | `06-form-runner.png` | Copied from numeric export. |
+| `7.png` | `07-prompt-templates.png` | Copied from numeric export. |
+| `8.png` | `08-media-presets.png` | Copied from numeric export. |
+| `9.png` | `09-history-hub.png` | Copied from numeric export. |
+| `10.png` | `10-component-states-board.png` | Copied from numeric export. |
+
 ## Required exports
 | File | Pencil frame | Purpose |
 | --- | --- | --- |

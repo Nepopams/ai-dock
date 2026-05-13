@@ -14,6 +14,7 @@
 
 ## Планируемые/расширяемые модули
 - [AI Dock UI v2 Design Handoff](../design/ui-v2/screen-map.md)
+- [AI Dock UI v2 Visual Acceptance](../design/ui-v2/visual-acceptance.md)
 - Chat Exporter
 - [Judge Mode / Evaluation Studio](../planning/epics/EP-JUDGE-001-evaluation-studio-mvp/epic.md)
 - Cross-history

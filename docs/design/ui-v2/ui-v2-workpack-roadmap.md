@@ -1,6 +1,6 @@
 # AI Dock UI v2 Workpack Roadmap
 
-This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, `WP-UI-004` applied the Local Chat restyle, `WP-UI-005` applied the Evaluation Studio restyle, `WP-UI-006` applied the Connections/Form Profiles restyle, `WP-UI-007A` applied the Form Runner restyle, `WP-UI-007B` applied the Prompt Templates / Media Presets restyle, and `WP-UI-007C` applied the History Hub restyle. Runtime UI v2 rollout is implementation-complete pending final manual smoke/assets pass.
+This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, `WP-UI-004` applied the Local Chat restyle, `WP-UI-005` applied the Evaluation Studio restyle, `WP-UI-006` applied the Connections/Form Profiles restyle, `WP-UI-007A` applied the Form Runner restyle, `WP-UI-007B` applied the Prompt Templates / Media Presets restyle, and `WP-UI-007C` applied the History Hub restyle. `IN-UI-008` adds the visual acceptance layer before any further runtime UI fixpack.
 
 ## WP-UI-001 Design Handoff Inventory
 | Field | Detail |
@@ -100,6 +100,17 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 | Manual smoke | History list/search/filter; open item; source metadata; continue in Chat; export/copy if available; previous UI v2 views still open. |
 | Risks | History Hub touches data-sensitive summaries; mitigate by visual-only renderer changes and no history schema changes. |
 
+## IN-UI-008 Visual Acceptance and Fixpack Plan
+| Field | Detail |
+| --- | --- |
+| Status | Acceptance pack prepared; manual screenshots and gap matrix remain required. |
+| Goal | Canonicalize design exports, define current screenshot capture, create visual gap matrix, final smoke checklist, and scoped WP-UI-009 fixpack backlog. |
+| Affected files | `docs/design/ui-v2/exports/**`, `docs/design/ui-v2/current-screenshots/**`, visual acceptance docs, roadmap/screen-map/index links, initiative/workpack artifacts. |
+| Forbidden files | `src/**`, package/config/build/scripts files, runtime CSS/React, dependencies, screenshot automation tooling. |
+| Verification | Initiative validator, workpack validator, `git diff --check`, forbidden-path status check. |
+| Manual smoke | Capture current screenshots and fill the visual gap matrix before any WP-UI-009 runtime fixpack starts. |
+| Risks | Without screenshots, visual acceptance cannot be claimed even if automated checks pass. |
+
 ## Dependency order
 1. `WP-UI-001` must complete before runtime UI work.
 2. `WP-UI-002` must run before shell or view restyles.
@@ -109,4 +120,4 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 6. `WP-UI-007B` and `WP-UI-007C` should remain separate to avoid a giant APPLY across remaining views.
 
 ## Next recommended runtime workpack
-UI v2 runtime rollout is implementation-complete through `WP-UI-007C`. Next recommended action is a final cross-view manual smoke/assets pass before closing the UI v2 initiative thread.
+No further runtime UI fixpack should start before `docs/design/ui-v2/current-screenshots/` is populated and `docs/design/ui-v2/visual-gap-matrix.md` is filled. Next recommended action is human screenshot capture and visual gap triage, then scoped `WP-UI-009*` fixpacks only for real gaps.

@@ -32,6 +32,9 @@
 - `docs/design/ui-v2/**` - AI Dock UI v2 design handoff pack for Pencil source/reference handling, PNG export inventory, design tokens, implementation notes, screen map, and UI workpack roadmap.
 - `docs/design/ui-v2/design-tokens.md` - UI v2 token inventory for future runtime mapping into existing renderer styles.
 - `docs/design/ui-v2/screen-map.md` - mapping between Pencil frames, PNG exports, current React views/files, and target UI workpacks.
+- `docs/design/ui-v2/visual-acceptance.md` - UI v2 visual acceptance model, evidence requirements, and GO/NO-GO criteria.
+- `docs/design/ui-v2/visual-gap-matrix.md` - screen-by-screen design-vs-current screenshot comparison matrix for scoped fixpack decisions.
+- `docs/design/ui-v2/current-screenshots/README.md` - manual screenshot capture instructions and required current screenshot filenames.
 
 ## Workpack layer references
 11. `docs/planning/workpacks/_template/workpack.md` — шаблон для новых workpack.
