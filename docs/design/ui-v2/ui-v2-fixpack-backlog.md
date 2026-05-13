@@ -1,58 +1,90 @@
 # UI v2 Fixpack Backlog
 
-This backlog is a template. Do not start a runtime fixpack until `visual-gap-matrix.md` has current screenshots and concrete visual gaps.
+This backlog is now evidence-backed by `visual-gap-matrix.md` and `ui-v2-visual-triage-report.md`. Do not start a runtime fixpack from this file alone: each fixpack still needs its own initiative/workpack PLAN, allowed files, forbidden files, verification, and visual acceptance target.
 
-## WP-UI-009A Shell/Layout Visual Fixpack
+## Priority Summary
+
+| Priority | Fixpack | Why |
+| --- | --- | --- |
+| P0 | WP-UI-011A Connections Recomposition Fixpack | Clearest owner-file miss: current screen is owned by `CompletionsSettings.tsx`, which IN-UI-006 did not change. |
+| P0 | WP-UI-011B Shell / PromptRouter Layout Breakthrough | Shell mismatch affects every screenshot and blocks final visual acceptance. |
+| P0 | WP-UI-011C Chat Layout Recomposition | Prior Chat pass was CSS-only and cannot create the target chat composition. |
+| P1 | WP-UI-011D Judge Studio Layout Recomposition | Prior Judge pass was CSS-only and target requires working-surface recomposition. |
+| P1 | WP-UI-011E Settings/Form Follow-up | Form Profiles is close, but Form Runner remains visually divergent. |
+| P1 | WP-UI-011F Remaining Surfaces Polish | Prompt Templates and Media Presets need populated-state proof; History screenshot is missing. |
+
+## WP-UI-011A Connections Recomposition Fixpack
+
 | Field | Detail |
 | --- | --- |
-| Trigger condition | Shell, BrowserView bounds, Sidebar, TabStrip, PromptRouter, PromptDrawer, or Toast is marked NO-GO or GO with polish. |
-| Likely files | `src/renderer/react/App.tsx`, shell components, `src/renderer/react/styles/global.css`. |
-| Forbidden files | `src/main/**`, `src/preload/**`, `src/shared/**`, package/config/scripts, store files, unrelated local views. |
+| Trigger evidence | `04-connections.current.png` remains the old Completion Profiles editor, unlike `04-connections.png`. |
+| Likely files | `src/renderer/react/views/ConnectionsSettings.tsx`, `src/renderer/react/views/CompletionsSettings.tsx`, `src/renderer/react/views/settings/ClientsAndCategories.tsx`, `src/renderer/react/views/settings/AdapterOverrides.tsx`, `src/renderer/react/styles/global.css`. |
+| Forbidden files | `src/main/**`, `src/preload/**`, `src/shared/**`, stores, package/config/scripts/build outputs. |
 | Validation commands | Initiative/workpack validators, `npm test`, `npm run build`, `git diff --check`, forbidden-path status check. |
-| Manual smoke focus | Shell navigation, BrowserView bounds, prompt router insert/send/broadcast, drawer, toast, focus states. |
-| Acceptable changes | Tokenized spacing/color/radius fixes, clipped-control fixes, z-index/focus polish inside shell scope. |
-| Forbidden scope creep | BrowserView lifecycle changes, IPC changes, tab data model changes, new dependencies. |
+| Manual smoke focus | Completion profile load/save/test/set-active, token redaction, Generic HTTP config, registry add/edit/delete, adapter override save/reset/health-check. |
+| Acceptable changes | React layout recomposition and scoped CSS for model profiles, editor, status cards, and registry preview. |
+| Forbidden scope creep | Provider schema changes, token handling changes, registry contract changes, IPC/main/preload changes. |
 
-## WP-UI-009B Chat/Evaluation Visual Fixpack
+## WP-UI-011B Shell / PromptRouter Layout Breakthrough
+
 | Field | Detail |
 | --- | --- |
-| Trigger condition | Chat or Evaluation Studio is marked NO-GO or GO with polish. |
-| Likely files | `ChatView.tsx`, chat components, `EvaluationStudioView.tsx`, `CompareView.tsx`, `global.css`. |
-| Forbidden files | Chat provider logic, Judge pipeline/storage/export contracts, main/preload/shared, package/config/scripts. |
+| Trigger evidence | `01-main-dock-shell.current.png` lacks the target cockpit shell, router, tab strip, and workspace placeholder composition. |
+| Likely files | `src/renderer/react/App.tsx`, `src/renderer/react/components/Sidebar.tsx`, `src/renderer/react/components/TabStrip.tsx`, `src/renderer/react/components/PromptRouter.tsx`, `src/renderer/react/components/PromptDrawer.tsx`, `src/renderer/react/components/Toast.tsx`, `src/renderer/react/styles/global.css`. |
+| Forbidden files | BrowserView lifecycle/bounds logic in main/preload/shared, stores, package/config/scripts/build outputs, unrelated local views. |
 | Validation commands | Initiative/workpack validators, `npm test`, `npm run build`, `git diff --check`, forbidden-path status check. |
-| Manual smoke focus | Chat send/stream/abort/retry/export/compare; Judge manual start/run/save/open/delete/export. |
-| Acceptable changes | Message/card/table/readability/focus polish, layout clipping fixes, status chip clarity. |
-| Forbidden scope creep | Streaming changes, judge result schema changes, EvaluationRun storage changes. |
+| Manual smoke focus | Sidebar navigation, tab create/switch/close, prompt router insert/send/broadcast, drawer/toast, BrowserView bounds. |
+| Acceptable changes | Bounded shell markup/layout changes, prompt router visible composition, shell placeholder/status polish. |
+| Forbidden scope creep | IPC changes, BrowserView data model changes, new dependencies, local view restyles. |
 
-## WP-UI-009C Settings/Form Visual Fixpack
+## WP-UI-011C Chat Layout Recomposition
+
 | Field | Detail |
 | --- | --- |
-| Trigger condition | Connections, Form Profiles, or Form Runner is marked NO-GO or GO with polish. |
-| Likely files | Connections/settings/form view files and `global.css`. |
-| Forbidden files | Provider/profile/form schemas, registry contracts, form render utilities, main/preload/shared, package/config/scripts. |
+| Trigger evidence | `02-local-chat.current.png` does not match target conversation rail/message/composer/right-rail composition. |
+| Likely files | `src/renderer/react/views/ChatView.tsx`, `src/renderer/react/components/chat/ConversationList.tsx`, `src/renderer/react/components/chat/MessageList.tsx`, `src/renderer/react/components/chat/MessageItem.tsx`, `src/renderer/react/components/CompareButton.tsx`, `src/renderer/react/styles/global.css`. |
+| Forbidden files | Chat provider logic, stores, main/preload/shared, package/config/scripts/build outputs. |
 | Validation commands | Initiative/workpack validators, `npm test`, `npm run build`, `git diff --check`, forbidden-path status check. |
-| Manual smoke focus | Profile load/save/test, registry/adapters, form CRUD/test/open-run, redaction, sync/stream/abort/copy. |
-| Acceptable changes | Form density, validation/error readability, modal/list/table polish, tokenized control states. |
-| Forbidden scope creep | Schema migrations, token/auth handling changes, form execution behavior changes. |
+| Manual smoke focus | New/select conversation, send/stream/abort/retry, composer pinned state, message actions, export, compare handoff. |
+| Acceptable changes | React layout changes and scoped CSS that preserve existing handlers and chat state contracts. |
+| Forbidden scope creep | Streaming protocol changes, completions provider changes, chatSlice shape changes. |
 
-## WP-UI-009D Prompts/Presets/History Visual Fixpack
+## WP-UI-011D Judge Studio Layout Recomposition
+
 | Field | Detail |
 | --- | --- |
-| Trigger condition | Prompt Templates, Media Presets, or History Hub is marked NO-GO or GO with polish. |
-| Likely files | Prompt/preset/history view files, dialog components in scope, `global.css`. |
-| Forbidden files | Template/preset/history storage, adapter resolution, ingest/search contracts, main/preload/shared, package/config/scripts. |
+| Trigger evidence | `03-judge-evaluation-studio.current.png` still uses the old mode/saved-run first viewport rather than target working studio. |
+| Likely files | `src/renderer/react/views/EvaluationStudioView.tsx`, `src/renderer/react/views/CompareView.tsx`, `src/renderer/react/styles/global.css`. |
+| Forbidden files | Judge pipeline/storage/export contracts, stores, main/preload/shared, package/config/scripts/build outputs. |
 | Validation commands | Initiative/workpack validators, `npm test`, `npm run build`, `git diff --check`, forbidden-path status check. |
-| Manual smoke focus | Template CRUD/import/export/insert; preset CRUD/import/export/apply; history search/ingest/open-source/continue-chat. |
-| Acceptable changes | Card/list/dialog/search/result readability fixes and scoped visual polish. |
-| Forbidden scope creep | Import/export semantics, apply behavior, search semantics, history storage changes. |
+| Manual smoke focus | Manual start, Run Judge, JSON contract findings, dynamic score table, save/open/delete run, export MD/JSON. |
+| Acceptable changes | Visual/layout recomposition of Studio/CompareView while preserving all event handlers and storage/export behavior. |
+| Forbidden scope creep | Judge result schema changes, EvaluationRun storage changes, export semantics changes. |
 
-## WP-UI-009E Design Token Polish
+## WP-UI-011E Settings/Form Follow-up
+
 | Field | Detail |
 | --- | --- |
-| Trigger condition | Multiple screens show the same color, typography, radius, focus, or spacing mismatch that is best solved at token level. |
-| Likely files | `src/renderer/react/styles/global.css`, docs token notes. |
-| Forbidden files | React component behavior, main/preload/shared, package/config/scripts, storage/store files. |
+| Trigger evidence | `05-form-profiles.current.png` is close but needs polish; `06-form-runner.current.png` remains a composition NO-GO. |
+| Likely files | `src/renderer/react/views/forms/FormProfilesManager.tsx`, `src/renderer/react/views/forms/FormEditor.tsx`, `src/renderer/react/views/forms/FormRunView.tsx`, `src/renderer/react/styles/global.css`. |
+| Forbidden files | Form schemas, form render utilities, IPC/main/preload/shared, stores, package/config/scripts/build outputs. |
 | Validation commands | Initiative/workpack validators, `npm test`, `npm run build`, `git diff --check`, forbidden-path status check. |
-| Manual smoke focus | Cross-view readability, focus, disabled, empty/loading/error states, modal layering. |
-| Acceptable changes | Adjusting `--aid-*` variables or primitive class polish based on screenshot evidence. |
-| Forbidden scope creep | Broad selector rewrites, adding a UI library, changing view layouts without screen-specific workpack evidence. |
+| Manual smoke focus | Form profile CRUD/test/open-run, dirty/delete confirms, generated fields, redaction, sync/stream/abort/copy. |
+| Acceptable changes | Density, clipping, response inspector, validation/error readability, and scoped layout cleanup. |
+| Forbidden scope creep | Form execution behavior changes, schema migrations, shared utility rewrites. |
+
+## WP-UI-011F Remaining Surfaces Polish
+
+| Field | Detail |
+| --- | --- |
+| Trigger evidence | Prompt Templates and Media Presets screenshots are empty-state mismatches; History current screenshot is missing. |
+| Likely files | `TemplatesManager.tsx`, `InsertPromptDialog.tsx`, `PresetsGallery.tsx`, `ApplyPresetDialog.tsx`, `HistoryView.tsx`, scoped shared state files if planned, `global.css`. |
+| Forbidden files | Template/preset/history storage, adapter resolution, search/ingest contracts, main/preload/shared, stores, package/config/scripts/build outputs. |
+| Validation commands | Initiative/workpack validators, `npm test`, `npm run build`, `git diff --check`, forbidden-path status check. |
+| Manual smoke focus | Template CRUD/import/export/variables, preset CRUD/import/export/apply, history search/ingest/open-source/continue-chat. |
+| Acceptable changes | Split runtime fixpacks if the owner set is too broad; require populated screenshots for Prompts/Presets and current screenshot for History. |
+| Forbidden scope creep | Import/export behavior changes, preset apply behavior changes, history storage/search semantics changes. |
+
+## Token Polish Follow-Up
+
+Token-level polish should run only after the screen recomposition fixpacks identify repeated visual drift across multiple accepted screenshots. It should be limited to `--aid-*` variables and primitive state classes in `global.css`, with no view behavior changes.

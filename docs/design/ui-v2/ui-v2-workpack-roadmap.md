@@ -1,6 +1,6 @@
 # AI Dock UI v2 Workpack Roadmap
 
-This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, `WP-UI-004` applied the Local Chat restyle, `WP-UI-005` applied the Evaluation Studio restyle, `WP-UI-006` applied the Connections/Form Profiles restyle, `WP-UI-007A` applied the Form Runner restyle, `WP-UI-007B` applied the Prompt Templates / Media Presets restyle, and `WP-UI-007C` applied the History Hub restyle. `IN-UI-008` adds the visual acceptance layer, and `IN-UI-009` covers the remaining Component States / Shared Dialogs pass before screenshot-based acceptance.
+This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, `WP-UI-004` applied the Local Chat restyle, `WP-UI-005` applied the Evaluation Studio restyle, `WP-UI-006` applied the Connections/Form Profiles restyle, `WP-UI-007A` applied the Form Runner restyle, `WP-UI-007B` applied the Prompt Templates / Media Presets restyle, and `WP-UI-007C` applied the History Hub restyle. `IN-UI-008` added the visual acceptance layer, `IN-UI-009` covered Component States / Shared Dialogs, and `IN-UI-010` performed screenshot-based visual gap triage before any further runtime UI fixpacks.
 
 ## WP-UI-001 Design Handoff Inventory
 | Field | Detail |
@@ -122,6 +122,17 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 | Manual smoke | Trigger Form Profiles confirm dialogs; verify KeyValueEditor add/edit/remove/warning states; confirm Presets/Apply dialogs and Toast remain readable. |
 | Risks | Shared CSS can leak if selectors are too broad; mitigate with semantic scoped selectors and no parent screen changes. |
 
+## IN-UI-010 Visual Gap Auto-Triage
+| Field | Detail |
+| --- | --- |
+| Status | Done as docs/design triage; no runtime changes. |
+| Goal | Compare canonical design PNGs against current screenshots and code ownership to produce an evidence-backed visual gap matrix, root-cause report, and fixpack sequence. |
+| Affected files | `docs/design/ui-v2/visual-gap-matrix.md`, `ui-v2-visual-triage-report.md`, `ui-v2-runtime-root-cause.md`, `ui-v2-fixpack-sequence.md`, `ui-v2-fixpack-backlog.md`, roadmap, initiative/workpack artifacts. |
+| Forbidden files | `src/**`, package/config/build/scripts files, runtime CSS/React, dependencies. |
+| Verification | Initiative validator, workpack validator, `git diff --check`, forbidden-path status check. |
+| Manual smoke | Capture missing `09-history-hub.current.png`; recapture Prompts/Presets with representative data before final acceptance. |
+| Risks | Triage does not fix UI; it routes bounded runtime fixpacks to actual owner files. |
+
 ## Dependency order
 1. `WP-UI-001` must complete before runtime UI work.
 2. `WP-UI-002` must run before shell or view restyles.
@@ -130,6 +141,7 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 5. `WP-UI-006` should precede `WP-UI-007A` because Form Runner follows Form Profiles.
 6. `WP-UI-007B` and `WP-UI-007C` should remain separate to avoid a giant APPLY across remaining views.
 7. `IN-UI-009` can run before final visual acceptance because it is cross-cutting component-state polish, not a screen-level gap fixpack.
+8. `IN-UI-010` must precede any WP-UI-011 runtime fixpack because it identifies evidence-backed owner files and acceptance blockers.
 
 ## Next recommended runtime workpack
-After `IN-UI-009`, no further runtime UI fixpack should start before `docs/design/ui-v2/current-screenshots/` is populated and `docs/design/ui-v2/visual-gap-matrix.md` is filled. Next recommended action is human screenshot capture and visual gap triage, then scoped fixpacks only for real gaps.
+After `IN-UI-010`, the first recommended runtime fixpack is `WP-UI-011A Connections Recomposition Fixpack`, followed immediately by `WP-UI-011B Shell / PromptRouter Layout Breakthrough`. The missing `09-history-hub.current.png` should be captured before History-specific acceptance or fixes.
