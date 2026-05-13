@@ -501,6 +501,282 @@ textarea:focus-visible {
   opacity: 0.55;
 }
 
+.ui-state-empty,
+.ui-state-loading,
+.ui-state-error,
+.ui-state-warning,
+.ui-state-success {
+  border: 1px solid var(--aid-border-subtle);
+  border-radius: var(--aid-radius-panel);
+  color: var(--aid-text-secondary);
+  padding: var(--aid-space-4);
+}
+
+.ui-state-empty,
+.ui-state-loading {
+  background: var(--aid-bg-surface-subtle);
+  color: var(--aid-text-muted);
+}
+
+.ui-state-error {
+  background: var(--aid-status-error-bg);
+  border-color: rgba(251, 113, 133, 0.3);
+  color: var(--aid-status-error);
+}
+
+.ui-state-warning {
+  background: var(--aid-status-warning-bg);
+  border-color: rgba(251, 191, 36, 0.28);
+  color: var(--aid-status-warning);
+}
+
+.ui-state-success {
+  background: var(--aid-status-ready-bg);
+  border-color: rgba(52, 211, 153, 0.28);
+  color: var(--aid-status-ready);
+}
+
+.confirm-dialog-overlay {
+  align-items: center;
+  background: rgba(7, 10, 15, 0.84);
+  backdrop-filter: blur(10px);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: var(--aid-space-6);
+  position: fixed;
+  z-index: 40;
+}
+
+.confirm-dialog {
+  background: var(--aid-bg-surface);
+  border: 1px solid var(--aid-border-subtle);
+  border-radius: var(--aid-radius-card);
+  box-shadow: var(--aid-shadow-modal);
+  color: var(--aid-text-primary);
+  max-width: 100%;
+  padding: var(--aid-space-6);
+  width: 420px;
+}
+
+.confirm-dialog-title {
+  color: var(--aid-text-primary);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.confirm-dialog-message {
+  color: var(--aid-text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: var(--aid-space-3) 0 0;
+  white-space: pre-line;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  gap: var(--aid-space-3);
+  justify-content: flex-end;
+  margin-top: var(--aid-space-6);
+}
+
+.confirm-dialog-button {
+  align-items: center;
+  border: 1px solid var(--aid-border-subtle);
+  border-radius: var(--aid-radius-control);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 var(--aid-space-4);
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.confirm-dialog-button:hover {
+  transform: translateY(-1px);
+}
+
+.confirm-dialog-button:focus-visible {
+  outline: none;
+  box-shadow: var(--aid-focus-ring);
+}
+
+.confirm-dialog-button--cancel {
+  background: var(--aid-bg-surface-raised);
+  color: var(--aid-text-secondary);
+}
+
+.confirm-dialog-button--cancel:hover {
+  border-color: var(--aid-border-strong);
+  color: var(--aid-text-primary);
+}
+
+.confirm-dialog-button--danger {
+  background: var(--aid-status-error-bg);
+  border-color: rgba(251, 113, 133, 0.38);
+  color: var(--aid-status-error);
+}
+
+.confirm-dialog-button--danger:hover {
+  background: rgba(251, 113, 133, 0.22);
+  border-color: rgba(251, 113, 133, 0.56);
+  color: #ffdbe2;
+}
+
+.key-value-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--aid-space-2);
+}
+
+.key-value-editor--readonly {
+  opacity: 0.84;
+}
+
+.key-value-editor-header,
+.key-value-editor-row {
+  align-items: center;
+  display: grid;
+  gap: var(--aid-space-2);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+
+.key-value-editor-header {
+  color: var(--aid-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.key-value-editor-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--aid-space-2);
+}
+
+.key-value-editor-input {
+  background: var(--aid-bg-surface-subtle);
+  border: 1px solid var(--aid-border-subtle);
+  border-radius: var(--aid-radius-control);
+  color: var(--aid-text-primary);
+  font: inherit;
+  min-height: 34px;
+  min-width: 0;
+  padding: 0 var(--aid-space-3);
+  width: 100%;
+}
+
+.key-value-editor-input::placeholder {
+  color: var(--aid-text-muted);
+}
+
+.key-value-editor-input:focus-visible {
+  border-color: rgba(79, 140, 255, 0.52);
+  box-shadow: var(--aid-focus-ring);
+  outline: none;
+}
+
+.key-value-editor-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.key-value-editor-input--warning {
+  background: rgba(251, 191, 36, 0.08);
+  border-color: rgba(251, 191, 36, 0.62);
+}
+
+.key-value-editor-actions {
+  text-align: right;
+}
+
+.key-value-editor-add,
+.key-value-editor-remove,
+.key-value-editor-empty-add {
+  border: 1px solid var(--aid-border-subtle);
+  border-radius: var(--aid-radius-control);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  min-height: 30px;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.key-value-editor-add {
+  background: var(--aid-accent-primary-subtle);
+  border-color: rgba(79, 140, 255, 0.3);
+  color: var(--aid-text-primary);
+  padding: 0 var(--aid-space-3);
+}
+
+.key-value-editor-add:hover {
+  background: rgba(79, 140, 255, 0.22);
+  border-color: rgba(79, 140, 255, 0.48);
+}
+
+.key-value-editor-remove {
+  background: transparent;
+  color: var(--aid-text-secondary);
+  padding: 0 var(--aid-space-2);
+}
+
+.key-value-editor-remove:hover {
+  border-color: rgba(251, 113, 133, 0.46);
+  color: var(--aid-status-error);
+}
+
+.key-value-editor-empty-add {
+  background: var(--aid-bg-surface-subtle);
+  border: 1px dashed var(--aid-border-strong);
+  color: var(--aid-text-secondary);
+  width: 100%;
+}
+
+.key-value-editor-empty-add:hover {
+  border-color: rgba(79, 140, 255, 0.42);
+  color: var(--aid-text-primary);
+}
+
+.key-value-editor-add:focus-visible,
+.key-value-editor-remove:focus-visible,
+.key-value-editor-empty-add:focus-visible {
+  outline: none;
+  box-shadow: var(--aid-focus-ring);
+}
+
+@media (max-width: 720px) {
+  .confirm-dialog-overlay {
+    padding: var(--aid-space-4);
+  }
+
+  .confirm-dialog-actions {
+    flex-direction: column-reverse;
+  }
+
+  .confirm-dialog-button {
+    width: 100%;
+  }
+
+  .key-value-editor-header {
+    display: none;
+  }
+
+  .key-value-editor-row {
+    grid-template-columns: 1fr;
+  }
+
+  .key-value-editor-actions {
+    text-align: left;
+  }
+}
+
 #prompt-router-container {
   position: absolute;
   left: var(--aid-layout-dock-rail-width);
