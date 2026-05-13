@@ -5,6 +5,7 @@ No runtime fixpack should start without a PLAN that references the target PNG, c
 ## WP-UI-011A Connections Recomposition Fixpack
 
 - Trigger evidence: `04-connections.current.png` is still the old Completion Profiles editor, while `04-connections.png` shows a compact model-profile/editor/status-card composition.
+- Status: implemented by `IN-UI-011A-connections-recomposition-fixpack`; pending fresh `04-connections.current.png` and visual gap re-assessment.
 - Target screens: Connections, Completion Profiles tab, Service Registry preview, Adapter Overrides entry points.
 - Owner files: `ConnectionsSettings.tsx`, `CompletionsSettings.tsx`, `ClientsAndCategories.tsx`, `AdapterOverrides.tsx`, `global.css`.
 - Allowed files: those owner files plus initiative/workpack docs.
