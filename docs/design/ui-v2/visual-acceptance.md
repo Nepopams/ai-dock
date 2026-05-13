@@ -39,3 +39,8 @@ Codex should not perform visual acceptance without current app screenshots becau
 
 ## Decision rule
 No further runtime UI fixpack should start until screenshots exist and the visual gap matrix identifies the actual gaps. Fixpacks must be scoped by screen bucket and must not become a new giant restyle.
+
+## Component States Evidence
+The Component States Board pass is tracked separately by `IN-UI-009-component-states-shared-dialogs`. Visual acceptance should include at least one exercised confirm dialog, one key-value editor state with add/edit/remove and empty-key warning, one modal/dialog stack, one toast, and representative empty/error/warning/success states where those surfaces are reachable.
+
+This evidence does not replace screen screenshots. It only confirms that shared overlays and state fragments do not undermine otherwise accepted screens.

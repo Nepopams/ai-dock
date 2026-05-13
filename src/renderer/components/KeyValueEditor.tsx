@@ -77,38 +77,42 @@ const KeyValueEditor = ({
     [items, onChange, readOnly]
   );
 
+  const rootClassName = ["key-value-editor", readOnly ? "key-value-editor--readonly" : "", className]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div className={`space-y-2 ${className}`}>
-      <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-2 text-xs uppercase tracking-wide text-slate-400">
+    <div className={rootClassName}>
+      <div className="key-value-editor-header">
         <span>Name</span>
         <span>Value</span>
-        <span className="text-right">
+        <span className="key-value-editor-actions">
           {!readOnly && (
             <button
               type="button"
               onClick={handleAdd}
-              className="rounded bg-slate-700 px-2 py-1 text-xs font-medium text-slate-100 hover:bg-slate-600"
+              className="key-value-editor-add"
             >
               {addLabel}
             </button>
           )}
         </span>
       </div>
-      <div className="space-y-2">
+      <div className="key-value-editor-rows">
         {items.map((item) => {
           const keyEmpty = !allowEmptyKey && item.key.trim().length === 0;
           return (
             <div
               key={item.id}
-              className="grid grid-cols-[1fr_1fr_auto] items-center gap-2"
+              className="key-value-editor-row"
             >
               <input
                 type="text"
                 value={item.key}
                 disabled={readOnly}
                 onChange={(event) => handleUpdate(item.id, "key", event.target.value)}
-                className={`rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none ${
-                  keyEmpty ? "border-amber-500" : ""
+                className={`key-value-editor-input${
+                  keyEmpty ? " key-value-editor-input--warning" : ""
                 }`}
                 placeholder={keyPlaceholder}
               />
@@ -117,15 +121,15 @@ const KeyValueEditor = ({
                 value={item.value}
                 disabled={readOnly}
                 onChange={(event) => handleUpdate(item.id, "value", event.target.value)}
-                className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"
+                className="key-value-editor-input"
                 placeholder={valuePlaceholder}
               />
-              <div className="text-right">
+              <div className="key-value-editor-actions">
                 {!readOnly && (
                   <button
                     type="button"
                     onClick={() => handleRemove(item.id)}
-                    className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:border-rose-500 hover:text-rose-400"
+                    className="key-value-editor-remove"
                     title="Remove row"
                   >
                     Remove
@@ -139,7 +143,7 @@ const KeyValueEditor = ({
           <button
             type="button"
             onClick={handleAdd}
-            className="w-full rounded border border-dashed border-slate-600 px-3 py-2 text-sm text-slate-300 hover:border-slate-400"
+            className="key-value-editor-empty-add"
           >
             {addLabel}
           </button>

@@ -1,6 +1,6 @@
 # AI Dock UI v2 Workpack Roadmap
 
-This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, `WP-UI-004` applied the Local Chat restyle, `WP-UI-005` applied the Evaluation Studio restyle, `WP-UI-006` applied the Connections/Form Profiles restyle, `WP-UI-007A` applied the Form Runner restyle, `WP-UI-007B` applied the Prompt Templates / Media Presets restyle, and `WP-UI-007C` applied the History Hub restyle. `IN-UI-008` adds the visual acceptance layer before any further runtime UI fixpack.
+This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, `WP-UI-004` applied the Local Chat restyle, `WP-UI-005` applied the Evaluation Studio restyle, `WP-UI-006` applied the Connections/Form Profiles restyle, `WP-UI-007A` applied the Form Runner restyle, `WP-UI-007B` applied the Prompt Templates / Media Presets restyle, and `WP-UI-007C` applied the History Hub restyle. `IN-UI-008` adds the visual acceptance layer, and `IN-UI-009` covers the remaining Component States / Shared Dialogs pass before screenshot-based acceptance.
 
 ## WP-UI-001 Design Handoff Inventory
 | Field | Detail |
@@ -111,6 +111,17 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 | Manual smoke | Capture current screenshots and fill the visual gap matrix before any WP-UI-009 runtime fixpack starts. |
 | Risks | Without screenshots, visual acceptance cannot be claimed even if automated checks pass. |
 
+## IN-UI-009 Component States / Shared Dialogs Restyle
+| Field | Detail |
+| --- | --- |
+| Status | Done by `IN-UI-009-component-states-shared-dialogs`; shared component behavior remains unchanged; manual smoke pending. |
+| Goal | Apply UI v2 treatment to Component States Board leftovers: ConfirmDialog, KeyValueEditor, and scoped common empty/loading/error/warning/success/focus/danger states. |
+| Affected files | `src/renderer/components/ConfirmDialog.tsx`, `src/renderer/components/KeyValueEditor.tsx`, `src/renderer/react/styles/global.css`, visual acceptance docs, initiative/workpack artifacts. |
+| Forbidden files | `src/main/**`, `src/preload/**`, `src/shared/**`, stores, view files, shell components, chat components, adapters, package/config/build/scripts files. |
+| Verification | Initiative validator, workpack validator, `npm test`, `npm run build`, `git diff --check`, forbidden-path status check. |
+| Manual smoke | Trigger Form Profiles confirm dialogs; verify KeyValueEditor add/edit/remove/warning states; confirm Presets/Apply dialogs and Toast remain readable. |
+| Risks | Shared CSS can leak if selectors are too broad; mitigate with semantic scoped selectors and no parent screen changes. |
+
 ## Dependency order
 1. `WP-UI-001` must complete before runtime UI work.
 2. `WP-UI-002` must run before shell or view restyles.
@@ -118,6 +129,7 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 4. `WP-UI-004` and `WP-UI-005` can follow the shell work in either order.
 5. `WP-UI-006` should precede `WP-UI-007A` because Form Runner follows Form Profiles.
 6. `WP-UI-007B` and `WP-UI-007C` should remain separate to avoid a giant APPLY across remaining views.
+7. `IN-UI-009` can run before final visual acceptance because it is cross-cutting component-state polish, not a screen-level gap fixpack.
 
 ## Next recommended runtime workpack
-No further runtime UI fixpack should start before `docs/design/ui-v2/current-screenshots/` is populated and `docs/design/ui-v2/visual-gap-matrix.md` is filled. Next recommended action is human screenshot capture and visual gap triage, then scoped `WP-UI-009*` fixpacks only for real gaps.
+After `IN-UI-009`, no further runtime UI fixpack should start before `docs/design/ui-v2/current-screenshots/` is populated and `docs/design/ui-v2/visual-gap-matrix.md` is filled. Next recommended action is human screenshot capture and visual gap triage, then scoped fixpacks only for real gaps.
