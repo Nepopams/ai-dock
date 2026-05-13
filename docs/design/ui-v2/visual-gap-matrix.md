@@ -1,27 +1,26 @@
 # UI v2 Visual Gap Matrix
 
-Use this matrix after current screenshots are captured. Each row compares the canonical Pencil export with the current Electron screenshot and assigns a visual acceptance decision.
+Evidence set for this pass:
+
+- Design PNGs: `docs/design/ui-v2/exports/*.png`
+- Current screenshots: `docs/design/ui-v2/current-screenshots/*.current.png`
+- Code ownership: current React renderer files and prior UI v2 delivery reports
+
+Status meanings:
+
+- `GO`: target and current are visually close enough for final smoke.
+- `GO with polish`: screen composition is broadly aligned, but visible polish or shell-dependent issues remain.
+- `NO-GO`: current composition is visibly different from target or needs React layout/component recomposition.
+- `Pending screenshot`: current screenshot is missing, so Codex cannot make a visual verdict.
 
 | Screen | Design PNG | Current Screenshot | Status | Main visual gaps | Functional risk | Proposed fixpack | Priority | Owner | Evidence notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Main Dock Shell | `exports/01-main-dock-shell.png` | `current-screenshots/01-main-dock-shell.current.png` | Pending screenshot | TBD | TBD | TBD | TBD | Human + Codex | Add screenshot and smoke notes. |
-| Local Chat | `exports/02-local-chat.png` | `current-screenshots/02-local-chat.current.png` | Pending screenshot | TBD | TBD | TBD | TBD | Human + Codex | Add screenshot and smoke notes. |
-| Judge Evaluation Studio | `exports/03-judge-evaluation-studio.png` | `current-screenshots/03-judge-evaluation-studio.current.png` | Pending screenshot | TBD | TBD | TBD | TBD | Human + Codex | Add screenshot and smoke notes. |
-| Connections | `exports/04-connections.png` | `current-screenshots/04-connections.current.png` | Pending screenshot | TBD | TBD | TBD | TBD | Human + Codex | Add screenshot and smoke notes. |
-| Form Profiles | `exports/05-form-profiles.png` | `current-screenshots/05-form-profiles.current.png` | Pending screenshot | TBD | TBD | TBD | TBD | Human + Codex | Add screenshot and smoke notes. |
-| Form Runner | `exports/06-form-runner.png` | `current-screenshots/06-form-runner.current.png` | Pending screenshot | TBD | TBD | TBD | TBD | Human + Codex | Add screenshot and smoke notes. |
-| Prompt Templates | `exports/07-prompt-templates.png` | `current-screenshots/07-prompt-templates.current.png` | Pending screenshot | TBD | TBD | TBD | TBD | Human + Codex | Add screenshot and smoke notes. |
-| Media Presets | `exports/08-media-presets.png` | `current-screenshots/08-media-presets.current.png` | Pending screenshot | TBD | TBD | TBD | TBD | Human + Codex | Add screenshot and smoke notes. |
-| History Hub | `exports/09-history-hub.png` | `current-screenshots/09-history-hub.current.png` | Pending screenshot | TBD | TBD | TBD | TBD | Human + Codex | Add screenshot and smoke notes. |
-
-## Status values
-- `Pending screenshot`
-- `GO`
-- `GO with polish`
-- `NO-GO`
-
-## Priority values
-- `P0 blocker`
-- `P1 acceptance`
-- `P2 polish`
-- `P3 backlog`
+| Main Dock Shell | `exports/01-main-dock-shell.png` | `current-screenshots/01-main-dock-shell.current.png` | NO-GO | Current shell still shows old title/chrome, old empty-tab copy, collapsed prompt router strip, and blank workspace instead of the target cockpit layout with compact router/status cards and BrowserView placeholder. | BrowserView bounds may still function, but visual acceptance is blocked because every local view inherits the old frame. | WP-UI-011B Shell / PromptRouter Layout Breakthrough | P0 | `App.tsx`, `Sidebar.tsx`, `TabStrip.tsx`, `PromptRouter.tsx`, `global.css` | Image comparison shows target composition is not present. Code still renders old strings such as `Нет открытых вкладок` and `Show panel`. |
+| Local Chat | `exports/02-local-chat.png` | `current-screenshots/02-local-chat.current.png` | NO-GO | Target has a composed chat workspace with conversation rail, populated thread, pinned composer, and right preset/status rail. Current is mostly old empty-chat layout with large legacy status/composer blocks. | Send/stream behavior may be intact, but UI v2 layout is not represented. | WP-UI-011C Chat Layout Recomposition | P0 | `ChatView.tsx`, `ConversationList.tsx`, `MessageList.tsx`, `MessageItem.tsx`, `CompareButton.tsx`, `global.css` | IN-UI-004 changed `global.css` and docs but did not change Chat owner components, so CSS could not produce the target composition. |
+| Judge Evaluation Studio | `exports/03-judge-evaluation-studio.png` | `current-screenshots/03-judge-evaluation-studio.current.png` | NO-GO | Target is a three-column working studio. Current still starts with mode cards and saved evaluations, with the compare surface below/hidden by scroll. | Judge runtime can still work, but the target studio surface is not the primary visible composition. | WP-UI-011D Judge Studio Layout Recomposition | P1 | `EvaluationStudioView.tsx`, `CompareView.tsx`, `global.css` | IN-UI-005 was effectively CSS/docs-only for Judge owner files. Target requires markup/layout changes. |
+| Connections | `exports/04-connections.png` | `current-screenshots/04-connections.current.png` | NO-GO | Target shows compact model profiles, profile editor, status cards, search/router, and registry preview. Current is the old Completion Profiles editor with `New Profile`, `Back to Chat`, custom headers, and saved status. | Settings behavior may work, but the target design cannot appear while `CompletionsSettings.tsx` owns the visible content unchanged. | WP-UI-011A Connections Recomposition Fixpack | P0 | `ConnectionsSettings.tsx`, `CompletionsSettings.tsx`, `ClientsAndCategories.tsx`, `AdapterOverrides.tsx`, `global.css` | IN-UI-006 did not change `CompletionsSettings.tsx`, which is the owner of the visible current screen. This is the clearest owner-file miss. |
+| Form Profiles | `exports/05-form-profiles.png` | `current-screenshots/05-form-profiles.current.png` | GO with polish | Main profile/list/editor composition is closer than other screens, but old shell, dense spacing, utility-style editor areas, and scroll/clipping differences remain. | Lower functional risk; likely polish and targeted layout cleanup rather than a full rewrite. | WP-UI-011E Settings/Form Follow-up | P2 | `FormProfilesManager.tsx`, `FormEditor.tsx`, `global.css` | IN-UI-006 touched both owner files. Visual gap is mostly density, alignment, states, and inherited shell mismatch. |
+| Form Runner | `exports/06-form-runner.png` | `current-screenshots/06-form-runner.current.png` | NO-GO | Target has a compact execution workspace with generated form, request preview, and response inspector. Current has partial columns but old header, clipping/scrollbar density, and response/stream areas do not match target composition. | Execution can still work, but screen needs a stronger layout pass to match target. | WP-UI-011E Settings/Form Follow-up | P1 | `FormRunView.tsx`, `global.css` | IN-UI-007A changed the owner file, but screenshot shows the result is not visually accepted. |
+| Prompt Templates | `exports/07-prompt-templates.png` | `current-screenshots/07-prompt-templates.current.png` | NO-GO | Target shows populated template management with table/list, editor, variable hints, and status panels. Current screenshot is an old empty-state surface with no visible editor/table composition. | Template CRUD may work, but acceptance needs representative populated state and likely layout changes. | WP-UI-011F Remaining Surfaces Polish | P1 | `TemplatesManager.tsx`, `InsertPromptDialog.tsx`, `global.css` | IN-UI-007B touched owner files, but current evidence is an empty state that does not demonstrate target layout. |
+| Media Presets | `exports/08-media-presets.png` | `current-screenshots/08-media-presets.current.png` | NO-GO | Target shows preset cards, editor/apply surfaces, chips, and rich preset details. Current is an empty gallery state with old toolbar/filter treatment and no target cards/editor. | Preset behavior may work, but visual acceptance needs populated gallery/apply dialog evidence and layout cleanup. | WP-UI-011F Remaining Surfaces Polish | P1 | `PresetsGallery.tsx`, `ApplyPresetDialog.tsx`, `global.css` | IN-UI-007B touched owner files, but screenshot state does not exercise the target visual surface. |
+| History Hub | `exports/09-history-hub.png` | `current-screenshots/09-history-hub.current.png` | Pending screenshot | Current screenshot is missing, so Codex cannot compare the target timeline/thread/detail design to the app. | Unknown until screenshot is captured. | WP-UI-011F Remaining Surfaces Polish after screenshot evidence | P1 | `HistoryView.tsx`, `global.css` | Target PNG exists. `09-history-hub.current.png` was not present during IN-UI-010 triage. |
