@@ -21,3 +21,18 @@ This table links Pencil frames and PNG exports to the current React surfaces and
 - `compare` routes to `EvaluationStudioView`, which composes `CompareView`.
 - The shell components remain mounted around every local view.
 - Runtime BrowserView/web-client content is outside this design handoff scope except for shell boundaries around it.
+
+## Current screenshot mapping
+`IN-UI-008 Visual Acceptance and Fixpack Plan` adds a manual current-screenshot capture layer. Current app screenshots belong in `docs/design/ui-v2/current-screenshots/` and should use the `.current.png` names listed below.
+
+| Design PNG | Current screenshot |
+| --- | --- |
+| `01-main-dock-shell.png` | `current-screenshots/01-main-dock-shell.current.png` |
+| `02-local-chat.png` | `current-screenshots/02-local-chat.current.png` |
+| `03-judge-evaluation-studio.png` | `current-screenshots/03-judge-evaluation-studio.current.png` |
+| `04-connections.png` | `current-screenshots/04-connections.current.png` |
+| `05-form-profiles.png` | `current-screenshots/05-form-profiles.current.png` |
+| `06-form-runner.png` | `current-screenshots/06-form-runner.current.png` |
+| `07-prompt-templates.png` | `current-screenshots/07-prompt-templates.current.png` |
+| `08-media-presets.png` | `current-screenshots/08-media-presets.current.png` |
+| `09-history-hub.png` | `current-screenshots/09-history-hub.current.png` |
