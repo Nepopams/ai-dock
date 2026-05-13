@@ -146,31 +146,31 @@ const InsertPromptDialog = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 backdrop-blur">
-      <div className="w-full max-w-4xl overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-2xl">
-        <header className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
-          <h2 className="text-lg font-semibold text-slate-100">Insert Prompt</h2>
+    <div className="insert-prompt-overlay">
+      <div className="insert-prompt-dialog">
+        <header className="insert-prompt-header">
+          <h2>Insert Prompt</h2>
           <button
-            className="rounded px-3 py-1 text-sm text-slate-400 hover:text-slate-100"
+            className="insert-prompt-close"
             onClick={onClose}
           >
             Close
           </button>
         </header>
         {sortedTemplates.length === 0 ? (
-          <div className="px-6 py-10 text-center text-sm text-slate-400">
+          <div className="insert-prompt-empty">
             Нет шаблонов. Создайте шаблон на странице Prompt Templates.
           </div>
         ) : (
           <>
-            <div className="grid gap-6 border-b border-slate-800 px-6 py-4 md:grid-cols-[280px_1fr]">
-              <div className="flex flex-col gap-3">
-                <label className="flex flex-col gap-2 text-sm text-slate-200">
-                  <span className="text-xs uppercase tracking-wide text-slate-500">
+            <div className="insert-prompt-body">
+              <div className="insert-prompt-sidebar">
+                <label className="insert-prompt-field">
+                  <span>
                     Template
                   </span>
                   <select
-                    className="rounded border border-slate-800 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-sky-500"
+                    className="insert-prompt-input"
                     value={selectedTemplateId}
                     onChange={(event) => {
                       const nextId = event.target.value;
@@ -188,47 +188,47 @@ const InsertPromptDialog = ({
                     ))}
                   </select>
                 </label>
-                <div>
-                  <span className="block text-xs uppercase tracking-wide text-slate-500">
+                <div className="insert-prompt-field">
+                  <span>
                     Target tabs
                   </span>
-                  <div className="mt-2 flex max-h-44 flex-col gap-2 overflow-y-auto rounded border border-slate-800 bg-slate-900/60 p-3 text-sm">
+                  <div className="insert-prompt-tabs-list">
                     {tabs.length === 0 ? (
                       <span className="text-xs text-slate-500">Нет открытых вкладок</span>
                     ) : (
                       tabs.map((tab) => (
-                        <label key={tab.id} className="flex items-center gap-2">
+                        <label key={tab.id} className="insert-prompt-tab-option">
                           <input
                             type="checkbox"
-                            className="accent-sky-500"
+                            className="insert-prompt-checkbox"
                             checked={selectedTabIds.includes(tab.id)}
                             onChange={() => toggleTab(tab.id)}
                           />
-                          <span className="text-slate-200">{tab.title || tab.id}</span>
+                          <span>{tab.title || tab.id}</span>
                         </label>
                       ))
                     )}
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="insert-prompt-hint">
                     Если ничего не выбрать, будут использованы вкладки из основного выбора.
                   </p>
                 </div>
               </div>
-              <div className="flex flex-col gap-4">
+              <div className="insert-prompt-main">
                 {variables.length > 0 && (
-                  <div className="rounded border border-slate-800 bg-slate-900/50 p-4">
-                    <span className="text-xs uppercase tracking-wide text-slate-500">
+                  <div className="insert-prompt-card">
+                    <span className="insert-prompt-section-label">
                       Variables
                     </span>
-                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    <div className="insert-prompt-variable-grid">
                       {variables.map((variable) => (
-                        <label key={variable.name} className="flex flex-col gap-1 text-xs text-slate-200">
-                          <span className="font-medium text-slate-300">
+                        <label key={variable.name} className="insert-prompt-field">
+                          <span>
                             {variable.name}
                           </span>
                           <input
                             type="text"
-                            className="rounded border border-slate-800 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-sky-500"
+                            className="insert-prompt-input"
                             value={variableValues[variable.name] ?? ""}
                             onChange={(event) =>
                               setVariableValues((current) => ({
@@ -242,24 +242,24 @@ const InsertPromptDialog = ({
                     </div>
                   </div>
                 )}
-                <div className="flex-1 rounded border border-slate-800 bg-slate-900/40 p-4">
-                  <span className="text-xs uppercase tracking-wide text-slate-500">
+                <div className="insert-prompt-card insert-prompt-card--preview">
+                  <span className="insert-prompt-section-label">
                     Preview
                   </span>
-                  <pre className="mt-3 max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded bg-slate-950/60 p-3 text-sm text-slate-100">
+                  <pre className="insert-prompt-preview">
                     {renderedPreview || " "}
                   </pre>
                 </div>
               </div>
             </div>
-            <footer className="flex flex-col gap-3 px-6 py-4 md:flex-row md:items-center md:justify-between">
-              <div className="text-xs text-slate-500">
+            <footer className="insert-prompt-footer">
+              <div className="insert-prompt-meta">
                 Последнее обновление шаблона:{" "}
                 {selectedTemplate
                   ? new Date(selectedTemplate.updatedAt).toLocaleString()
                   : "—"}
               </div>
-              <div className="flex gap-3">
+              <div className="insert-prompt-actions">
                 <button
                   type="button"
                   className="pill-btn ghost"
