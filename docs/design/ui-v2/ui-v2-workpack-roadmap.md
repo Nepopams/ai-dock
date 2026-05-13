@@ -1,6 +1,6 @@
 # AI Dock UI v2 Workpack Roadmap
 
-This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, `WP-UI-004` applied the Local Chat restyle, `WP-UI-005` applied the Evaluation Studio restyle, `WP-UI-006` applied the Connections/Form Profiles restyle, `WP-UI-007A` applied the Form Runner restyle, and `WP-UI-007B` applied the Prompt Templates / Media Presets restyle. Remaining runtime workpacks require separate PLAN, Human Gate, APPLY, and REVIEW.
+This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, `WP-UI-004` applied the Local Chat restyle, `WP-UI-005` applied the Evaluation Studio restyle, `WP-UI-006` applied the Connections/Form Profiles restyle, `WP-UI-007A` applied the Form Runner restyle, `WP-UI-007B` applied the Prompt Templates / Media Presets restyle, and `WP-UI-007C` applied the History Hub restyle. Runtime UI v2 rollout is implementation-complete pending final manual smoke/assets pass.
 
 ## WP-UI-001 Design Handoff Inventory
 | Field | Detail |
@@ -92,6 +92,7 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 ## WP-UI-007C History Hub Restyle
 | Field | Detail |
 | --- | --- |
+| Status | Done by `IN-UI-007C-history-hub-restyle`; history storage/search/ingest/open-source/continue-chat behavior remains unchanged. |
 | Goal | Apply UI v2 to History Hub without changing history storage/search/ingest/export or continue flows. |
 | Affected files | `HistoryView.tsx`, scoped history components if present, `global.css`. |
 | Forbidden files | History storage/search/ingest contracts, exporters, IPC/main/preload/shared, package/config/build/scripts files. |
@@ -108,4 +109,4 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 6. `WP-UI-007B` and `WP-UI-007C` should remain separate to avoid a giant APPLY across remaining views.
 
 ## Next recommended runtime workpack
-`WP-UI-007C History Hub Restyle` is the next runtime workpack after `WP-UI-007B Prompt Templates / Media Presets Restyle`.
+UI v2 runtime rollout is implementation-complete through `WP-UI-007C`. Next recommended action is a final cross-view manual smoke/assets pass before closing the UI v2 initiative thread.

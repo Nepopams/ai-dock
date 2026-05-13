@@ -247,8 +247,19 @@ function HistoryView() {
 
   return (
     <div className="history-view">
+      <header className="history-view-header">
+        <div>
+          <h1>History Hub</h1>
+          <p>Search, ingest, reopen, and continue previous AI work across local and browser-backed clients.</p>
+        </div>
+        <span className="history-index-status">{historyLoading ? "Indexing" : "Index ready"}</span>
+      </header>
       <aside className="history-sidebar">
         <form className="history-search" onSubmit={handleSearchSubmit}>
+          <div className="history-section-heading">
+            <h2>Filters</h2>
+            <p>Refine by text, agent, client, role, or tag.</p>
+          </div>
           <label>
             <span>Search</span>
             <input
@@ -313,23 +324,27 @@ function HistoryView() {
             </button>
           </div>
           {historyLoading && <div className="history-loading">Loading…</div>}
-          <ul>
-            {threadList.map((thread) => {
-              const isActive = selectedThreadId === thread.id;
-              return (
-                <li key={thread.id}>
-                  <button
-                    type="button"
-                    className={`history-thread-item${isActive ? " active" : ""}`}
-                    onClick={() => openThread(thread.id)}
-                  >
-                    <span className="history-thread-title">{thread.title || thread.id}</span>
-                    <span className="history-thread-date">{formatTimestamp(thread.createdAt)}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+          {threadList.length ? (
+            <ul>
+              {threadList.map((thread) => {
+                const isActive = selectedThreadId === thread.id;
+                return (
+                  <li key={thread.id}>
+                    <button
+                      type="button"
+                      className={`history-thread-item${isActive ? " active" : ""}`}
+                      onClick={() => openThread(thread.id)}
+                    >
+                      <span className="history-thread-title">{thread.title || thread.id}</span>
+                      <span className="history-thread-date">{formatTimestamp(thread.createdAt)}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            !historyLoading && <div className="history-empty history-empty--compact">No history threads yet</div>
+          )}
         </div>
       </aside>
       <section className="history-main">
@@ -388,7 +403,7 @@ function HistoryView() {
                       <span className="history-message-date">{formatTimestamp(message.ts)}</span>
                     </header>
                     <pre>{message.text}</pre>
-                    <footer>
+                    <footer className="history-message-actions">
                       <button
                         type="button"
                         className="pill-btn ghost"
@@ -417,16 +432,20 @@ function HistoryView() {
         {historySearchResult && (
           <aside className="history-search-results">
             <h2>Search results</h2>
-            <ul>
-              {historySearchResult.messages.map((message) => (
-                <li key={message.id}>
-                  <span className="history-result-title">
-                    [{message.agentId}] {formatTimestamp(message.ts)}
-                  </span>
-                  <span className="history-result-text">{message.text}</span>
-                </li>
-              ))}
-            </ul>
+            {historySearchResult.messages.length ? (
+              <ul>
+                {historySearchResult.messages.map((message) => (
+                  <li key={message.id} className="history-result-item">
+                    <span className="history-result-title">
+                      [{message.agentId}] {formatTimestamp(message.ts)}
+                    </span>
+                    <span className="history-result-text">{message.text}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="history-empty history-empty--compact">No search results</div>
+            )}
           </aside>
         )}
       </section>
