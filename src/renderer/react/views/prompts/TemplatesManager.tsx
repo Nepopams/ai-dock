@@ -202,17 +202,17 @@ function TemplatesManager() {
     const variables = dedupeVariables(previewBody);
     if (!variables.length) {
       return (
-        <p className="text-xs text-slate-400">
+        <p className="prompt-template-variable-hint">
           Переменные не обнаружены. Используйте синтаксис вида {"{{name}}"} или {"{{name|default}}"}.
         </p>
       );
     }
     return (
-      <div className="flex flex-wrap gap-2 text-xs text-slate-200">
+      <div className="prompt-template-variable-list">
         {variables.map((variable) => (
           <span
             key={variable.name}
-            className="rounded bg-slate-700/60 px-2 py-1"
+            className="prompt-template-variable-chip"
           >
             {variable.name}
             {variable.defaultValue ? ` = ${variable.defaultValue}` : ""}
@@ -223,15 +223,15 @@ function TemplatesManager() {
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-slate-950 text-slate-100">
-      <header className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
-        <div>
-          <h1 className="text-lg font-semibold">Prompt Templates</h1>
-          <p className="text-sm text-slate-400">
+    <div className="prompt-templates-view">
+      <header className="prompt-templates-header">
+        <div className="prompt-templates-title">
+          <h1>Prompt Templates</h1>
+          <p>
             Создавайте, редактируйте и экспортируйте шаблоны с переменными.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="prompt-templates-actions">
           <button className="pill-btn ghost" onClick={handleImport}>
             Import
           </button>
@@ -243,21 +243,21 @@ function TemplatesManager() {
           </button>
         </div>
       </header>
-      <section className="flex flex-col gap-4 px-6 py-4">
-        <div className="flex flex-wrap items-center gap-3">
+      <section className="prompt-templates-controls">
+        <div className="prompt-templates-filter-row">
           <input
             type="search"
-            className="w-full flex-1 rounded border border-slate-800 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-sky-500"
+            className="prompt-templates-search"
             placeholder="Поиск по названию, тексту или тегам..."
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
-          <div className="flex flex-wrap gap-2">
+          <div className="prompt-templates-tag-filter">
             <button
-              className={`rounded-full border px-3 py-1 text-xs ${
+              className={`prompt-templates-tag-button ${
                 tagFilter === null
-                  ? "border-sky-500 bg-sky-500/10 text-sky-300"
-                  : "border-slate-700 text-slate-300"
+                  ? "prompt-templates-tag-button--active"
+                  : ""
               }`}
               onClick={() => setTagFilter(null)}
             >
@@ -268,10 +268,10 @@ function TemplatesManager() {
               return (
                 <button
                   key={tag}
-                  className={`rounded-full border px-3 py-1 text-xs ${
+                  className={`prompt-templates-tag-button ${
                     isActive
-                      ? "border-sky-500 bg-sky-500/10 text-sky-300"
-                      : "border-slate-700 text-slate-300"
+                      ? "prompt-templates-tag-button--active"
+                      : ""
                   }`}
                   onClick={() => setTagFilter(isActive ? null : tag)}
                 >
@@ -282,40 +282,40 @@ function TemplatesManager() {
           </div>
         </div>
         {templatesError && (
-          <div className="rounded border border-rose-500/60 bg-rose-900/20 px-4 py-3 text-sm text-rose-200">
+          <div className="prompt-templates-alert prompt-templates-alert--error">
             {templatesError}
           </div>
         )}
       </section>
-      <div className="flex-1 overflow-y-auto px-6 pb-6">
+      <div className="prompt-templates-content">
         {templatesLoading ? (
           <div className="mt-10 text-center text-sm text-slate-400">Загрузка шаблонов...</div>
         ) : filteredTemplates.length === 0 ? (
-          <div className="mt-10 text-center text-sm text-slate-400">
+          <div className="prompt-templates-empty">
             Шаблоны не найдены. Создайте новый шаблон, чтобы начать.
           </div>
         ) : (
-          <table className="w-full table-fixed border-separate border-spacing-y-2 text-sm">
-            <thead className="text-left text-xs uppercase tracking-wide text-slate-500">
+          <table className="prompt-templates-table">
+            <thead>
               <tr>
-                <th className="w-1/4 px-3">Title</th>
-                <th className="w-1/2 px-3">Tags</th>
-                <th className="w-1/6 px-3">Updated</th>
-                <th className="w-[120px] px-3 text-right">Actions</th>
+                <th className="prompt-templates-table-title">Title</th>
+                <th>Tags</th>
+                <th className="prompt-templates-table-updated">Updated</th>
+                <th className="prompt-templates-table-actions">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredTemplates.map((template) => (
                 <tr
                   key={template.id}
-                  className="rounded border border-slate-800 bg-slate-900/60 transition hover:border-sky-500/40"
+                  className="prompt-template-row"
                 >
-                  <td className="px-3 py-3 font-medium">{template.title}</td>
-                  <td className="px-3 py-3">
+                  <td className="prompt-template-title-cell">{template.title}</td>
+                  <td>
                     {(template.tags || []).length ? (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="prompt-template-tags">
                         {template.tags?.map((tag) => (
-                          <span key={tag} className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-300">
+                          <span key={tag} className="prompt-template-tag">
                             #{tag}
                           </span>
                         ))}
@@ -324,25 +324,25 @@ function TemplatesManager() {
                       <span className="text-xs text-slate-500">Нет тегов</span>
                     )}
                   </td>
-                  <td className="px-3 py-3 text-xs text-slate-400">
+                  <td className="prompt-template-date">
                     {new Date(template.updatedAt).toLocaleString()}
                   </td>
-                  <td className="px-3 py-3">
-                    <div className="flex justify-end gap-2">
+                  <td>
+                    <div className="prompt-template-row-actions">
                       <button
-                        className="text-xs text-slate-300 underline-offset-2 hover:underline"
+                        className="prompt-template-action"
                         onClick={() => openEditor("edit", template)}
                       >
                         Edit
                       </button>
                       <button
-                        className="text-xs text-slate-300 underline-offset-2 hover:underline"
+                        className="prompt-template-action"
                         onClick={() => handleDuplicate(template)}
                       >
                         Duplicate
                       </button>
                       <button
-                        className="text-xs text-rose-300 underline-offset-2 hover:underline"
+                        className="prompt-template-action prompt-template-action--danger"
                         onClick={() => handleDelete(template)}
                       >
                         Delete
@@ -357,27 +357,27 @@ function TemplatesManager() {
       </div>
 
       {editor && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 backdrop-blur">
-          <div className="w-full max-w-2xl overflow-hidden rounded-lg border border-slate-800 bg-slate-950 shadow-xl">
+        <div className="prompt-template-modal-overlay">
+          <div className="prompt-template-modal">
             <form onSubmit={handleSaveTemplate}>
-              <header className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
-                <h2 className="text-base font-semibold">
+              <header className="prompt-template-modal-header">
+                <h2>
                   {editor.mode === "edit" ? "Редактирование шаблона" : "Новый шаблон"}
                 </h2>
                 <button
                   type="button"
-                  className="text-slate-400 hover:text-slate-200"
+                  className="prompt-template-modal-close"
                   onClick={closeEditor}
                 >
                   ✕
                 </button>
               </header>
-              <div className="flex flex-col gap-4 px-5 py-4">
-                <label className="flex flex-col gap-2">
-                  <span className="text-xs uppercase tracking-wide text-slate-400">Title</span>
+              <div className="prompt-template-modal-body">
+                <label className="prompt-template-field">
+                  <span>Title</span>
                   <input
                     type="text"
-                    className="rounded border border-slate-800 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-sky-500"
+                    className="prompt-template-input"
                     value={editor.title}
                     onChange={(event) =>
                       setEditor((prev) =>
@@ -393,10 +393,10 @@ function TemplatesManager() {
                     maxLength={160}
                   />
                 </label>
-                <label className="flex flex-col gap-2">
-                  <span className="text-xs uppercase tracking-wide text-slate-400">Body</span>
+                <label className="prompt-template-field">
+                  <span>Body</span>
                   <textarea
-                    className="h-48 rounded border border-slate-800 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-sky-500"
+                    className="prompt-template-textarea prompt-template-textarea--body"
                     value={editor.body}
                     onChange={(event) =>
                       setEditor((prev) =>
@@ -412,13 +412,13 @@ function TemplatesManager() {
                   />
                   {renderVariablesHint()}
                 </label>
-                <label className="flex flex-col gap-2">
-                  <span className="text-xs uppercase tracking-wide text-slate-400">
+                <label className="prompt-template-field">
+                  <span>
                     Tags (через запятую)
                   </span>
                   <input
                     type="text"
-                    className="rounded border border-slate-800 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-sky-500"
+                    className="prompt-template-input"
                     value={editor.tagsText}
                     onChange={(event) =>
                       setEditor((prev) =>
@@ -434,7 +434,7 @@ function TemplatesManager() {
                   />
                 </label>
               </div>
-              <footer className="flex items-center justify-end gap-3 border-t border-slate-800 px-5 py-4">
+              <footer className="prompt-template-modal-footer">
                 <button
                   type="button"
                   className="pill-btn ghost"

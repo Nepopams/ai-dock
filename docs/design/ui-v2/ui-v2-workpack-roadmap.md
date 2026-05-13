@@ -1,6 +1,6 @@
 # AI Dock UI v2 Workpack Roadmap
 
-This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, `WP-UI-004` applied the Local Chat restyle, `WP-UI-005` applied the Evaluation Studio restyle, `WP-UI-006` applied the Connections/Form Profiles restyle, and `WP-UI-007A` applied the Form Runner restyle. Remaining runtime workpacks require separate PLAN, Human Gate, APPLY, and REVIEW.
+This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001` completed the handoff inventory, `WP-UI-002` established the runtime token/primitives foundation, `WP-UI-003` applied the shared shell restyle, `WP-UI-004` applied the Local Chat restyle, `WP-UI-005` applied the Evaluation Studio restyle, `WP-UI-006` applied the Connections/Form Profiles restyle, `WP-UI-007A` applied the Form Runner restyle, and `WP-UI-007B` applied the Prompt Templates / Media Presets restyle. Remaining runtime workpacks require separate PLAN, Human Gate, APPLY, and REVIEW.
 
 ## WP-UI-001 Design Handoff Inventory
 | Field | Detail |
@@ -81,6 +81,7 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 ## WP-UI-007B Prompt Templates / Media Presets Restyle
 | Field | Detail |
 | --- | --- |
+| Status | Done by `IN-UI-007B-prompts-presets-restyle`; template/preset CRUD, import/export, adapter warnings, and apply behavior remain unchanged. |
 | Goal | Apply UI v2 to Prompt Templates and Media Presets without changing prompt template storage, preset schema, import/export, or apply behavior. |
 | Affected files | `TemplatesManager.tsx`, prompt dialog components if scoped by PLAN, `PresetsGallery.tsx`, `ApplyPresetDialog.tsx`, `global.css`. |
 | Forbidden files | Prompt template storage contracts, media preset schema/adapters, main/preload/shared IPC, package/config/build/scripts files. |
@@ -107,4 +108,4 @@ This roadmap decomposes UI v2 implementation into bounded workpacks. `WP-UI-001`
 6. `WP-UI-007B` and `WP-UI-007C` should remain separate to avoid a giant APPLY across remaining views.
 
 ## Next recommended runtime workpack
-`WP-UI-007B Prompt Templates / Media Presets Restyle` is the next runtime workpack after `WP-UI-007A Form Runner Restyle`.
+`WP-UI-007C History Hub Restyle` is the next runtime workpack after `WP-UI-007B Prompt Templates / Media Presets Restyle`.

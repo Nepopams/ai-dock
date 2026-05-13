@@ -96,9 +96,9 @@ const ApplyPresetDialog = ({
   }, [feedback]);
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-dialog">
-        <header className="modal-header">
+    <div className="modal-overlay apply-preset-overlay">
+      <div className="modal-dialog apply-preset-dialog">
+        <header className="modal-header apply-preset-header">
           <h2>Apply “{preset.title}”</h2>
         </header>
         <section className="apply-preset-body">

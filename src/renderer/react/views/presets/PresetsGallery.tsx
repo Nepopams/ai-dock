@@ -158,9 +158,9 @@ const PresetEditorModal = ({
     });
   };
   return (
-    <div className="modal-overlay">
-      <div className="modal-dialog">
-        <header className="modal-header">
+    <div className="modal-overlay presets-modal-overlay">
+      <div className="modal-dialog presets-modal-dialog">
+        <header className="modal-header presets-modal-header">
           <h2>{state.title ? `Edit ${state.title}` : "New Media Preset"}</h2>
         </header>
         <form onSubmit={onSubmit} className="preset-form">
@@ -304,12 +304,12 @@ const ImportPresetsDialog = ({ open, busy, onSelect, onCancel }: ImportPresetsDi
     return null;
   }
   return (
-    <div className="modal-overlay">
-      <div className="modal-dialog">
-        <header className="modal-header">
+    <div className="modal-overlay presets-modal-overlay">
+      <div className="modal-dialog presets-modal-dialog presets-import-dialog">
+        <header className="modal-header presets-modal-header">
           <h2>Import Media Presets</h2>
         </header>
-        <section className="apply-preset-body">
+        <section className="apply-preset-body presets-import-body">
           <p className="muted">
             How should conflicting presets (same ID) be handled?
           </p>
@@ -651,6 +651,12 @@ function PresetsGallery() {
 
   return (
     <div className="presets-gallery">
+      <header className="presets-heading">
+        <div>
+          <h1>Media Presets</h1>
+          <p>Reusable image and video prompt presets with client bindings and adapter-safe apply flow.</p>
+        </div>
+      </header>
       <header className="presets-toolbar">
         <div className="presets-search-group">
           <input
